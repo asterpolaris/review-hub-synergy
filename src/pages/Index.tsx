@@ -11,11 +11,16 @@ const Index = () => {
   useEffect(() => {
     // Check if user is already logged in
     supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
       if (session) {
         navigate("/dashboard");
       }
     });
   }, [navigate]);
+
+  const handleAuthStateChange = (event: string) => {
+    console.log("Auth UI event:", event);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -41,6 +46,7 @@ const Index = () => {
             providers={["google"]}
             onlyThirdPartyProviders={true}
             redirectTo={`${window.location.origin}/auth/callback`}
+            onAuthStateChange={handleAuthStateChange}
           />
         </CardContent>
       </Card>
