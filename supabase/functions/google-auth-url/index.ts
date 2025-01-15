@@ -6,18 +6,27 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+    if (!clientId) {
+      console.error('GOOGLE_CLIENT_ID not configured');
+      throw new Error('OAuth configuration missing');
+    }
+
     const redirectUri = `${new URL(req.url).origin}/auth/callback`;
+    console.log('Redirect URI:', redirectUri);
     
+    // Explicitly specify all required scopes
     const scope = encodeURIComponent([
       'https://www.googleapis.com/auth/business.manage',
-      'email',
-      'profile'
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'openid'
     ].join(' '));
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -28,6 +37,9 @@ serve(async (req) => {
       `&access_type=offline` +
       `&prompt=consent`;
 
+    console.log('Generated auth URL (without sensitive data):', 
+      authUrl.replace(clientId, 'REDACTED'));
+
     return new Response(
       JSON.stringify({ url: authUrl }),
       { 
@@ -36,8 +48,13 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error('Error in google-auth-url function:', error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Please ensure Google OAuth is properly configured and API access has been granted.'
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
