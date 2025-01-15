@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
+  const [details, setDetails] = useState<string | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -25,18 +27,12 @@ const AuthCallback = () => {
       console.log("Received state:", state);
       
       try {
-        // Parse the state parameter to get the return URL
         const stateData = state ? JSON.parse(decodeURIComponent(state)) : null;
         const returnTo = stateData?.returnTo || "/";
 
-        console.log("About to call exchange-token function with code");
-        
-        // Call the exchange-token function with explicit error logging
+        console.log("Calling exchange-token function...");
         const { data, error: functionError } = await supabase.functions.invoke("exchange-token", {
           body: { code },
-          headers: {
-            'Content-Type': 'application/json',
-          }
         });
 
         console.log("Function response:", { data, error: functionError });
@@ -53,26 +49,25 @@ const AuthCallback = () => {
 
         console.log("Token exchange successful:", data);
         
-        // Show success message
         toast({
           title: "Successfully connected with Google",
           description: "You can now manage your business reviews",
         });
 
-        // Redirect back to the main application
-        console.log("Redirecting to:", returnTo);
         navigate(returnTo);
       } catch (err) {
         console.error("Error during callback:", err);
         const errorMessage = err instanceof Error ? err.message : "Failed to authenticate with Google";
         console.error("Formatted error message:", errorMessage);
         setError(errorMessage);
+        if (err.response) {
+          setDetails(JSON.stringify(err.response.data, null, 2));
+        }
         toast({
           variant: "destructive",
           title: "Authentication Error",
           description: "Failed to complete Google authentication. Please try again.",
         });
-        navigate("/");
       }
     };
 
@@ -81,10 +76,21 @@ const AuthCallback = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Authentication Error</h1>
-          <p className="mt-2 text-gray-600">{error}</p>
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="w-full max-w-md">
+          <Alert variant="destructive">
+            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2">
+                <p className="font-medium">{error}</p>
+                {details && (
+                  <pre className="mt-2 p-2 bg-gray-100 rounded text-sm overflow-x-auto">
+                    {details}
+                  </pre>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
         </div>
       </div>
     );

@@ -8,119 +8,115 @@ const corsHeaders = {
 const PRODUCTION_URL = 'https://review-hub-synergy.lovable.app';
 
 serve(async (req) => {
+  console.log('Function invoked - initial entry point');
+  
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
-    console.log('Function invoked - initial entry point');
-    console.log('Request URL:', req.url);
-    console.log('Request method:', req.method);
-    console.log('Headers present:', [...req.headers.keys()]);
+    const requestBody = await req.json();
+    console.log('Request body:', JSON.stringify(requestBody));
     
-    // Handle CORS preflight requests
-    if (req.method === 'OPTIONS') {
-      console.log('Handling CORS preflight request');
-      return new Response(null, { headers: corsHeaders });
+    const { code } = requestBody;
+    if (!code) {
+      console.error('No authorization code provided');
+      throw new Error('No authorization code provided in request body');
     }
 
-    try {
-      const requestBody = await req.json();
-      console.log('Successfully parsed request body');
-      console.log('Request body content:', JSON.stringify(requestBody));
-      
-      const { code } = requestBody;
-      if (!code) {
-        console.error('No authorization code provided');
-        throw new Error('No authorization code provided in request body');
-      }
-      console.log('Authorization code received:', code);
-      
-      const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
-      const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+    const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+    const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+    
+    console.log('OAuth credentials check:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+    });
 
-      console.log('OAuth credentials check:', {
-        hasClientId: !!clientId,
-        hasClientSecret: !!clientSecret,
-        clientIdLength: clientId?.length,
-        secretLength: clientSecret?.length
-      });
-
-      if (!clientId || !clientSecret) {
-        console.error('Missing OAuth credentials');
-        throw new Error('OAuth configuration is incomplete');
-      }
-
-      const redirectUri = `${PRODUCTION_URL}/auth/callback`;
-      console.log('Using redirect URI:', redirectUri);
-      
-      // Exchange the authorization code for tokens
-      console.log('Preparing token exchange request...');
-      const tokenRequestBody = new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-      });
-      
-      console.log('Making token exchange request to Google...');
-      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: tokenRequestBody,
-      });
-
-      console.log('Token exchange response status:', tokenResponse.status);
-      const data = await tokenResponse.json();
-      
-      if (!tokenResponse.ok) {
-        console.error('Token exchange error:', {
-          status: tokenResponse.status,
-          statusText: tokenResponse.statusText,
-          error: data
-        });
-        throw new Error(data.error_description || data.error || 'Failed to exchange token');
-      }
-
-      console.log('Token exchange successful');
-      console.log('Access token received:', !!data.access_token);
-      console.log('Token type:', data.token_type);
-      console.log('Expires in:', data.expires_in);
-      
+    if (!clientId || !clientSecret) {
+      console.error('Missing OAuth credentials');
       return new Response(
-        JSON.stringify({ 
-          success: true,
-          message: 'Successfully exchanged token',
-          debug: {
-            tokenReceived: !!data.access_token,
-            timestamp: new Date().toISOString(),
-            responseStatus: tokenResponse.status,
-            tokenType: data.token_type,
-            expiresIn: data.expires_in
-          }
+        JSON.stringify({
+          error: 'OAuth configuration is incomplete',
+          details: 'Client ID or Client Secret is missing'
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
+          status: 500
         }
       );
-    } catch (error) {
-      console.error('Error parsing request or during token exchange:', error);
-      throw error; // Re-throw to be caught by outer try-catch
     }
-  } catch (error) {
-    console.error('Top level error in exchange-token function:', error.message);
-    console.error('Error stack:', error.stack);
+
+    const redirectUri = `${PRODUCTION_URL}/auth/callback`;
+    console.log('Using redirect URI:', redirectUri);
     
+    const tokenRequestBody = new URLSearchParams({
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+    });
+
+    console.log('Making token exchange request to Google...');
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: tokenRequestBody,
+    });
+
+    const data = await tokenResponse.json();
+    console.log('Token exchange response status:', tokenResponse.status);
+    console.log('Token exchange response:', JSON.stringify(data));
+
+    if (!tokenResponse.ok) {
+      console.error('Token exchange error:', {
+        status: tokenResponse.status,
+        error: data
+      });
+      return new Response(
+        JSON.stringify({
+          error: data.error,
+          error_description: data.error_description,
+          status: tokenResponse.status,
+          timestamp: new Date().toISOString()
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: tokenResponse.status 
+        }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: 'Failed to exchange authorization code for tokens',
-        timestamp: new Date().toISOString(),
-        errorType: error.constructor.name
+      JSON.stringify({
+        success: true,
+        message: 'Successfully exchanged token',
+        debug: {
+          tokenReceived: !!data.access_token,
+          timestamp: new Date().toISOString(),
+          responseStatus: tokenResponse.status
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 200
+      }
+    );
+  } catch (error) {
+    console.error('Error in exchange-token function:', error);
+    return new Response(
+      JSON.stringify({
+        error: error.message,
+        details: 'Failed to process token exchange request',
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     );
   }
