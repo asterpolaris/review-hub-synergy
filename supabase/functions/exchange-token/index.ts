@@ -35,11 +35,16 @@ serve(async (req) => {
     });
 
     if (!clientId || !clientSecret) {
-      console.error('Missing OAuth credentials');
+      const error = 'OAuth configuration is incomplete';
+      console.error(error, {
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret
+      });
       return new Response(
         JSON.stringify({
-          error: 'OAuth configuration is incomplete',
-          details: 'Client ID or Client Secret is missing'
+          error,
+          details: 'Client ID or Client Secret is missing',
+          timestamp: new Date().toISOString()
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -60,59 +65,92 @@ serve(async (req) => {
     });
 
     console.log('Making token exchange request to Google...');
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: tokenRequestBody,
-    });
-
-    const data = await tokenResponse.json();
-    console.log('Token exchange response status:', tokenResponse.status);
-    console.log('Token exchange response:', JSON.stringify(data));
-
-    if (!tokenResponse.ok) {
-      console.error('Token exchange error:', {
-        status: tokenResponse.status,
-        error: data
+    try {
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: tokenRequestBody,
       });
+
+      const data = await tokenResponse.json();
+      console.log('Token exchange response status:', tokenResponse.status);
+      console.log('Token exchange response:', JSON.stringify(data));
+
+      if (!tokenResponse.ok) {
+        console.error('Token exchange error:', {
+          status: tokenResponse.status,
+          error: data,
+          requestDetails: {
+            redirectUri,
+            timestamp: new Date().toISOString()
+          }
+        });
+        return new Response(
+          JSON.stringify({
+            error: data.error,
+            error_description: data.error_description,
+            status: tokenResponse.status,
+            timestamp: new Date().toISOString(),
+            debug: {
+              redirectUri,
+              requestStatus: tokenResponse.status
+            }
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: tokenResponse.status 
+          }
+        );
+      }
+
       return new Response(
         JSON.stringify({
-          error: data.error,
-          error_description: data.error_description,
-          status: tokenResponse.status,
-          timestamp: new Date().toISOString()
+          success: true,
+          message: 'Successfully exchanged token',
+          debug: {
+            tokenReceived: !!data.access_token,
+            timestamp: new Date().toISOString(),
+            responseStatus: tokenResponse.status,
+            redirectUri
+          }
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: tokenResponse.status 
+          status: 200
+        }
+      );
+    } catch (fetchError) {
+      console.error('Fetch error during token exchange:', fetchError);
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to exchange token',
+          details: fetchError.message,
+          timestamp: new Date().toISOString(),
+          debug: {
+            redirectUri,
+            errorType: fetchError.constructor.name
+          }
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
         }
       );
     }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Successfully exchanged token',
-        debug: {
-          tokenReceived: !!data.access_token,
-          timestamp: new Date().toISOString(),
-          responseStatus: tokenResponse.status
-        }
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
-    );
   } catch (error) {
     console.error('Error in exchange-token function:', error);
+    console.error('Error stack:', error.stack);
     return new Response(
       JSON.stringify({
         error: error.message,
         details: 'Failed to process token exchange request',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        debug: {
+          errorType: error.constructor.name,
+          stack: error.stack
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
