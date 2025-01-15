@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const Businesses = () => {
   const [newBusiness, setNewBusiness] = useState({ name: "", location: "" });
+  const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
 
   const { data: businesses, isLoading } = useQuery({
@@ -54,13 +55,11 @@ const Businesses = () => {
       return;
     }
 
-    const { error } = await supabase.from("businesses").insert([
-      {
-        name: newBusiness.name,
-        location: newBusiness.location,
-        user_id: user.id,
-      },
-    ]);
+    const { error } = await supabase.from("businesses").insert({
+      name: newBusiness.name,
+      location: newBusiness.location,
+      user_id: user.id,
+    });
 
     if (error) {
       console.error("Error adding business:", error);
@@ -81,16 +80,37 @@ const Businesses = () => {
 
   const handleGoogleConnect = async () => {
     try {
-      const { data } = await supabase.functions.invoke("google-auth-url");
+      setIsConnecting(true);
+      const { data, error } = await supabase.functions.invoke("google-auth-url");
+      
+      if (error) {
+        console.error("Error getting auth URL:", error);
+        toast({
+          title: "Connection Error",
+          description: "Failed to initiate Google connection. Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        toast({
+          title: "Error",
+          description: "Invalid response from authentication service",
+          variant: "destructive",
+        });
       }
     } catch (error) {
+      console.error("Google connection error:", error);
       toast({
-        title: "Error",
-        description: "Failed to connect with Google",
+        title: "Connection Error",
+        description: "Failed to connect with Google Business Profile. Please ensure you have been granted API access.",
         variant: "destructive",
       });
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -100,8 +120,12 @@ const Businesses = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-4xl font-semibold tracking-tight">Businesses</h1>
           <div className="flex gap-4">
-            <Button onClick={handleGoogleConnect} variant="outline">
-              Connect Google Business
+            <Button 
+              onClick={handleGoogleConnect} 
+              variant="outline"
+              disabled={isConnecting}
+            >
+              {isConnecting ? "Connecting..." : "Connect Google Business"}
             </Button>
             <Dialog>
               <DialogTrigger asChild>
