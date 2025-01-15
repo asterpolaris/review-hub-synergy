@@ -11,27 +11,36 @@ const AuthCallback = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
+      console.log("Starting callback handling");
       const code = searchParams.get("code");
       const state = searchParams.get("state");
       
       if (!code) {
+        console.error("No authorization code received");
         setError("No authorization code received");
         return;
       }
 
+      console.log("Received authorization code");
+      
       try {
         // Parse the state parameter to get the return URL
         const stateData = state ? JSON.parse(decodeURIComponent(state)) : null;
         const returnTo = stateData?.returnTo || "/";
 
-        // Call the exchange-token function (to be implemented)
+        console.log("Calling exchange-token function");
+        
+        // Call the exchange-token function
         const { data, error } = await supabase.functions.invoke("exchange-token", {
           body: { code }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Token exchange error:", error);
+          throw error;
+        }
 
-        console.log("Token exchange successful:", data);
+        console.log("Token exchange response:", data);
         
         // Show success message
         toast({
@@ -40,6 +49,7 @@ const AuthCallback = () => {
         });
 
         // Redirect back to the main application
+        console.log("Redirecting to:", returnTo);
         navigate(returnTo);
       } catch (err) {
         console.error("Error during callback:", err);
