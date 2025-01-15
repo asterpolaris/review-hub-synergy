@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -42,14 +42,28 @@ const Businesses = () => {
       return;
     }
 
+    // Get the current user's ID
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add a business",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error } = await supabase.from("businesses").insert([
       {
         name: newBusiness.name,
         location: newBusiness.location,
+        user_id: user.id,
       },
     ]);
 
     if (error) {
+      console.error("Error adding business:", error);
       toast({
         title: "Error",
         description: "Failed to add business",
