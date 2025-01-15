@@ -8,7 +8,7 @@ const corsHeaders = {
 const PRODUCTION_URL = 'https://review-hub-synergy.lovable.app';
 
 serve(async (req) => {
-  console.log('Exchange token function called');
+  console.log('Exchange token function called with method:', req.method);
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -17,11 +17,22 @@ serve(async (req) => {
   }
 
   try {
-    const { code } = await req.json();
-    console.log('Received authorization code:', code ? 'Present' : 'Missing');
+    const requestBody = await req.json();
+    console.log('Request body received:', JSON.stringify(requestBody));
+    
+    const { code } = requestBody;
+    if (!code) {
+      throw new Error('No authorization code provided in request body');
+    }
+    console.log('Authorization code extracted from request');
     
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
     const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+
+    console.log('OAuth credentials check:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret
+    });
 
     if (!clientId || !clientSecret) {
       console.error('Missing OAuth credentials');
@@ -32,7 +43,7 @@ serve(async (req) => {
     console.log('Using redirect URI:', redirectUri);
     
     // Exchange the authorization code for tokens
-    console.log('Initiating token exchange...');
+    console.log('Initiating token exchange request to Google...');
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -47,25 +58,24 @@ serve(async (req) => {
       }),
     });
 
-    const data = await tokenResponse.json();
     console.log('Token exchange response status:', tokenResponse.status);
+    const data = await tokenResponse.json();
     
     if (!tokenResponse.ok) {
-      console.error('Token exchange error:', data);
+      console.error('Token exchange error response:', JSON.stringify(data));
       throw new Error(data.error_description || data.error || 'Failed to exchange token');
     }
 
-    console.log('Token exchange successful');
+    console.log('Token exchange successful, access token received:', !!data.access_token);
     
-    // Here you would typically store the tokens securely
-    // For now, we'll just return success
     return new Response(
       JSON.stringify({ 
         success: true,
         message: 'Successfully exchanged token',
         debug: {
           tokenReceived: !!data.access_token,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          responseStatus: tokenResponse.status
         }
       }),
       { 
@@ -74,7 +84,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in exchange-token function:', error);
+    console.error('Error in exchange-token function:', error.message);
     console.error('Error stack:', error.stack);
     
     return new Response(
