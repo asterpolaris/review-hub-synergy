@@ -5,6 +5,8 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+const PRODUCTION_URL = 'https://review-hub-synergy.lovable.app';
+
 const Index = () => {
   const navigate = useNavigate();
 
@@ -45,7 +47,7 @@ const Index = () => {
             theme="light"
             providers={["google"]}
             onlyThirdPartyProviders={true}
-            redirectTo={`${window.location.origin}/auth/callback`}
+            redirectTo={`${PRODUCTION_URL}/auth/callback`}
           />
         </CardContent>
       </Card>
