@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -21,26 +21,37 @@ const AuthCallback = () => {
         return;
       }
 
-      console.log("Received authorization code");
+      console.log("Received authorization code:", code);
+      console.log("Received state:", state);
       
       try {
         // Parse the state parameter to get the return URL
         const stateData = state ? JSON.parse(decodeURIComponent(state)) : null;
         const returnTo = stateData?.returnTo || "/";
 
-        console.log("Calling exchange-token function");
+        console.log("About to call exchange-token function with code");
         
-        // Call the exchange-token function
-        const { data, error } = await supabase.functions.invoke("exchange-token", {
-          body: { code }
+        // Call the exchange-token function with explicit error logging
+        const { data, error: functionError } = await supabase.functions.invoke("exchange-token", {
+          body: { code },
+          headers: {
+            'Content-Type': 'application/json',
+          }
         });
 
-        if (error) {
-          console.error("Token exchange error:", error);
-          throw error;
+        console.log("Function response:", { data, error: functionError });
+
+        if (functionError) {
+          console.error("Token exchange error:", functionError);
+          throw new Error(functionError.message || "Failed to exchange token");
         }
 
-        console.log("Token exchange response:", data);
+        if (!data) {
+          console.error("No data received from token exchange");
+          throw new Error("No response data from token exchange");
+        }
+
+        console.log("Token exchange successful:", data);
         
         // Show success message
         toast({
@@ -53,7 +64,9 @@ const AuthCallback = () => {
         navigate(returnTo);
       } catch (err) {
         console.error("Error during callback:", err);
-        setError(err instanceof Error ? err.message : "Failed to authenticate with Google");
+        const errorMessage = err instanceof Error ? err.message : "Failed to authenticate with Google";
+        console.error("Formatted error message:", errorMessage);
+        setError(errorMessage);
         toast({
           variant: "destructive",
           title: "Authentication Error",
