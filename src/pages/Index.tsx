@@ -38,7 +38,7 @@ const Index = () => {
               },
             }}
             theme="light"
-            providers={[]}
+            providers={["google"]}
           />
         </CardContent>
       </Card>
