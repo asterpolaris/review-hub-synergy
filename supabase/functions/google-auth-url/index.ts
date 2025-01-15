@@ -23,9 +23,8 @@ serve(async (req) => {
       throw new Error('OAuth configuration missing');
     }
 
-    // Get the origin from the request
-    const url = new URL(req.url);
-    const origin = url.origin;
+    // Get the origin from the request headers
+    const origin = req.headers.get('origin') || 'https://eqgtvisxqjfntyhqkadj.supabase.co';
     console.log('Request origin:', origin);
     
     // Use the application's origin for the redirect
@@ -60,6 +59,7 @@ serve(async (req) => {
         debug: {
           redirectUri,
           scopes,
+          origin,
           timestamp: new Date().toISOString()
         }
       }),
