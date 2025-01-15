@@ -30,6 +30,39 @@ export type Database = {
         }
         Relationships: []
       }
+      businesses: {
+        Row: {
+          created_at: string
+          google_business_account_id: string | null
+          google_place_id: string | null
+          id: string
+          location: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          google_business_account_id?: string | null
+          google_place_id?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          google_business_account_id?: string | null
+          google_place_id?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_history: {
         Row: {
           change_type: string
