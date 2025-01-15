@@ -21,7 +21,7 @@ const Index = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Review Hub Synergy</CardTitle>
+          <CardTitle className="text-2xl text-center">JEGantic Hospitality Desk</CardTitle>
         </CardHeader>
         <CardContent>
           <Auth
