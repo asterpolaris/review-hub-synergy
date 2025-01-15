@@ -42,6 +42,7 @@ const Index = () => {
             theme="light"
             providers={["google"]}
             redirectTo={`${PRODUCTION_URL}/auth/callback`}
+            onlyThirdPartyProviders={true}
           />
         </CardContent>
       </Card>
