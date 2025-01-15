@@ -23,7 +23,13 @@ serve(async (req) => {
       throw new Error('OAuth configuration missing');
     }
 
-    const redirectUri = `${new URL(req.url).origin}/auth/callback`;
+    // Get the origin from the request
+    const url = new URL(req.url);
+    const origin = url.origin;
+    console.log('Request origin:', origin);
+    
+    // Use the application's origin for the redirect
+    const redirectUri = `${origin}/auth/callback`;
     console.log('Generated redirect URI:', redirectUri);
     
     // Explicitly specify all required scopes
