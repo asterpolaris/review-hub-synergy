@@ -32,6 +32,11 @@ export const useOAuthCallback = () => {
     console.log("Received state:", stateParam);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("No authenticated user found");
+      }
+
       console.log("Calling exchange-token function...");
       const { data, error: functionError } = await supabase.functions.invoke("exchange-token", {
         body: { code },
@@ -47,6 +52,21 @@ export const useOAuthCallback = () => {
       if (!data) {
         console.error("No data received from token exchange");
         throw new Error("No response data from token exchange");
+      }
+
+      // Store tokens in the database
+      const { error: insertError } = await supabase
+        .from("google_auth_tokens")
+        .upsert({
+          user_id: user.id,
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+        });
+
+      if (insertError) {
+        console.error("Error storing tokens:", insertError);
+        throw new Error("Failed to store authentication tokens");
       }
 
       console.log("Token exchange successful:", data);

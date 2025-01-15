@@ -14,11 +14,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Businesses = () => {
   const [newBusiness, setNewBusiness] = useState({ name: "", location: "" });
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
+  const { session, googleAuthToken } = useAuth();
 
   const { data: businesses, isLoading } = useQuery({
     queryKey: ["businesses"],
@@ -43,10 +45,7 @@ const Businesses = () => {
       return;
     }
 
-    // Get the current user's ID
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    if (!session?.user) {
       toast({
         title: "Error",
         description: "You must be logged in to add a business",
@@ -58,7 +57,7 @@ const Businesses = () => {
     const { error } = await supabase.from("businesses").insert({
       name: newBusiness.name,
       location: newBusiness.location,
-      user_id: user.id,
+      user_id: session.user.id,
     });
 
     if (error) {
@@ -123,9 +122,14 @@ const Businesses = () => {
             <Button 
               onClick={handleGoogleConnect} 
               variant="outline"
-              disabled={isConnecting}
+              disabled={isConnecting || !!googleAuthToken}
             >
-              {isConnecting ? "Connecting..." : "Connect Google Business"}
+              {isConnecting 
+                ? "Connecting..." 
+                : googleAuthToken 
+                  ? "Connected to Google" 
+                  : "Connect Google Business"
+              }
             </Button>
             <Dialog>
               <DialogTrigger asChild>
