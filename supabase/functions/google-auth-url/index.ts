@@ -6,32 +6,40 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Google auth URL function called');
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
+    console.log('Client ID available:', !!clientId);
+    
     if (!clientId) {
       console.error('GOOGLE_CLIENT_ID not configured');
       throw new Error('OAuth configuration missing');
     }
 
     const redirectUri = `${new URL(req.url).origin}/auth/callback`;
-    console.log('Redirect URI:', redirectUri);
+    console.log('Generated redirect URI:', redirectUri);
     
     // Explicitly specify all required scopes
-    const scope = encodeURIComponent([
+    const scopes = [
       'https://www.googleapis.com/auth/business.manage',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
       'openid'
-    ].join(' '));
+    ];
+    
+    console.log('Using scopes:', scopes);
+    const scope = encodeURIComponent(scopes.join(' '));
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${clientId}` +
-      `&redirect_uri=${redirectUri}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
       `&access_type=offline` +
@@ -41,7 +49,14 @@ serve(async (req) => {
       authUrl.replace(clientId, 'REDACTED'));
 
     return new Response(
-      JSON.stringify({ url: authUrl }),
+      JSON.stringify({ 
+        url: authUrl,
+        debug: {
+          redirectUri,
+          scopes,
+          timestamp: new Date().toISOString()
+        }
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
@@ -49,11 +64,14 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in google-auth-url function:', error);
+    console.error('Error stack:', error.stack);
     
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: 'Please ensure Google OAuth is properly configured and API access has been granted.'
+        details: 'Please ensure Google OAuth is properly configured and API access has been granted.',
+        timestamp: new Date().toISOString(),
+        errorType: error.constructor.name
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
