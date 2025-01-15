@@ -28,7 +28,7 @@ const AuthCallback = () => {
       
       try {
         const stateData = state ? JSON.parse(decodeURIComponent(state)) : null;
-        const returnTo = stateData?.returnTo || "/";
+        const returnTo = stateData?.returnTo || "/businesses"; // Default to /businesses
 
         console.log("Calling exchange-token function...");
         const { data, error: functionError } = await supabase.functions.invoke("exchange-token", {
@@ -54,7 +54,8 @@ const AuthCallback = () => {
           description: "You can now manage your business reviews",
         });
 
-        navigate(returnTo);
+        // Ensure we always navigate after successful token exchange
+        navigate("/businesses");
       } catch (err) {
         console.error("Error during callback:", err);
         const errorMessage = err instanceof Error ? err.message : "Failed to authenticate with Google";
