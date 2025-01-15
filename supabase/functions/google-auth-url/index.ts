@@ -23,8 +23,8 @@ serve(async (req) => {
       throw new Error('OAuth configuration missing');
     }
 
-    // Get the origin from the request headers
-    const origin = req.headers.get('origin') || 'https://eqgtvisxqjfntyhqkadj.supabase.co';
+    // Get the origin from the request headers or use the production URL
+    const origin = req.headers.get('origin') || 'https://review-hub-synergy.lovable.app';
     console.log('Request origin:', origin);
     
     // Use the application's origin for the redirect
