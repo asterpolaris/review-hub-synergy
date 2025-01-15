@@ -40,6 +40,7 @@ const Index = () => {
             theme="light"
             providers={["google"]}
             onlyThirdPartyProviders={true}
+            redirectTo={`${window.location.origin}/auth/callback`}
           />
         </CardContent>
       </Card>
