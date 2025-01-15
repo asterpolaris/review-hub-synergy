@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const PRODUCTION_URL = 'https://review-hub-synergy.lovable.app';
+
 serve(async (req) => {
   console.log('Google auth URL function called');
 
@@ -23,13 +25,9 @@ serve(async (req) => {
       throw new Error('OAuth configuration missing');
     }
 
-    // Get the origin from the request headers or use the production URL
-    const origin = req.headers.get('origin') || 'https://review-hub-synergy.lovable.app';
-    console.log('Request origin:', origin);
-    
-    // Use the application's origin for the redirect
-    const redirectUri = `${origin}/auth/callback`;
-    console.log('Generated redirect URI:', redirectUri);
+    // Always use the production URL for the redirect
+    const redirectUri = `${PRODUCTION_URL}/auth/callback`;
+    console.log('Using redirect URI:', redirectUri);
     
     // Explicitly specify all required scopes
     const scopes = [
@@ -42,12 +40,17 @@ serve(async (req) => {
     console.log('Using scopes:', scopes);
     const scope = encodeURIComponent(scopes.join(' '));
 
+    const state = encodeURIComponent(JSON.stringify({
+      returnTo: PRODUCTION_URL
+    }));
+
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${clientId}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
       `&access_type=offline` +
+      `&state=${state}` +
       `&prompt=consent`;
 
     console.log('Generated auth URL (without sensitive data):', 
@@ -59,7 +62,6 @@ serve(async (req) => {
         debug: {
           redirectUri,
           scopes,
-          origin,
           timestamp: new Date().toISOString()
         }
       }),
