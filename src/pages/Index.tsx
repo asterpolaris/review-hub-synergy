@@ -1,39 +1,48 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AppLayout } from "@/components/layout/AppLayout";
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/dashboard");
+      }
+    });
+  }, [navigate]);
+
   return (
-    <AppLayout>
-      <div className="space-y-6 animate-fadeIn">
-        <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="glass-panel">
-            <CardHeader>
-              <CardTitle>Total Reviews</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-            </CardContent>
-          </Card>
-          <Card className="glass-panel">
-            <CardHeader>
-              <CardTitle>Average Rating</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">-</p>
-            </CardContent>
-          </Card>
-          <Card className="glass-panel">
-            <CardHeader>
-              <CardTitle>Response Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0%</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </AppLayout>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">Review Hub Synergy</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Auth
+            supabaseClient={supabase}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: 'rgb(var(--primary))',
+                    brandAccent: 'rgb(var(--primary))',
+                  },
+                },
+              },
+            }}
+            theme="light"
+            providers={[]}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
