@@ -1,4 +1,4 @@
-import { Building2, Home, Star } from "lucide-react";
+import { Building2, Home, Star, UserCircle2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +11,9 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
-import { ProfileSettings } from "@/components/profile/ProfileSettings";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
   { title: "Dashboard", icon: Home, path: "/" },
@@ -21,6 +23,11 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const { session } = useAuth();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <Sidebar>
@@ -46,8 +53,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t">
-        <ProfileSettings />
+      <SidebarFooter className="border-t p-4">
+        <Button
+          variant="ghost"
+          className="w-full justify-start"
+          asChild
+        >
+          <Link to="/profile" className="flex items-center gap-3">
+            <UserCircle2 className="h-4 w-4" />
+            <span>{session?.user?.email}</span>
+          </Link>
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );
