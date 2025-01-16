@@ -15,40 +15,42 @@ export const useGoogleAuth = () => {
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log("Using redirect URL:", redirectUrl);
       
-      const { data, error } = await supabase.functions.invoke("google-auth-url", {
+      // Set a timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Connection timeout")), 10000);
+      });
+
+      const authUrlPromise = supabase.functions.invoke("google-auth-url", {
         body: { redirectUrl }
       });
+
+      // Race between the timeout and the actual request
+      const { data, error } = await Promise.race([authUrlPromise, timeoutPromise]);
       
       if (error) {
         console.error("Error getting auth URL:", error);
-        toast({
-          title: "Connection Error",
-          description: "Failed to initiate Google connection. Please try again later.",
-          variant: "destructive",
-        });
-        return;
+        throw new Error(error.message || "Failed to get authentication URL");
       }
 
-      if (data?.url) {
-        console.log("Redirecting to Google auth URL...");
-        window.location.href = data.url;
-      } else {
+      if (!data?.url) {
         console.error("Invalid response:", data);
-        toast({
-          title: "Error",
-          description: "Invalid response from authentication service",
-          variant: "destructive",
-        });
+        throw new Error("Invalid response from authentication service");
       }
+
+      console.log("Redirecting to Google auth URL...");
+      // Add a small delay before redirect to ensure state is updated
+      setTimeout(() => {
+        window.location.href = data.url;
+      }, 100);
+
     } catch (error) {
       console.error("Google connection error:", error);
+      setIsConnecting(false);
       toast({
         title: "Connection Error",
-        description: "Failed to connect with Google Business Profile. Please ensure you have been granted API access.",
+        description: error.message || "Failed to connect with Google Business Profile. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsConnecting(false);
     }
   };
 

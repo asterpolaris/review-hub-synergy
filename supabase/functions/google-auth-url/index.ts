@@ -19,13 +19,11 @@ serve(async (req) => {
     console.log('Received redirect URL:', redirectUrl);
     
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
-    console.log('Client ID available:', !!clientId);
-    
     if (!clientId) {
       console.error('GOOGLE_CLIENT_ID not configured');
       throw new Error('OAuth configuration missing');
     }
-
+    
     // Use the provided redirect URL or fall back to the production URL
     const finalRedirectUri = redirectUrl || 'https://desk.jegantic.com/auth/callback';
     console.log('Using redirect URI:', finalRedirectUri);
