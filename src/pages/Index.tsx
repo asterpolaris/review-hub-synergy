@@ -16,7 +16,6 @@ const Index = () => {
 
   useEffect(() => {
     console.log("Index page mounted");
-    console.log("Current redirect URL:", `${PRODUCTION_URL}/auth/callback`);
     
     const {
       data: { subscription },
@@ -31,57 +30,11 @@ const Index = () => {
       }
     });
 
-    // Listen for auth errors
-    const authListener = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        setAuthError(null);
-      }
-      if (event === 'SIGNED_OUT') {
-        setAuthError(null);
-      }
-    });
-
     return () => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
-      authListener.data.subscription.unsubscribe();
     };
   }, [navigate]);
-
-  const handleGoogleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${PRODUCTION_URL}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-          skipBrowserRedirect: true,
-        }
-      });
-
-      if (error) {
-        console.error("Google sign-in error:", error);
-        setAuthError(error.message);
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: error.message,
-        });
-      }
-    } catch (err) {
-      console.error("Unexpected error during sign-in:", err);
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
-      setAuthError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: errorMessage,
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -109,11 +62,19 @@ const Index = () => {
               },
             }}
             theme="light"
-            providers={["google"]}
-            onlyThirdPartyProviders={true}
-            redirectTo={`${PRODUCTION_URL}/auth/callback`}
+            providers={[]}
             view="sign_in"
-            showLinks={false}
+            showLinks={true}
+            redirectTo={`${PRODUCTION_URL}/auth/callback`}
+            socialLayout="horizontal"
+            localization={{
+              variables: {
+                sign_up: {
+                  disabled: true,
+                  text: "Sign up is disabled. Please contact an administrator.",
+                },
+              },
+            }}
           />
         </CardContent>
       </Card>
