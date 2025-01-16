@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Businesses from "./pages/Businesses";
+import ManageBusinesses from "./pages/ManageBusinesses";
 import Reviews from "./pages/Reviews";
 import AuthCallback from "./pages/AuthCallback";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/businesses" element={<Businesses />} />
+            <Route path="/businesses/manage" element={<ManageBusinesses />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
