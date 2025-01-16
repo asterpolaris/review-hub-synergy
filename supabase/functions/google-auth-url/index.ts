@@ -26,7 +26,7 @@ serve(async (req) => {
       throw new Error('OAuth configuration missing');
     }
 
-    // Use the provided redirect URL or fall back to a default
+    // Use the provided redirect URL or fall back to the production URL
     const finalRedirectUri = redirectUrl || 'https://desk.jegantic.com/auth/callback';
     console.log('Using redirect URI:', finalRedirectUri);
     
@@ -41,18 +41,18 @@ serve(async (req) => {
     console.log('Using scopes:', scopes);
     const scope = encodeURIComponent(scopes.join(' '));
 
-    const state = encodeURIComponent(JSON.stringify({
-      returnTo: finalRedirectUri.split('/auth/callback')[0]
-    }));
+    // Generate a unique state parameter
+    const state = crypto.randomUUID();
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${clientId}` +
+      `client_id=${encodeURIComponent(clientId)}` +
       `&redirect_uri=${encodeURIComponent(finalRedirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
       `&access_type=offline` +
       `&state=${state}` +
-      `&prompt=consent`;
+      `&prompt=consent` +
+      `&include_granted_scopes=true`;
 
     console.log('Generated auth URL (without sensitive data):', 
       authUrl.replace(clientId, 'REDACTED'));
