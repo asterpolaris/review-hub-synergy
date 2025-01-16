@@ -4,10 +4,40 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { AddBusinessDialog } from "@/components/business/AddBusinessDialog";
 import { BusinessList } from "@/components/business/BusinessList";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Businesses = () => {
   const { googleAuthToken } = useAuth();
   const { isConnecting, handleGoogleConnect } = useGoogleAuth();
+  const { toast } = useToast();
+
+  const handleGoogleDisconnect = async () => {
+    try {
+      // Delete the Google auth tokens from the database
+      const { error } = await supabase
+        .from('google_auth_tokens')
+        .delete()
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Disconnected from Google Business Profile",
+      });
+
+      // Force a page reload to refresh the auth state
+      window.location.reload();
+    } catch (error) {
+      console.error('Error disconnecting from Google:', error);
+      toast({
+        title: "Error",
+        description: "Failed to disconnect from Google. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <AppLayout>
@@ -15,18 +45,22 @@ const Businesses = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-4xl font-semibold tracking-tight">Businesses</h1>
           <div className="flex gap-4">
-            <Button 
-              onClick={handleGoogleConnect} 
-              variant="outline"
-              disabled={isConnecting}
-            >
-              {isConnecting 
-                ? "Connecting..." 
-                : googleAuthToken 
-                  ? "Connected to Google" 
-                  : "Connect Google Business"
-              }
-            </Button>
+            {googleAuthToken ? (
+              <Button 
+                onClick={handleGoogleDisconnect} 
+                variant="outline"
+              >
+                Disconnect Google
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleGoogleConnect} 
+                variant="outline"
+                disabled={isConnecting}
+              >
+                {isConnecting ? "Connecting..." : "Connect Google Business"}
+              </Button>
+            )}
             <AddBusinessDialog />
           </div>
         </div>
