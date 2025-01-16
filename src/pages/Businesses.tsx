@@ -1,23 +1,36 @@
-import { AppLayout } from "@/components/layout/AppLayout";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2 } from "lucide-react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { AddBusinessDialog } from "@/components/business/AddBusinessDialog";
+import { BusinessList } from "@/components/business/BusinessList";
 
 const Businesses = () => {
+  const { googleAuthToken } = useAuth();
+  const { isConnecting, handleGoogleConnect } = useGoogleAuth();
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fadeIn">
         <div className="flex justify-between items-center">
           <h1 className="text-4xl font-semibold tracking-tight">Businesses</h1>
-        </div>
-        <div className="grid gap-4">
-          <Link to="/businesses/manage">
-            <Button variant="outline" className="w-full justify-start">
-              <Building2 className="mr-2 h-4 w-4" />
-              Manage Businesses
+          <div className="flex gap-4">
+            <Button 
+              onClick={handleGoogleConnect} 
+              variant="outline"
+              disabled={isConnecting}
+            >
+              {isConnecting 
+                ? "Connecting..." 
+                : googleAuthToken 
+                  ? "Connected to Google" 
+                  : "Connect Google Business"
+              }
             </Button>
-          </Link>
+            <AddBusinessDialog />
+          </div>
         </div>
+        <BusinessList />
       </div>
     </AppLayout>
   );
