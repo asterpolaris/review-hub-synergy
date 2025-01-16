@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+// Longer delay between retries and more retries
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const BusinessList = () => {
@@ -12,15 +13,16 @@ export const BusinessList = () => {
   const { session, googleAuthToken } = useAuth();
   const { toast } = useToast();
 
-  const fetchWithRetry = async (url: string, options: RequestInit, retries = 3) => {
+  const fetchWithRetry = async (url: string, options: RequestInit, retries = 5) => {
     for (let i = 0; i < retries; i++) {
       try {
         const response = await fetch(url, options);
         
         if (response.status === 429) {
-          console.log(`Rate limited, attempt ${i + 1} of ${retries}. Waiting before retry...`);
-          // Exponential backoff: wait longer between each retry
-          await delay(Math.pow(2, i) * 1000);
+          // Much longer exponential backoff: 2^i * 2000ms (2s, 4s, 8s, 16s, 32s)
+          const waitTime = Math.pow(2, i) * 2000;
+          console.log(`Rate limited, attempt ${i + 1} of ${retries}. Waiting ${waitTime}ms before retry...`);
+          await delay(waitTime);
           continue;
         }
 
@@ -30,8 +32,9 @@ export const BusinessList = () => {
 
         return await response.json();
       } catch (error) {
+        console.error(`Attempt ${i + 1} failed:`, error);
         if (i === retries - 1) throw error;
-        console.log(`Attempt ${i + 1} failed, retrying...`);
+        // Add additional delay even for non-429 errors
         await delay(Math.pow(2, i) * 1000);
       }
     }
@@ -105,7 +108,7 @@ export const BusinessList = () => {
       console.error("Error fetching Google businesses:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch Google businesses. Please try again in a few minutes.",
+        description: "Failed to fetch Google businesses. Please wait a few minutes and try again.",
         variant: "destructive",
       });
     }
