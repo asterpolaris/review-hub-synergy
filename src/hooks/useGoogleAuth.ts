@@ -2,20 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface GoogleAuthUrlResponse {
-  data: {
-    url: string;
-    debug?: {
-      redirectUri: string;
-      scopes: string[];
-      timestamp: string;
-    };
-  };
-  error: null | {
-    message: string;
-  };
-}
-
 export const useGoogleAuth = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
@@ -75,7 +61,6 @@ export const useGoogleAuth = () => {
 
       console.log("Opening popup with URL:", data.url);
       
-      // Open popup with specific features
       const popup = window.open(
         data.url,
         'Google Login',
@@ -86,27 +71,8 @@ export const useGoogleAuth = () => {
         throw new Error("Popup was blocked. Please allow popups for this site.");
       }
 
-      // Use a more reliable method to check popup state
-      const checkPopup = setInterval(() => {
-        try {
-          if (!popup || popup.closed) {
-            clearInterval(checkPopup);
-            window.removeEventListener('message', messageHandler);
-            setIsConnecting(false);
-            console.log("Auth popup closed");
-            return;
-          }
-        } catch (e) {
-          // Ignore cross-origin errors
-          if (!(e instanceof DOMException)) {
-            console.error("Popup check error:", e);
-          }
-        }
-      }, 500);
-
       // Set a timeout to clean up if authentication takes too long
       setTimeout(() => {
-        clearInterval(checkPopup);
         window.removeEventListener('message', messageHandler);
         setIsConnecting(false);
         if (popup && !popup.closed) {
@@ -123,9 +89,9 @@ export const useGoogleAuth = () => {
       console.error("Google connection error:", error);
       setIsConnecting(false);
       toast({
+        variant: "destructive",
         title: "Connection Error",
         description: error.message || "Failed to connect with Google Business Profile. Please try again.",
-        variant: "destructive",
       });
     }
   };

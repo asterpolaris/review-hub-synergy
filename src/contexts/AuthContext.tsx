@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   session: Session | null;
@@ -32,28 +33,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     access_token: string;
     expires_at: string;
   } | null>(null);
+  const { toast } = useToast();
 
   const fetchGoogleToken = async (userId: string) => {
     try {
       console.log("Fetching Google token for user:", userId);
+      
       const { data: tokens, error } = await supabase
         .from("google_auth_tokens")
         .select("access_token, expires_at")
         .eq("user_id", userId)
         .limit(1)
-        .maybeSingle()
-        .throwOnError(); // This will throw if there's an RLS or other database error
+        .maybeSingle();
 
       if (error) {
-        console.error("Error fetching Google token:", error);
+        console.error("Database error fetching Google token:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch Google authentication token",
+        });
         setGoogleAuthToken(null);
         return;
       }
 
       console.log("Received tokens:", tokens);
+      
+      if (!tokens) {
+        console.log("No Google token found for user");
+        setGoogleAuthToken(null);
+        return;
+      }
+
       setGoogleAuthToken(tokens);
     } catch (error) {
       console.error("Failed to fetch Google token:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred while fetching Google token",
+      });
       setGoogleAuthToken(null);
     }
   };
