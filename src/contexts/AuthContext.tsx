@@ -41,10 +41,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select("access_token, expires_at")
         .eq("user_id", userId)
         .limit(1)
-        .maybeSingle();
+        .maybeSingle()
+        .throwOnError(); // This will throw if there's an RLS or other database error
 
       if (error) {
         console.error("Error fetching Google token:", error);
+        setGoogleAuthToken(null);
         return;
       }
 

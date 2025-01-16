@@ -75,21 +75,20 @@ export const useGoogleAuth = () => {
 
       console.log("Opening popup with URL:", data.url);
       
-      // Open popup with specific features to minimize COOP issues
+      // Open popup with specific features
       const popup = window.open(
         data.url,
         'Google Login',
-        'width=600,height=800,scrollbars=yes,status=1,toolbar=0,location=1,menubar=0'
+        'width=600,height=800,scrollbars=yes'
       );
 
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      if (!popup) {
         throw new Error("Popup was blocked. Please allow popups for this site.");
       }
 
       // Use a more reliable method to check popup state
       const checkPopup = setInterval(() => {
         try {
-          // First check if popup exists and is not closed
           if (!popup || popup.closed) {
             clearInterval(checkPopup);
             window.removeEventListener('message', messageHandler);
@@ -97,14 +96,8 @@ export const useGoogleAuth = () => {
             console.log("Auth popup closed");
             return;
           }
-
-          // Try to access location carefully
-          const currentUrl = popup.location.href;
-          if (currentUrl.includes('/auth/callback')) {
-            popup.postMessage({ type: 'CHECK_AUTH_STATUS' }, window.location.origin);
-          }
         } catch (e) {
-          // Ignore cross-origin errors - this is expected
+          // Ignore cross-origin errors
           if (!(e instanceof DOMException)) {
             console.error("Popup check error:", e);
           }
