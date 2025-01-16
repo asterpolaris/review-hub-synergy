@@ -21,9 +21,9 @@ export const BusinessList = () => {
         return;
       }
 
-      // Fetch businesses from Google Business Profile API
-      const response = await fetch(
-        "https://mybusinessbusinessinformation.googleapis.com/v1/accounts/{accountId}/locations",
+      // First, get the accounts
+      const accountsResponse = await fetch(
+        "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
         {
           headers: {
             Authorization: `Bearer ${googleAuthToken.access_token}`,
@@ -31,23 +31,56 @@ export const BusinessList = () => {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch Google businesses");
+      if (!accountsResponse.ok) {
+        throw new Error("Failed to fetch Google accounts");
       }
 
-      const data = await response.json();
-      console.log("Google businesses:", data);
+      const accountsData = await accountsResponse.json();
+      console.log("Google accounts:", accountsData);
 
-      // TODO: Add logic to store selected businesses in Supabase
+      // For each account, get its locations
+      for (const account of accountsData.accounts) {
+        const locationsResponse = await fetch(
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`,
+          {
+            headers: {
+              Authorization: `Bearer ${googleAuthToken.access_token}`,
+            },
+          }
+        );
+
+        if (!locationsResponse.ok) {
+          console.error(`Failed to fetch locations for account ${account.name}`);
+          continue;
+        }
+
+        const locationsData = await locationsResponse.json();
+        console.log(`Locations for account ${account.name}:`, locationsData);
+
+        // Store each location in Supabase
+        for (const location of locationsData.locations) {
+          const { error } = await supabase.from("businesses").insert({
+            name: location.locationName,
+            location: `${location.address.addressLines.join(", ")}, ${location.address.locality}, ${location.address.regionCode}`,
+            google_place_id: location.name,
+            google_business_account_id: account.name,
+          });
+
+          if (error && error.code !== "23505") { // Ignore duplicate key errors
+            console.error("Error storing location:", error);
+          }
+        }
+      }
+
       toast({
         title: "Success",
-        description: "Retrieved Google businesses successfully",
+        description: "Successfully imported Google businesses",
       });
     } catch (error) {
       console.error("Error fetching Google businesses:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch Google businesses",
+        description: "Failed to fetch Google businesses. Please try again.",
         variant: "destructive",
       });
     }
