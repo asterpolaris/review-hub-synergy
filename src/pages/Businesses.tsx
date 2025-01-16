@@ -14,7 +14,6 @@ const Businesses = () => {
 
   const handleGoogleDisconnect = async () => {
     try {
-      // Delete the Google auth tokens from the database
       const { error } = await supabase
         .from('google_auth_tokens')
         .delete()

@@ -33,10 +33,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     expires_at: string;
   } | null>(null);
 
+  const fetchGoogleToken = async (userId: string) => {
+    const { data: tokens } = await supabase
+      .from("google_auth_tokens")
+      .select("access_token, expires_at")
+      .eq("user_id", userId)
+      .single();
+
+    setGoogleAuthToken(tokens);
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user) {
+        fetchGoogleToken(session.user.id);
+      }
       setIsLoading(false);
     });
 
@@ -44,20 +57,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log("Auth state changed:", _event);
       setSession(session);
       setIsLoading(false);
 
-      if (session) {
-        // Fetch Google auth token when session exists
-        const { data: tokens } = await supabase
-          .from("google_auth_tokens")
-          .select("access_token, expires_at")
-          .eq("user_id", session.user.id)
-          .single();
-
-        setGoogleAuthToken(tokens);
-      } else {
+      // Reset Google auth token on sign out
+      if (!session) {
+        console.log("Clearing Google auth token");
         setGoogleAuthToken(null);
+      } else {
+        // Fetch Google auth token on sign in
+        console.log("Fetching Google auth token for user:", session.user.id);
+        fetchGoogleToken(session.user.id);
       }
     });
 
