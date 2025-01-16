@@ -6,8 +6,14 @@ const AuthCallback = () => {
   const { error, details, handleCallback } = useOAuthCallback();
 
   useEffect(() => {
-    console.log("AuthCallback component mounted, handling callback...");
-    handleCallback();
+    console.log("AuthCallback component mounted");
+    // Add a small delay to ensure all URL parameters are available
+    const timer = setTimeout(() => {
+      console.log("Handling callback after delay");
+      handleCallback();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   if (error) {

@@ -34,7 +34,25 @@ export const useOAuthCallback = () => {
     console.log("Search params:", Object.fromEntries(searchParams.entries()));
     
     try {
-      // Get the session from the URL - this is how Supabase handles OAuth returns
+      // First check for any error parameters
+      const error = searchParams.get("error");
+      const errorDescription = searchParams.get("error_description");
+      
+      if (error) {
+        console.error("OAuth error:", error, errorDescription);
+        throw new Error(errorDescription || error);
+      }
+
+      // Get the authorization code
+      const code = searchParams.get("code");
+      if (!code) {
+        console.error("No authorization code in URL parameters");
+        throw new Error("No authorization code received from Google");
+      }
+
+      console.log("Received authorization code:", code);
+
+      // Get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -47,13 +65,6 @@ export const useOAuthCallback = () => {
         throw new Error("Authentication failed - no session found");
       }
 
-      const code = searchParams.get("code");
-      if (!code) {
-        console.error("No authorization code received");
-        throw new Error("No authorization code received");
-      }
-
-      console.log("Received authorization code:", code);
       console.log("User ID from session:", session.user.id);
       
       console.log("Calling exchange-token function...");
@@ -106,7 +117,7 @@ export const useOAuthCallback = () => {
       toast({
         variant: "destructive",
         title: "Authentication Error",
-        description: "Failed to complete Google authentication. Please try again.",
+        description: errorMessage,
       });
     }
   };
