@@ -8,7 +8,7 @@ const corsHeaders = {
 const PRODUCTION_URL = 'https://desk.jegantic.com';
 
 serve(async (req) => {
-  console.log('Function invoked - initial entry point');
+  console.log('Exchange token function invoked - initial entry point');
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -67,7 +67,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ data }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
