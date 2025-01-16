@@ -34,18 +34,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   } | null>(null);
 
   const fetchGoogleToken = async (userId: string) => {
-    const { data: tokens } = await supabase
-      .from("google_auth_tokens")
-      .select("access_token, expires_at")
-      .eq("user_id", userId)
-      .single();
+    try {
+      console.log("Fetching Google token for user:", userId);
+      const { data: tokens, error } = await supabase
+        .from("google_auth_tokens")
+        .select("access_token, expires_at")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle();
 
-    setGoogleAuthToken(tokens);
+      if (error) {
+        console.error("Error fetching Google token:", error);
+        return;
+      }
+
+      console.log("Received tokens:", tokens);
+      setGoogleAuthToken(tokens);
+    } catch (error) {
+      console.error("Failed to fetch Google token:", error);
+      setGoogleAuthToken(null);
+    }
   };
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.id);
       setSession(session);
       if (session?.user) {
         fetchGoogleToken(session.user.id);
