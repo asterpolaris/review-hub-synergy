@@ -33,31 +33,29 @@ export const useOAuthCallback = () => {
     console.log("Current URL:", window.location.href);
     console.log("Search params:", Object.fromEntries(searchParams.entries()));
     
-    const code = searchParams.get("code");
-    const stateParam = searchParams.get("state");
-    const error = searchParams.get("error");
-    
-    if (error) {
-      console.error("Received error in callback:", error);
-      setState({ error: `Authentication error: ${error}`, details: null });
-      return;
-    }
-
-    if (!code) {
-      console.error("No authorization code received");
-      setState({ error: "No authorization code received", details: null });
-      return;
-    }
-
-    console.log("Received authorization code:", code);
-    console.log("Received state:", stateParam);
-    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("No authenticated user found");
+      // Get the session from the URL - this is how Supabase handles OAuth returns
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        throw new Error(sessionError.message);
       }
 
+      if (!session) {
+        console.error("No session found");
+        throw new Error("Authentication failed - no session found");
+      }
+
+      const code = searchParams.get("code");
+      if (!code) {
+        console.error("No authorization code received");
+        throw new Error("No authorization code received");
+      }
+
+      console.log("Received authorization code:", code);
+      console.log("User ID from session:", session.user.id);
+      
       console.log("Calling exchange-token function...");
       const { data, error } = await supabase.functions.invoke<TokenExchangeResponse>("exchange-token", {
         body: { code }
@@ -79,7 +77,7 @@ export const useOAuthCallback = () => {
       const { error: insertError } = await supabase
         .from("google_auth_tokens")
         .upsert({
-          user_id: user.id,
+          user_id: session.user.id,
           access_token: data.data.access_token,
           refresh_token: data.data.refresh_token,
           expires_at: new Date(Date.now() + data.data.expires_in * 1000).toISOString(),
@@ -97,14 +95,7 @@ export const useOAuthCallback = () => {
         description: "You can now manage your business reviews",
       });
 
-      // Close popup if we're in one
-      if (window.opener) {
-        console.log("Sending success message to opener window");
-        window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, window.location.origin);
-        window.close();
-      } else {
-        navigate("/businesses");
-      }
+      navigate("/businesses");
     } catch (error: any) {
       console.error("Error during callback:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to authenticate with Google";
@@ -117,13 +108,6 @@ export const useOAuthCallback = () => {
         title: "Authentication Error",
         description: "Failed to complete Google authentication. Please try again.",
       });
-
-      // Close popup with error if we're in one
-      if (window.opener) {
-        console.log("Sending error message to opener window");
-        window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: errorMessage }, window.location.origin);
-        window.close();
-      }
     }
   };
 

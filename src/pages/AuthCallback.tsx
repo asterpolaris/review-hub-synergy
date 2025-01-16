@@ -6,6 +6,7 @@ const AuthCallback = () => {
   const { error, details, handleCallback } = useOAuthCallback();
 
   useEffect(() => {
+    console.log("AuthCallback component mounted, handling callback...");
     handleCallback();
   }, []);
 
