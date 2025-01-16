@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,39 @@ export function ProfileSettings() {
   const { session } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm<ProfileFormData>();
+  const { register, handleSubmit, formState: { errors, isDirty }, reset } = useForm<ProfileFormData>();
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (!session?.user) return;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (error) throw error;
+        
+        if (profile) {
+          reset({
+            firstName: profile.first_name || '',
+            lastName: profile.last_name || '',
+          });
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load profile data. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    loadProfile();
+  }, [session?.user, reset, toast]);
 
   const onSubmit = async (data: ProfileFormData) => {
     if (!session?.user) return;
@@ -122,7 +154,7 @@ export function ProfileSettings() {
           />
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button type="submit" disabled={isLoading || !isDirty} className="w-full">
           {isLoading ? "Updating..." : "Update Profile"}
         </Button>
       </form>
