@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 const PRODUCTION_URL = 'https://review-hub-synergy.lovable.app';
 
@@ -36,13 +37,36 @@ const Index = () => {
     };
   }, [navigate]);
 
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${PRODUCTION_URL}/auth/callback`
+        }
+      });
+      if (error) {
+        console.error("Google sign in error:", error);
+        setAuthError(error.message);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to sign in with Google. Please try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Google sign in error:", error);
+      setAuthError("An unexpected error occurred during Google sign in.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">JEGantic Hospitality Desk</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           {authError && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>{authError}</AlertDescription>
@@ -82,6 +106,16 @@ const Index = () => {
               },
             }}
           />
+          <div className="mt-4 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">Don't have an account?</p>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignIn}
+            >
+              Sign in with Google
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
