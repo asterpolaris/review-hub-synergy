@@ -25,6 +25,32 @@ export const useGoogleAuth = () => {
       setIsConnecting(true);
       console.log("Starting Google connection process...");
       
+      // Add event listener for messages from popup
+      const messageHandler = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        console.log("Received message from popup:", event.data);
+        
+        if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+          console.log("Google authentication successful");
+          setIsConnecting(false);
+          toast({
+            title: "Successfully connected with Google",
+            description: "You can now manage your business reviews",
+          });
+        } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+          console.error("Google authentication error:", event.data.error);
+          setIsConnecting(false);
+          toast({
+            variant: "destructive",
+            title: "Connection Error",
+            description: event.data.error || "Failed to connect with Google",
+          });
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -33,7 +59,7 @@ export const useGoogleAuth = () => {
             prompt: 'consent'
           },
           redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: true // This enables popup mode
+          skipBrowserRedirect: true
         }
       });
 
@@ -47,24 +73,23 @@ export const useGoogleAuth = () => {
         throw new Error("Invalid response from authentication service");
       }
 
-      // Open popup window
+      console.log("Opening popup with URL:", data.url);
+      
       const popup = window.open(
         data.url,
         'Google Login',
         'width=600,height=800,scrollbars=yes'
       );
 
-      // Check if popup was blocked
       if (!popup || popup.closed || typeof popup.closed === 'undefined') {
         throw new Error("Popup was blocked. Please allow popups for this site.");
       }
-
-      console.log("Opened Google auth popup");
 
       // Monitor popup
       const checkPopup = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkPopup);
+          window.removeEventListener('message', messageHandler);
           setIsConnecting(false);
           console.log("Auth popup closed");
         }

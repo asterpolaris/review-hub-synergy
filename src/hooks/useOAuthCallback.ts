@@ -30,9 +30,19 @@ export const useOAuthCallback = () => {
 
   const handleCallback = async () => {
     console.log("Starting callback handling");
+    console.log("Current URL:", window.location.href);
+    console.log("Search params:", Object.fromEntries(searchParams.entries()));
+    
     const code = searchParams.get("code");
     const stateParam = searchParams.get("state");
+    const error = searchParams.get("error");
     
+    if (error) {
+      console.error("Received error in callback:", error);
+      setState({ error: `Authentication error: ${error}`, details: null });
+      return;
+    }
+
     if (!code) {
       console.error("No authorization code received");
       setState({ error: "No authorization code received", details: null });
@@ -63,6 +73,8 @@ export const useOAuthCallback = () => {
         throw new Error("No response data from token exchange");
       }
 
+      console.log("Token exchange successful, storing tokens...");
+
       // Store tokens in the database
       const { error: insertError } = await supabase
         .from("google_auth_tokens")
@@ -78,7 +90,7 @@ export const useOAuthCallback = () => {
         throw new Error("Failed to store authentication tokens");
       }
 
-      console.log("Token exchange successful");
+      console.log("Token exchange and storage successful");
       
       toast({
         title: "Successfully connected with Google",
@@ -87,6 +99,7 @@ export const useOAuthCallback = () => {
 
       // Close popup if we're in one
       if (window.opener) {
+        console.log("Sending success message to opener window");
         window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, window.location.origin);
         window.close();
       } else {
@@ -107,6 +120,7 @@ export const useOAuthCallback = () => {
 
       // Close popup with error if we're in one
       if (window.opener) {
+        console.log("Sending error message to opener window");
         window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: errorMessage }, window.location.origin);
         window.close();
       }
