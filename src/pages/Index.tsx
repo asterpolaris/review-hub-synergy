@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 
 // Use window.location.origin to dynamically get the current domain
 const REDIRECT_URL = `${window.location.origin}/auth/callback`;
@@ -38,34 +37,6 @@ const Index = () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
-
-  const handleGoogleSignIn = async () => {
-    try {
-      console.log("Initiating Google sign in with redirect URL:", REDIRECT_URL);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: REDIRECT_URL,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
-        }
-      });
-      if (error) {
-        console.error("Google sign in error:", error);
-        setAuthError(error.message);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to sign in with Google. Please try again.",
-        });
-      }
-    } catch (error) {
-      console.error("Google sign in error:", error);
-      setAuthError("An unexpected error occurred during Google sign in.");
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -113,16 +84,6 @@ const Index = () => {
               },
             }}
           />
-          <div className="mt-4 text-center space-y-2">
-            <p className="text-sm text-muted-foreground">Don't have an account?</p>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleSignIn}
-            >
-              Sign in with Google
-            </Button>
-          </div>
           <div className="mt-4 text-center text-sm text-muted-foreground">
             <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
             {' • '}
