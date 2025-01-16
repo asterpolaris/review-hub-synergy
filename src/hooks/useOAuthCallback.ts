@@ -41,16 +41,7 @@ export const useOAuthCallback = () => {
         throw new Error(errorDescription || oauthError);
       }
 
-      // Get the authorization code from URL parameters (not hash fragment)
-      const code = searchParams.get("code");
-      console.log("Authorization code from URL:", code);
-
-      if (!code) {
-        console.error("No authorization code in URL parameters");
-        throw new Error("No authorization code received from Google");
-      }
-
-      // Get the current session
+      // Get the session from the URL hash
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -64,32 +55,20 @@ export const useOAuthCallback = () => {
       }
 
       console.log("User ID from session:", session.user.id);
-      
-      console.log("Calling exchange-token function...");
-      const { data: exchangeData, error: exchangeError } = await supabase.functions.invoke<TokenExchangeResponse>("exchange-token", {
-        body: { code }
-      });
 
-      if (exchangeError) {
-        console.error("Token exchange error:", exchangeError);
-        throw new Error(exchangeError.message || "Failed to exchange token");
+      // Extract tokens from provider token
+      if (!session.provider_token) {
+        throw new Error("No provider token received");
       }
-
-      if (!exchangeData?.data) {
-        console.error("No data received from token exchange");
-        throw new Error("No response data from token exchange");
-      }
-
-      console.log("Token exchange successful, storing tokens...");
 
       // Store tokens in the database
       const { error: insertError } = await supabase
         .from("google_auth_tokens")
         .upsert({
           user_id: session.user.id,
-          access_token: exchangeData.data.access_token,
-          refresh_token: exchangeData.data.refresh_token,
-          expires_at: new Date(Date.now() + exchangeData.data.expires_in * 1000).toISOString(),
+          access_token: session.provider_token,
+          refresh_token: session.provider_refresh_token || '',
+          expires_at: new Date(Date.now() + 3600 * 1000).toISOString(), // 1 hour from now
         });
 
       if (insertError) {
@@ -97,7 +76,7 @@ export const useOAuthCallback = () => {
         throw new Error("Failed to store authentication tokens");
       }
 
-      console.log("Token exchange and storage successful");
+      console.log("Token storage successful");
       
       toast({
         title: "Successfully connected with Google",

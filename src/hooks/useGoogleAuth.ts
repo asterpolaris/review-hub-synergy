@@ -14,13 +14,12 @@ export const useGoogleAuth = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: 'https://www.googleapis.com/auth/business.manage',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-            response_type: 'code'
-          },
-          scopes: 'https://www.googleapis.com/auth/business.manage',
-          redirectTo: `${window.location.origin}/auth/callback`
+          }
         }
       });
 
