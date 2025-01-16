@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
-  { title: "Dashboard", icon: Home, path: "/" },
+  { title: "Dashboard", icon: Home, path: "/dashboard" },
   { title: "Businesses", icon: Building2, path: "/businesses" },
   { title: "Reviews", icon: Star, path: "/reviews" },
 ];
