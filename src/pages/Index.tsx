@@ -29,14 +29,14 @@ const Index = () => {
       if (event === 'SIGNED_OUT') {
         setAuthError(null);
       }
-      if (event === 'USER_DELETED' || event === 'SIGNED_OUT') {
-        setAuthError(null);
-      }
     });
 
     // Listen for auth errors
     const authListener = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
+        setAuthError(null);
+      }
+      if (event === 'SIGNED_OUT') {
         setAuthError(null);
       }
     });
