@@ -66,12 +66,11 @@ export function AppSidebar() {
         </Button>
         <Button
           variant="ghost"
-          size="icon"
           onClick={handleSignOut}
-          className="shrink-0"
+          className="flex-1 justify-start"
         >
-          <LogOut className="h-4 w-4" />
-          <span className="sr-only">Sign out</span>
+          <LogOut className="h-4 w-4 mr-3" />
+          <span>Sign out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
