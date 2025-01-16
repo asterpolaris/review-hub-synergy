@@ -8,10 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
-const PRODUCTION_URL = 'https://desk.jegantic.com';
-const REDIRECT_URL = `${PRODUCTION_URL}/auth/callback`;
-
-// ... keep existing code (component logic and state)
+// Use window.location.origin to dynamically get the current domain
+const REDIRECT_URL = `${window.location.origin}/auth/callback`;
 
 const Index = () => {
   const navigate = useNavigate();
