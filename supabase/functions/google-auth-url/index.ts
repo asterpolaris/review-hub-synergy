@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PRODUCTION_URL = 'https://review-hub-synergy.lovable.app';
+const PRODUCTION_URL = 'https://desk.jegantic.com';
 
 serve(async (req) => {
   console.log('Google auth URL function called');
