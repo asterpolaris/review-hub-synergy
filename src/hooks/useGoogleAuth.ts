@@ -10,7 +10,7 @@ interface GoogleAuthUrlResponse {
       scopes: string[];
       timestamp: string;
     };
-  } | null;
+  };
   error: null | {
     message: string;
   };
@@ -25,7 +25,6 @@ export const useGoogleAuth = () => {
       setIsConnecting(true);
       console.log("Starting Google connection process...");
       
-      // Use window.location.origin to dynamically get the current domain
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log("Using redirect URL:", redirectUrl);
       
