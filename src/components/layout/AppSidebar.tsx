@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,10 +23,12 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { session } = useAuth();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    navigate("/");
   };
 
   return (
