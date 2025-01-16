@@ -13,7 +13,7 @@ interface TokenExchangeResponse {
     access_token: string;
     refresh_token: string;
     expires_in: number;
-  } | null;
+  };
   error: null | {
     message: string;
   };
@@ -58,7 +58,7 @@ export const useOAuthCallback = () => {
         throw new Error(error.message || "Failed to exchange token");
       }
 
-      if (!data) {
+      if (!data?.data) {
         console.error("No data received from token exchange");
         throw new Error("No response data from token exchange");
       }
@@ -68,9 +68,9 @@ export const useOAuthCallback = () => {
         .from("google_auth_tokens")
         .upsert({
           user_id: user.id,
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-          expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+          access_token: data.data.access_token,
+          refresh_token: data.data.refresh_token,
+          expires_at: new Date(Date.now() + data.data.expires_in * 1000).toISOString(),
         });
 
       if (insertError) {
@@ -85,7 +85,13 @@ export const useOAuthCallback = () => {
         description: "You can now manage your business reviews",
       });
 
-      navigate("/businesses");
+      // Close popup if we're in one
+      if (window.opener) {
+        window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS' }, window.location.origin);
+        window.close();
+      } else {
+        navigate("/businesses");
+      }
     } catch (error: any) {
       console.error("Error during callback:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to authenticate with Google";
@@ -98,6 +104,12 @@ export const useOAuthCallback = () => {
         title: "Authentication Error",
         description: "Failed to complete Google authentication. Please try again.",
       });
+
+      // Close popup with error if we're in one
+      if (window.opener) {
+        window.opener.postMessage({ type: 'GOOGLE_AUTH_ERROR', error: errorMessage }, window.location.origin);
+        window.close();
+      }
     }
   };
 

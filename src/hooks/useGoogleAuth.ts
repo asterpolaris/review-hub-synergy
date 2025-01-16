@@ -25,16 +25,21 @@ export const useGoogleAuth = () => {
       setIsConnecting(true);
       console.log("Starting Google connection process...");
       
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log("Using redirect URL:", redirectUrl);
-      
-      const { data, error } = await supabase.functions.invoke<GoogleAuthUrlResponse>("google-auth-url", {
-        body: { redirectUrl }
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          },
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: true // This enables popup mode
+        }
       });
-      
+
       if (error) {
-        console.error("Error getting auth URL:", error);
-        throw new Error(error.message || "Failed to get authentication URL");
+        console.error("Google auth error:", error);
+        throw new Error(error.message || "Failed to connect with Google");
       }
 
       if (!data?.url) {
@@ -42,8 +47,28 @@ export const useGoogleAuth = () => {
         throw new Error("Invalid response from authentication service");
       }
 
-      console.log("Redirecting to Google auth URL...");
-      window.location.href = data.url;
+      // Open popup window
+      const popup = window.open(
+        data.url,
+        'Google Login',
+        'width=600,height=800,scrollbars=yes'
+      );
+
+      // Check if popup was blocked
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        throw new Error("Popup was blocked. Please allow popups for this site.");
+      }
+
+      console.log("Opened Google auth popup");
+
+      // Monitor popup
+      const checkPopup = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkPopup);
+          setIsConnecting(false);
+          console.log("Auth popup closed");
+        }
+      }, 500);
 
     } catch (error: any) {
       console.error("Google connection error:", error);
