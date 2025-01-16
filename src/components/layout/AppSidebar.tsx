@@ -67,10 +67,10 @@ export function AppSidebar() {
         <Button
           variant="ghost"
           onClick={handleSignOut}
-          className="w-full justify-start"
+          className="w-full justify-start gap-3"
         >
           <LogOut className="h-4 w-4" />
-          <span className="ml-3">Sign out</span>
+          <span>Sign out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
