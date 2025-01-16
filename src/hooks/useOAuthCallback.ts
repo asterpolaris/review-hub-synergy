@@ -30,8 +30,6 @@ export const useOAuthCallback = () => {
 
   const handleCallback = async () => {
     console.log("Starting callback handling");
-    console.log("Current URL:", window.location.href);
-    console.log("Search params:", Object.fromEntries(searchParams.entries()));
     
     try {
       // First check for any error parameters
@@ -43,14 +41,14 @@ export const useOAuthCallback = () => {
         throw new Error(errorDescription || oauthError);
       }
 
-      // Get the authorization code
+      // Get the authorization code from URL parameters (not hash fragment)
       const code = searchParams.get("code");
+      console.log("Authorization code from URL:", code);
+
       if (!code) {
         console.error("No authorization code in URL parameters");
         throw new Error("No authorization code received from Google");
       }
-
-      console.log("Received authorization code:", code);
 
       // Get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -107,7 +105,7 @@ export const useOAuthCallback = () => {
       });
 
       navigate("/businesses");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during callback:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to authenticate with Google";
       setState({ 

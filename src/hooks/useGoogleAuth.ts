@@ -16,8 +16,10 @@ export const useGoogleAuth = () => {
         options: {
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'consent',
+            response_type: 'code'
           },
+          scopes: 'https://www.googleapis.com/auth/business.manage',
           redirectTo: `${window.location.origin}/auth/callback`
         }
       });
