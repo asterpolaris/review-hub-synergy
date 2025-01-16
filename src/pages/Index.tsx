@@ -29,11 +29,22 @@ const Index = () => {
       if (event === 'SIGNED_OUT') {
         setAuthError(null);
       }
+      if (event === 'USER_DELETED' || event === 'SIGNED_OUT') {
+        setAuthError(null);
+      }
+    });
+
+    // Listen for auth errors
+    const authListener = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        setAuthError(null);
+      }
     });
 
     return () => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
+      authListener.data.subscription.unsubscribe();
     };
   }, [navigate]);
 
@@ -103,15 +114,6 @@ const Index = () => {
             redirectTo={`${PRODUCTION_URL}/auth/callback`}
             view="sign_in"
             showLinks={false}
-            onError={(error) => {
-              console.error("Auth UI error:", error);
-              setAuthError(error.message);
-              toast({
-                variant: "destructive",
-                title: "Authentication Error",
-                description: error.message,
-              });
-            }}
           />
         </CardContent>
       </Card>
