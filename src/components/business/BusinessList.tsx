@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const BusinessList = () => {
   const { data: businesses, isLoading } = useBusinesses();
-  const { googleAuthToken } = useAuth();
+  const { session, googleAuthToken } = useAuth();
   const { toast } = useToast();
 
   const fetchGoogleBusinesses = async () => {
@@ -64,6 +64,7 @@ export const BusinessList = () => {
             location: `${location.address.addressLines.join(", ")}, ${location.address.locality}, ${location.address.regionCode}`,
             google_place_id: location.name,
             google_business_account_id: account.name,
+            user_id: session?.user.id, // Add the user_id from the session
           });
 
           if (error && error.code !== "23505") { // Ignore duplicate key errors
