@@ -8,8 +8,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
+import { ProfileSettings } from "@/components/profile/ProfileSettings";
 
 const menuItems = [
   { title: "Dashboard", icon: Home, path: "/" },
@@ -44,6 +46,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t">
+        <ProfileSettings />
+      </SidebarFooter>
     </Sidebar>
   );
 }
