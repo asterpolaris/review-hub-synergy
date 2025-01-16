@@ -5,10 +5,38 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const BusinessList = () => {
   const { data: businesses, isLoading } = useBusinesses();
   const { session, googleAuthToken } = useAuth();
   const { toast } = useToast();
+
+  const fetchWithRetry = async (url: string, options: RequestInit, retries = 3) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, options);
+        
+        if (response.status === 429) {
+          console.log(`Rate limited, attempt ${i + 1} of ${retries}. Waiting before retry...`);
+          // Exponential backoff: wait longer between each retry
+          await delay(Math.pow(2, i) * 1000);
+          continue;
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        console.log(`Attempt ${i + 1} failed, retrying...`);
+        await delay(Math.pow(2, i) * 1000);
+      }
+    }
+    throw new Error("Max retries reached");
+  };
 
   const fetchGoogleBusinesses = async () => {
     try {
@@ -21,55 +49,51 @@ export const BusinessList = () => {
         return;
       }
 
-      // First, get the accounts
-      const accountsResponse = await fetch(
+      const headers = {
+        Authorization: `Bearer ${googleAuthToken.access_token}`,
+      };
+
+      // First, get the accounts with retry logic
+      console.log("Fetching Google accounts...");
+      const accountsData = await fetchWithRetry(
         "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
-        {
-          headers: {
-            Authorization: `Bearer ${googleAuthToken.access_token}`,
-          },
-        }
+        { headers }
       );
 
-      if (!accountsResponse.ok) {
-        throw new Error("Failed to fetch Google accounts");
-      }
-
-      const accountsData = await accountsResponse.json();
       console.log("Google accounts:", accountsData);
 
-      // For each account, get its locations
+      // For each account, get its locations with retry logic
       for (const account of accountsData.accounts) {
-        const locationsResponse = await fetch(
-          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`,
-          {
-            headers: {
-              Authorization: `Bearer ${googleAuthToken.access_token}`,
-            },
+        try {
+          console.log(`Fetching locations for account ${account.name}...`);
+          const locationsData = await fetchWithRetry(
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`,
+            { headers }
+          );
+
+          console.log(`Locations for account ${account.name}:`, locationsData);
+
+          // Store each location in Supabase
+          for (const location of locationsData.locations) {
+            const { error } = await supabase.from("businesses").insert({
+              name: location.locationName,
+              location: `${location.address.addressLines.join(", ")}, ${location.address.locality}, ${location.address.regionCode}`,
+              google_place_id: location.name,
+              google_business_account_id: account.name,
+              user_id: session?.user.id,
+            });
+
+            if (error && error.code !== "23505") { // Ignore duplicate key errors
+              console.error("Error storing location:", error);
+            }
           }
-        );
-
-        if (!locationsResponse.ok) {
-          console.error(`Failed to fetch locations for account ${account.name}`);
-          continue;
-        }
-
-        const locationsData = await locationsResponse.json();
-        console.log(`Locations for account ${account.name}:`, locationsData);
-
-        // Store each location in Supabase
-        for (const location of locationsData.locations) {
-          const { error } = await supabase.from("businesses").insert({
-            name: location.locationName,
-            location: `${location.address.addressLines.join(", ")}, ${location.address.locality}, ${location.address.regionCode}`,
-            google_place_id: location.name,
-            google_business_account_id: account.name,
-            user_id: session?.user.id, // Add the user_id from the session
+        } catch (error) {
+          console.error(`Error fetching locations for account ${account.name}:`, error);
+          toast({
+            title: "Warning",
+            description: `Failed to fetch some locations. Please try again later.`,
+            variant: "destructive",
           });
-
-          if (error && error.code !== "23505") { // Ignore duplicate key errors
-            console.error("Error storing location:", error);
-          }
         }
       }
 
@@ -81,7 +105,7 @@ export const BusinessList = () => {
       console.error("Error fetching Google businesses:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch Google businesses. Please try again.",
+        description: "Failed to fetch Google businesses. Please try again in a few minutes.",
         variant: "destructive",
       });
     }
