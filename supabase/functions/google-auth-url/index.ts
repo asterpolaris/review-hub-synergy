@@ -5,8 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const PRODUCTION_URL = 'https://desk.jegantic.com';
-
 serve(async (req) => {
   console.log('Google auth URL function called');
 
@@ -17,6 +15,9 @@ serve(async (req) => {
   }
 
   try {
+    const { redirectUrl } = await req.json();
+    console.log('Received redirect URL:', redirectUrl);
+    
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
     console.log('Client ID available:', !!clientId);
     
@@ -25,9 +26,9 @@ serve(async (req) => {
       throw new Error('OAuth configuration missing');
     }
 
-    // Always use the production URL for the redirect
-    const redirectUri = `${PRODUCTION_URL}/auth/callback`;
-    console.log('Using redirect URI:', redirectUri);
+    // Use the provided redirect URL or fall back to a default
+    const finalRedirectUri = redirectUrl || 'https://desk.jegantic.com/auth/callback';
+    console.log('Using redirect URI:', finalRedirectUri);
     
     // Explicitly specify all required scopes
     const scopes = [
@@ -41,12 +42,12 @@ serve(async (req) => {
     const scope = encodeURIComponent(scopes.join(' '));
 
     const state = encodeURIComponent(JSON.stringify({
-      returnTo: PRODUCTION_URL
+      returnTo: finalRedirectUri.split('/auth/callback')[0]
     }));
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${clientId}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&redirect_uri=${encodeURIComponent(finalRedirectUri)}` +
       `&response_type=code` +
       `&scope=${scope}` +
       `&access_type=offline` +
@@ -60,7 +61,7 @@ serve(async (req) => {
       JSON.stringify({ 
         url: authUrl,
         debug: {
-          redirectUri,
+          redirectUri: finalRedirectUri,
           scopes,
           timestamp: new Date().toISOString()
         }

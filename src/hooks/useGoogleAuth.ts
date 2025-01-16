@@ -9,7 +9,15 @@ export const useGoogleAuth = () => {
   const handleGoogleConnect = async () => {
     try {
       setIsConnecting(true);
-      const { data, error } = await supabase.functions.invoke("google-auth-url");
+      console.log("Starting Google connection process...");
+      
+      // Use window.location.origin to dynamically get the current domain
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log("Using redirect URL:", redirectUrl);
+      
+      const { data, error } = await supabase.functions.invoke("google-auth-url", {
+        body: { redirectUrl }
+      });
       
       if (error) {
         console.error("Error getting auth URL:", error);
@@ -22,8 +30,10 @@ export const useGoogleAuth = () => {
       }
 
       if (data?.url) {
+        console.log("Redirecting to Google auth URL...");
         window.location.href = data.url;
       } else {
+        console.error("Invalid response:", data);
         toast({
           title: "Error",
           description: "Invalid response from authentication service",
