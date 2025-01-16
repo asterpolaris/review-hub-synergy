@@ -1,4 +1,4 @@
-import { Building2, Home, Star, UserCircle2 } from "lucide-react";
+import { Building2, Home, LogOut, Star, UserCircle2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -53,16 +53,25 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4">
+      <SidebarFooter className="border-t p-4 flex gap-2">
         <Button
           variant="ghost"
-          className="w-full justify-start"
+          className="flex-1 justify-start"
           asChild
         >
           <Link to="/profile" className="flex items-center gap-3">
             <UserCircle2 className="h-4 w-4" />
-            <span>{session?.user?.email}</span>
+            <span>Profile</span>
           </Link>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleSignOut}
+          className="shrink-0"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="sr-only">Sign out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
