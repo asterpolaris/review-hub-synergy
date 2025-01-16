@@ -10,8 +10,10 @@ interface GoogleAuthUrlResponse {
       scopes: string[];
       timestamp: string;
     };
+  } | null;
+  error: null | {
+    message: string;
   };
-  error: null;
 }
 
 export const useGoogleAuth = () => {
@@ -29,7 +31,7 @@ export const useGoogleAuth = () => {
       
       // Set a timeout to prevent hanging
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Connection timeout")), 10000);
+        setTimeout(() => reject(new Error("Connection timeout")), 15000); // Increased timeout to 15 seconds
       });
 
       const authUrlPromise = supabase.functions.invoke<GoogleAuthUrlResponse>("google-auth-url", {
@@ -55,7 +57,7 @@ export const useGoogleAuth = () => {
         window.location.href = response.data.url;
       }, 100);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google connection error:", error);
       setIsConnecting(false);
       toast({
