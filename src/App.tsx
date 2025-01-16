@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Businesses from "./pages/Businesses";
 import Reviews from "./pages/Reviews";
 import AuthCallback from "./pages/AuthCallback";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +27,8 @@ const App = () => (
             <Route path="/businesses" element={<Businesses />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<Terms />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
