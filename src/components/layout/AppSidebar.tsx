@@ -53,10 +53,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4 flex gap-2">
+      <SidebarFooter className="border-t p-4 flex flex-col gap-1">
         <Button
           variant="ghost"
-          className="flex-1 justify-start"
+          className="w-full justify-start"
           asChild
         >
           <Link to="/profile" className="flex items-center gap-3">
@@ -67,10 +67,10 @@ export function AppSidebar() {
         <Button
           variant="ghost"
           onClick={handleSignOut}
-          className="flex-1 justify-start"
+          className="w-full justify-start"
         >
-          <LogOut className="h-4 w-4 mr-3" />
-          <span>Sign out</span>
+          <LogOut className="h-4 w-4" />
+          <span className="ml-3">Sign out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
