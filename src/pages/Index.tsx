@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
 const PRODUCTION_URL = 'https://review-hub-synergy.lovable.app';
+const REDIRECT_URL = `${PRODUCTION_URL}/auth/callback`;
 
 const Index = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const Index = () => {
 
   useEffect(() => {
     console.log("Index page mounted");
+    console.log("Redirect URL configured as:", REDIRECT_URL);
     
     const {
       data: { subscription },
@@ -39,10 +41,15 @@ const Index = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log("Initiating Google sign in with redirect URL:", REDIRECT_URL);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${PRODUCTION_URL}/auth/callback`
+          redirectTo: REDIRECT_URL,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
       if (error) {
@@ -89,7 +96,7 @@ const Index = () => {
             providers={[]}
             view="sign_in"
             showLinks={true}
-            redirectTo={`${PRODUCTION_URL}/auth/callback`}
+            redirectTo={REDIRECT_URL}
             socialLayout="horizontal"
             localization={{
               variables: {
