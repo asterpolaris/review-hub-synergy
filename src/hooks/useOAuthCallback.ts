@@ -35,12 +35,12 @@ export const useOAuthCallback = () => {
     
     try {
       // First check for any error parameters
-      const error = searchParams.get("error");
+      const oauthError = searchParams.get("error");
       const errorDescription = searchParams.get("error_description");
       
-      if (error) {
-        console.error("OAuth error:", error, errorDescription);
-        throw new Error(errorDescription || error);
+      if (oauthError) {
+        console.error("OAuth error:", oauthError, errorDescription);
+        throw new Error(errorDescription || oauthError);
       }
 
       // Get the authorization code
@@ -68,16 +68,16 @@ export const useOAuthCallback = () => {
       console.log("User ID from session:", session.user.id);
       
       console.log("Calling exchange-token function...");
-      const { data, error } = await supabase.functions.invoke<TokenExchangeResponse>("exchange-token", {
+      const { data: exchangeData, error: exchangeError } = await supabase.functions.invoke<TokenExchangeResponse>("exchange-token", {
         body: { code }
       });
 
-      if (error) {
-        console.error("Token exchange error:", error);
-        throw new Error(error.message || "Failed to exchange token");
+      if (exchangeError) {
+        console.error("Token exchange error:", exchangeError);
+        throw new Error(exchangeError.message || "Failed to exchange token");
       }
 
-      if (!data?.data) {
+      if (!exchangeData?.data) {
         console.error("No data received from token exchange");
         throw new Error("No response data from token exchange");
       }
@@ -89,9 +89,9 @@ export const useOAuthCallback = () => {
         .from("google_auth_tokens")
         .upsert({
           user_id: session.user.id,
-          access_token: data.data.access_token,
-          refresh_token: data.data.refresh_token,
-          expires_at: new Date(Date.now() + data.data.expires_in * 1000).toISOString(),
+          access_token: exchangeData.data.access_token,
+          refresh_token: exchangeData.data.refresh_token,
+          expires_at: new Date(Date.now() + exchangeData.data.expires_in * 1000).toISOString(),
         });
 
       if (insertError) {
@@ -107,7 +107,7 @@ export const useOAuthCallback = () => {
       });
 
       navigate("/businesses");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error during callback:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to authenticate with Google";
       setState({ 
