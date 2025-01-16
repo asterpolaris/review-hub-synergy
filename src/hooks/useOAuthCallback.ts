@@ -61,18 +61,24 @@ export const useOAuthCallback = () => {
         throw new Error("No provider token received");
       }
 
-      // Store tokens in the database
-      const { error: insertError } = await supabase
+      // Update tokens in the database using upsert
+      const { error: upsertError } = await supabase
         .from("google_auth_tokens")
-        .upsert({
-          user_id: session.user.id,
-          access_token: session.provider_token,
-          refresh_token: session.provider_refresh_token || '',
-          expires_at: new Date(Date.now() + 3600 * 1000).toISOString(), // 1 hour from now
-        });
+        .upsert(
+          {
+            user_id: session.user.id,
+            access_token: session.provider_token,
+            refresh_token: session.provider_refresh_token || '',
+            expires_at: new Date(Date.now() + 3600 * 1000).toISOString(), // 1 hour from now
+          },
+          {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          }
+        );
 
-      if (insertError) {
-        console.error("Error storing tokens:", insertError);
+      if (upsertError) {
+        console.error("Error storing tokens:", upsertError);
         throw new Error("Failed to store authentication tokens");
       }
 
