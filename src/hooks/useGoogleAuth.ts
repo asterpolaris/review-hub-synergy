@@ -29,33 +29,22 @@ export const useGoogleAuth = () => {
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log("Using redirect URL:", redirectUrl);
       
-      // Set a timeout to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Connection timeout")), 15000); // Increased timeout to 15 seconds
-      });
-
-      const authUrlPromise = supabase.functions.invoke<GoogleAuthUrlResponse>("google-auth-url", {
+      const { data, error } = await supabase.functions.invoke<GoogleAuthUrlResponse>("google-auth-url", {
         body: { redirectUrl }
       });
-
-      // Race between the timeout and the actual request
-      const response = await Promise.race([authUrlPromise, timeoutPromise]);
       
-      if (response.error) {
-        console.error("Error getting auth URL:", response.error);
-        throw new Error(response.error.message || "Failed to get authentication URL");
+      if (error) {
+        console.error("Error getting auth URL:", error);
+        throw new Error(error.message || "Failed to get authentication URL");
       }
 
-      if (!response.data?.url) {
-        console.error("Invalid response:", response.data);
+      if (!data?.url) {
+        console.error("Invalid response:", data);
         throw new Error("Invalid response from authentication service");
       }
 
       console.log("Redirecting to Google auth URL...");
-      // Add a small delay before redirect to ensure state is updated
-      setTimeout(() => {
-        window.location.href = response.data.url;
-      }, 100);
+      window.location.href = data.url;
 
     } catch (error: any) {
       console.error("Google connection error:", error);

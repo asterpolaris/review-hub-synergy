@@ -8,6 +8,17 @@ interface OAuthCallbackState {
   details: string | null;
 }
 
+interface TokenExchangeResponse {
+  data: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+  } | null;
+  error: null | {
+    message: string;
+  };
+}
+
 export const useOAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -38,15 +49,13 @@ export const useOAuthCallback = () => {
       }
 
       console.log("Calling exchange-token function...");
-      const { data, error: functionError } = await supabase.functions.invoke("exchange-token", {
-        body: { code },
+      const { data, error } = await supabase.functions.invoke<TokenExchangeResponse>("exchange-token", {
+        body: { code }
       });
 
-      console.log("Function response:", { data, error: functionError });
-
-      if (functionError) {
-        console.error("Token exchange error:", functionError);
-        throw new Error(functionError.message || "Failed to exchange token");
+      if (error) {
+        console.error("Token exchange error:", error);
+        throw new Error(error.message || "Failed to exchange token");
       }
 
       if (!data) {
@@ -69,22 +78,20 @@ export const useOAuthCallback = () => {
         throw new Error("Failed to store authentication tokens");
       }
 
-      console.log("Token exchange successful:", data);
+      console.log("Token exchange successful");
       
       toast({
         title: "Successfully connected with Google",
         description: "You can now manage your business reviews",
       });
 
-      // Always navigate to businesses page after successful authentication
       navigate("/businesses");
-    } catch (err) {
-      console.error("Error during callback:", err);
-      const errorMessage = err instanceof Error ? err.message : "Failed to authenticate with Google";
-      console.error("Formatted error message:", errorMessage);
+    } catch (error: any) {
+      console.error("Error during callback:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to authenticate with Google";
       setState({ 
         error: errorMessage, 
-        details: err.response ? JSON.stringify(err.response.data, null, 2) : null 
+        details: error.response ? JSON.stringify(error.response.data, null, 2) : null 
       });
       toast({
         variant: "destructive",

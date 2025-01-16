@@ -7,7 +7,7 @@ const AuthCallback = () => {
 
   useEffect(() => {
     handleCallback();
-  }, [handleCallback]);
+  }, []);
 
   if (error) {
     return <AuthError error={error} details={details} />;
