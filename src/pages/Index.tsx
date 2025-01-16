@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 const PRODUCTION_URL = 'https://desk.jegantic.com';
 const REDIRECT_URL = `${PRODUCTION_URL}/auth/callback`;
 
+// ... keep existing code (component logic and state)
+
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -122,6 +124,11 @@ const Index = () => {
             >
               Sign in with Google
             </Button>
+          </div>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
+            {' • '}
+            <a href="/terms" className="hover:underline">Terms of Service</a>
           </div>
         </CardContent>
       </Card>
