@@ -18,7 +18,7 @@ const Businesses = () => {
             <Button 
               onClick={handleGoogleConnect} 
               variant="outline"
-              disabled={isConnecting || !!googleAuthToken}
+              disabled={isConnecting}
             >
               {isConnecting 
                 ? "Connecting..." 
