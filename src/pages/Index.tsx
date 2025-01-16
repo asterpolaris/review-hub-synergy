@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
-const PRODUCTION_URL = 'https://desk.jegantic.com';
+const PRODUCTION_URL = 'https://jegantic-desk.netlify.app';
 const REDIRECT_URL = `${PRODUCTION_URL}/auth/callback`;
 
 const Index = () => {
