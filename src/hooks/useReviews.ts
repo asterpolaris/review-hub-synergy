@@ -3,8 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const useReviews = () => {
   const { toast } = useToast();
 
@@ -46,6 +44,8 @@ export const useReviews = () => {
         );
 
         if (!accountsResponse.ok) {
+          const errorText = await accountsResponse.text();
+          console.error("Google accounts error response:", errorText);
           throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
         }
 
