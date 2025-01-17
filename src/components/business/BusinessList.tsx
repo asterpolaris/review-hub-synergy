@@ -45,6 +45,22 @@ export const BusinessList = () => {
 
   const fetchGoogleBusinesses = async () => {
     try {
+      // Clear existing businesses first to prevent duplicates
+      const { error: deleteError } = await supabase
+        .from("businesses")
+        .delete()
+        .eq("user_id", session?.user.id);
+
+      if (deleteError) {
+        console.error("Error clearing existing businesses:", deleteError);
+        toast({
+          title: "Error",
+          description: "Failed to refresh business list. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       console.log("Starting fetchGoogleBusinesses function");
       console.log("Google Auth Token:", googleAuthToken);
       
@@ -81,18 +97,12 @@ export const BusinessList = () => {
         return;
       }
 
-      // Get existing businesses for deduplication
-      const { data: existingBusinesses } = await supabase
-        .from("businesses")
-        .select("google_place_id")
-        .eq("user_id", session?.user.id);
-
-      const existingPlaceIds = new Set(existingBusinesses?.map(b => b.google_place_id) || []);
+      let addedCount = 0;
+      let errorCount = 0;
 
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
-          // Request all necessary fields in the readMask
           const locationsData = await fetchWithRetry(
             `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile.locationName,profile.address`,
             { headers }
@@ -106,11 +116,6 @@ export const BusinessList = () => {
           }
 
           for (const location of locationsData.locations) {
-            if (existingPlaceIds.has(location.name)) {
-              console.log(`Skipping existing location: ${location.name}`);
-              continue;
-            }
-
             console.log("Processing location:", location);
 
             if (!location.profile?.locationName) {
@@ -155,31 +160,32 @@ export const BusinessList = () => {
 
             if (error) {
               console.error("Error storing location:", error);
-              toast({
-                title: "Error",
-                description: `Failed to save business: ${location.profile.locationName}`,
-                variant: "destructive",
-              });
+              errorCount++;
             } else {
               console.log(`Successfully saved business: ${location.profile.locationName}`);
+              addedCount++;
             }
           }
         } catch (error) {
           console.error(`Error fetching locations for account ${account.name}:`, error);
-          toast({
-            title: "Warning",
-            description: `Failed to fetch some locations. Please try again later.`,
-            variant: "destructive",
-          });
+          errorCount++;
         }
       }
 
       await refetch();
       
-      toast({
-        title: "Success",
-        description: "Successfully imported Google businesses",
-      });
+      if (addedCount > 0) {
+        toast({
+          title: "Success",
+          description: `Successfully imported ${addedCount} Google business${addedCount === 1 ? '' : 'es'}${errorCount > 0 ? `. ${errorCount} failed.` : ''}`,
+        });
+      } else {
+        toast({
+          title: "No businesses imported",
+          description: "No eligible businesses were found to import.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error fetching Google businesses:", error);
       toast({
@@ -202,7 +208,7 @@ export const BusinessList = () => {
     <div className="space-y-6">
       {googleAuthToken && (
         <Button onClick={fetchGoogleBusinesses} variant="outline">
-          Import from Google Business Profile
+          Refresh Google Business List
         </Button>
       )}
       
