@@ -12,9 +12,9 @@ Deno.serve(async (req) => {
       throw new Error('Missing required parameters')
     }
 
-    console.log('Starting review fetch process...')
-    
-    // First, get the account ID using the correct endpoint
+    console.log(`Starting review fetch process for place ID: ${placeId}`)
+
+    // First get the account ID
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       {
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     }
 
     const accountsData = await accountsResponse.json()
-    console.log('Accounts data received:', accountsData)
+    console.log('Accounts data:', accountsData)
 
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
       throw new Error('No accounts found')
@@ -44,19 +44,20 @@ Deno.serve(async (req) => {
     const accountId = accountsData.accounts[0].name
     console.log(`Using account ID: ${accountId}`)
 
-    // Extract location ID from placeId (assuming format "locations/LOCATION_ID")
+    // Extract location ID from placeId
     const locationId = placeId.split('/').pop()
     if (!locationId) {
       throw new Error('Invalid location ID format')
     }
 
-    // Fetch reviews using the correct endpoint
+    // Fetch reviews using the Business Profile API v4 endpoint
     const reviewsResponse = await fetch(
       `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
+          'X-Goog-Api-Version': '4',  // Explicitly specify API version
         },
       }
     )
@@ -80,8 +81,8 @@ Deno.serve(async (req) => {
       { 
         headers: { 
           ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
+          'Content-Type': 'application/json',
+        },
       }
     )
   } catch (error) {
