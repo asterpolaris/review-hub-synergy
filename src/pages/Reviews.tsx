@@ -21,9 +21,11 @@ const fetchReviews = async (): Promise<Review[]> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("No session found");
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reviews`, {
+    // Using the correct Edge Function URL format
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/reviews`, {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
     });
     
