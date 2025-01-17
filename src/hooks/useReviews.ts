@@ -31,92 +31,46 @@ export const useReviews = () => {
       const errors: string[] = [];
 
       try {
-        // First get the account ID
-        console.log("Fetching Google accounts...");
-        const accountsResponse = await fetch(
-          "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
-          { 
-            headers: {
-              'Authorization': `Bearer ${reviewsData.access_token}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            }
-          }
-        );
+        // Call our Edge Function instead of making direct API calls
+        const response = await fetch('/api/reviews/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_token: reviewsData.access_token,
+            businesses: reviewsData.businesses
+          })
+        });
 
-        const accountsText = await accountsResponse.text();
-        console.log("Google accounts raw response:", accountsText);
-
-        if (!accountsResponse.ok) {
-          console.error("Google accounts error response:", accountsText);
-          throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}\nResponse: ${accountsText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response from Edge Function:", errorText);
+          throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}\nResponse: ${errorText}`);
         }
 
-        const accountsData = JSON.parse(accountsText);
-        console.log("Google accounts parsed response:", accountsData);
+        const data = await response.json();
+        console.log("Reviews data received:", data);
 
-        if (!accountsData.accounts || accountsData.accounts.length === 0) {
-          throw new Error("No Google Business accounts found");
-        }
-
-        const accountId = accountsData.accounts[0].name;
-        console.log("Using account ID:", accountId);
-        
-        // Prepare location names array for batch request
-        const locationNames = reviewsData.businesses.map(business => business.google_place_id);
-        console.log("Location names for batch request:", locationNames);
-
-        // Make batch request for reviews
-        const batchResponse = await fetch(
-          `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations:batchGetReviews`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${reviewsData.access_token}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-              locationNames,
-              pageSize: 50,
-              ignoreRatingOnlyReviews: false
-            })
-          }
-        );
-
-        const batchText = await batchResponse.text();
-        console.log("Batch reviews raw response:", batchText);
-
-        if (!batchResponse.ok) {
-          console.error("Batch reviews error response:", batchText);
-          throw new Error(`Failed to fetch reviews batch: ${batchText}`);
-        }
-
-        const batchData = JSON.parse(batchText);
-        console.log("Batch reviews parsed response:", batchData);
-
-        // Process the batch response
-        if (batchData.locationReviews) {
-          batchData.locationReviews.forEach((locationReview: any) => {
+        if (data.reviews) {
+          data.reviews.forEach((review: any) => {
             const business = reviewsData.businesses.find(
-              b => b.google_place_id === locationReview.locationName
+              b => b.google_place_id === review.locationName
             );
             
-            if (business && locationReview.reviews) {
-              allReviews.push(
-                ...locationReview.reviews.map((review: any) => ({
-                  ...review,
-                  venueName: business.name,
-                  placeId: business.google_place_id,
-                }))
-              );
+            if (business) {
+              allReviews.push({
+                ...review,
+                venueName: business.name,
+                placeId: business.google_place_id,
+              });
             }
           });
         }
 
       } catch (error) {
-        console.error("Failed to fetch reviews batch:", error);
-        errors.push(`Batch request: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("Failed to fetch reviews:", error);
+        errors.push(`Reviews request: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
       if (errors.length > 0) {
