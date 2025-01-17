@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
 
     // First, get the account ID using the accounts.list endpoint
     const accountsResponse = await fetch(
-      'https://mybusiness.googleapis.com/v4/accounts',
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     console.log(`Extracted location ID: ${locationId}`)
 
     // Construct the full Google API URL with the correct endpoint structure
-    const googleApiUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`
+    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations/${locationId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
