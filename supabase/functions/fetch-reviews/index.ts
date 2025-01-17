@@ -52,12 +52,11 @@ Deno.serve(async (req) => {
 
     // Fetch reviews using the Business Profile API v4 endpoint
     const reviewsResponse = await fetch(
-      `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`,
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations/${locationId}/reviews`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
-          'X-Goog-Api-Version': '4',  // Explicitly specify API version
         },
       }
     )
@@ -66,9 +65,7 @@ Deno.serve(async (req) => {
       console.error('Failed to fetch reviews:', {
         status: reviewsResponse.status,
         statusText: reviewsResponse.statusText,
-        body: await reviewsResponse.text(),
-        accountId,
-        locationId
+        body: await reviewsResponse.text()
       })
       throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText}`)
     }
