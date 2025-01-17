@@ -1,5 +1,10 @@
 import { corsHeaders } from '../_shared/cors.ts'
 
+interface RequestBody {
+  placeId: string;
+  accessToken: string;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -7,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { placeId, accessToken } = await req.json();
+    const { placeId, accessToken } = await req.json() as RequestBody;
     
     if (!placeId || !accessToken) {
       throw new Error('Missing required parameters');
@@ -15,9 +20,26 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching reviews for location: ${placeId}`);
 
-    const locationName = placeId.startsWith('locations/') ? placeId : `locations/${placeId}`;
-    const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/${locationName}/reviews`;
+    // First get the account ID
+    const accountsResponse = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const accountsData = await accountsResponse.json();
+    console.log('Accounts response:', accountsData);
+
+    if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      throw new Error('No business accounts found');
+    }
+
+    const accountId = accountsData.accounts[0].name.split('/')[1];
+    const locationId = placeId.split('/').pop();
     
+    // Construct the correct reviews URL with account and location IDs
+    const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews`;
     console.log('Using API URL:', reviewsUrl);
 
     const response = await fetch(reviewsUrl, {

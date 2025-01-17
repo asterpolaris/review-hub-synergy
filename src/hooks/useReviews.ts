@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
-// Define the response type for the reviews RPC call
 interface ReviewsRPCResponse {
   access_token: string;
   businesses: Array<{
@@ -20,7 +19,6 @@ export const useReviews = () => {
     queryFn: async () => {
       console.log("Fetching business data...");
       
-      // First get the business data and access token
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
         data: ReviewsRPCResponse | null;
         error: Error | null;
@@ -37,7 +35,6 @@ export const useReviews = () => {
 
       console.log("Business data received:", reviewsData);
 
-      // Fetch reviews for all businesses
       const allReviews: Review[] = [];
       const errors: string[] = [];
 
@@ -45,7 +42,7 @@ export const useReviews = () => {
         try {
           console.log(`Fetching reviews for ${business.name}`);
           
-          const response = await fetch('/functions/v1/fetch-reviews', {
+          const response = await fetch(`${supabase.supabaseUrl}/functions/v1/fetch-reviews`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -81,7 +78,6 @@ export const useReviews = () => {
         }
       }
 
-      // Show toast if there were any errors
       if (errors.length > 0) {
         toast({
           title: "Some reviews failed to load",
@@ -90,7 +86,6 @@ export const useReviews = () => {
         });
       }
 
-      // Sort reviews by date
       return allReviews.sort((a, b) => 
         new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
       );
