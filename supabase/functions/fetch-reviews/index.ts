@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     console.log(`Fetching reviews for location: ${placeId}`)
 
     // Construct the correct URL format for the Google My Business API
-    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/accounts/-/locations/${placeId}/reviews`
+    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`
     console.log('Using API URL:', reviewsUrl)
 
     const response = await fetch(reviewsUrl, {

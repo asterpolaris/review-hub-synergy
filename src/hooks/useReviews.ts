@@ -21,7 +21,7 @@ export const useReviews = () => {
       console.log("Fetching business data...");
       
       // First get the business data and access token
-      const { data: reviewsData, error: reviewsError } = await supabase.rpc<ReviewsRPCResponse, never>('reviews');
+      const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews');
       
       if (reviewsError) {
         console.error("Error fetching reviews data:", reviewsError);
@@ -38,13 +38,13 @@ export const useReviews = () => {
       const allReviews: Review[] = [];
       const errors: string[] = [];
 
-      for (const business of reviewsData.businesses) {
+      for (const business of (reviewsData as ReviewsRPCResponse).businesses) {
         try {
           console.log(`Fetching reviews for ${business.name}`);
           const { data, error } = await supabase.functions.invoke('fetch-reviews', {
             body: {
               placeId: business.google_place_id,
-              accessToken: reviewsData.access_token
+              accessToken: (reviewsData as ReviewsRPCResponse).access_token
             }
           });
 
