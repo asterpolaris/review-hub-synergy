@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching reviews for place: ${placeId}`)
 
-    // Construct the full Google API URL
-    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`
+    // Construct the full Google API URL - using the correct Business Profile API endpoint
+    const googleApiUrl = `https://businessprofileperformance.googleapis.com/v1/${placeId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
       console.error('Google API error response:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText
+        body: errorText,
+        url: googleApiUrl
       })
       throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`)
     }
