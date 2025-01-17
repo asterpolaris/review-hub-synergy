@@ -2,22 +2,27 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from "../../_shared/cors.ts"
 
 serve(async (req) => {
+  console.log('Reviews batch function called');
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const { access_token, locationNames } = await req.json()
+    console.log('Received request with locationNames:', locationNames);
 
     if (!access_token || !locationNames) {
+      console.error('Missing required parameters:', { access_token: !!access_token, locationNames: !!locationNames });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('Fetching reviews for locations:', locationNames)
+    console.log('Fetching accounts with access token:', access_token.substring(0, 10) + '...');
 
     // First get the account ID
     const accountsResponse = await fetch(
@@ -41,14 +46,19 @@ serve(async (req) => {
     console.log("Google accounts response:", accountsData);
 
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      console.error('No Google Business accounts found');
       throw new Error('No Google Business accounts found');
     }
 
     const accountId = accountsData.accounts[0].name;
+    console.log('Using account ID:', accountId);
 
     // Fetch reviews using batchGetReviews endpoint
+    const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
+    console.log('Making request to:', batchReviewsUrl);
+
     const response = await fetch(
-      `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`,
+      batchReviewsUrl,
       {
         method: 'POST',
         headers: {
@@ -64,7 +74,7 @@ serve(async (req) => {
       }
     );
 
-    console.log('Batch reviews request URL:', `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`);
+    console.log('Batch reviews request URL:', batchReviewsUrl);
     console.log('Batch reviews request body:', {
       locationNames,
       pageSize: 50,
@@ -89,7 +99,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error in batch reviews function:', error)
+    console.error('Error in batch reviews function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
