@@ -99,7 +99,7 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Fetching details for location:", location.name);
             const locationDetails = await fetchWithRetry(
-              `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=profile.locationName,profile.address`,
+              `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=name,profile`,
               { headers }
             );
 
