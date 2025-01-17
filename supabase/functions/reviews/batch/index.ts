@@ -21,7 +21,7 @@ serve(async (req) => {
     const { access_token, locationNames } = JSON.parse(requestBody);
     console.log('Parsed request parameters:', {
       hasAccessToken: !!access_token,
-      locationNames: locationNames,
+      locationNames,
       accessTokenPreview: access_token ? `${access_token.substring(0, 10)}...` : 'none'
     });
 
