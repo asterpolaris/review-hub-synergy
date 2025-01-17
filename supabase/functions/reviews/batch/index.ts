@@ -32,6 +32,8 @@ serve(async (req) => {
     );
 
     if (!accountsResponse.ok) {
+      const errorText = await accountsResponse.text();
+      console.error('Error fetching accounts:', errorText);
       throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
     }
 
@@ -60,7 +62,14 @@ serve(async (req) => {
           ignoreRatingOnlyReviews: false
         })
       }
-    )
+    );
+
+    console.log('Batch reviews request URL:', `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`);
+    console.log('Batch reviews request body:', {
+      locationNames,
+      pageSize: 50,
+      ignoreRatingOnlyReviews: false
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -69,7 +78,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Reviews response from Google API:', data);
+    console.log('Raw response from Google API:', data);
 
     // Transform the response to match the expected format
     const locationReviews = data.locationReviews || [];
