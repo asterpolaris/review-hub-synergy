@@ -18,28 +18,59 @@ import { supabase } from "@/integrations/supabase/client";
 const fetchReviews = async (): Promise<Review[]> => {
   try {
     console.log("Fetching reviews...");
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error("No session found");
+    
+    // First get the access token and businesses from our database function
+    const { data: functionData, error: functionError } = await supabase
+      .rpc('reviews');
 
-    // Using the correct Edge Function URL format
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/reviews`, {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-    });
-    
-    console.log("Reviews response status:", response.status);
-    
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Error fetching reviews:", errorData);
-      throw new Error(`Failed to fetch reviews: ${errorData}`);
+    if (functionError) {
+      console.error("Database function error:", functionError);
+      throw new Error(functionError.message);
     }
 
-    const data = await response.json();
-    console.log("Reviews data:", data);
-    return data;
+    if (!functionData || !functionData.access_token) {
+      throw new Error("No Google access token found");
+    }
+
+    console.log("Got function data:", functionData);
+
+    const allReviews: Review[] = [];
+    
+    // Fetch reviews for each business
+    for (const business of functionData.businesses || []) {
+      try {
+        const response = await fetch(
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${business.google_place_id}/reviews`,
+          {
+            headers: {
+              Authorization: `Bearer ${functionData.access_token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.error(`Failed to fetch reviews for ${business.name}:`, await response.text());
+          continue;
+        }
+
+        const data = await response.json();
+        const reviews = data.reviews || [];
+        allReviews.push(
+          ...reviews.map((review: any) => ({
+            ...review,
+            venueName: business.name,
+            placeId: business.google_place_id,
+          }))
+        );
+      } catch (error) {
+        console.error(`Error fetching reviews for ${business.name}:`, error);
+      }
+    }
+
+    // Sort by date and limit to 100
+    return allReviews
+      .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
+      .slice(0, 100);
   } catch (error) {
     console.error("Error in fetchReviews:", error);
     throw error;
