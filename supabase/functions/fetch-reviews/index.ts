@@ -12,37 +12,10 @@ Deno.serve(async (req) => {
       throw new Error('Missing required parameters')
     }
 
-    console.log(`Fetching reviews for place: ${placeId}`)
-
-    // First, get the account ID using the accounts.list endpoint
-    const accountsResponse = await fetch(
-      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
-
-    if (!accountsResponse.ok) {
-      console.error('Failed to fetch accounts:', await accountsResponse.text())
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`)
-    }
-
-    const accountsData = await accountsResponse.json()
-    console.log('Accounts data:', accountsData)
-
-    if (!accountsData.accounts || accountsData.accounts.length === 0) {
-      throw new Error('No accounts found')
-    }
-
-    // The location name should already be in the correct format from the database
-    // The placeId should be in the format "locations/LOCATION_ID"
     console.log(`Using location path: ${placeId}`)
 
     // Construct the full Google API URL with the correct endpoint structure
-    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`
+    const googleApiUrl = `https://mybusinessprofileservice.googleapis.com/v4/${placeId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
@@ -58,7 +31,7 @@ Deno.serve(async (req) => {
         status: response.status,
         statusText: response.statusText,
         body: await response.text(),
-        url: googleApiUrl
+        url: response.url
       })
       throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`)
     }
@@ -78,13 +51,16 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in fetch-reviews function:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
         details: error.stack
       }),
       { 
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     )
   }
