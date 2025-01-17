@@ -104,7 +104,7 @@ export const BusinessList = () => {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,locationName,address`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress`,
             { headers }
           );
 
@@ -118,16 +118,16 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Processing location:", location);
 
-            // Skip if location name is missing
-            if (!location.locationName) {
+            // Skip if location title is missing
+            if (!location.title) {
               console.log(`Skipping location with no name: ${location.name}`);
               continue;
             }
 
             // Extract and format address
             let formattedAddress = "";
-            if (location.address) {
-              const address = location.address;
+            if (location.storefrontAddress) {
+              const address = location.storefrontAddress;
               const addressParts = [];
 
               if (address.addressLines?.length > 0) {
@@ -155,7 +155,7 @@ export const BusinessList = () => {
             }
 
             const { error } = await supabase.from("businesses").insert({
-              name: location.locationName,
+              name: location.title,
               location: formattedAddress,
               google_place_id: location.name,
               google_business_account_id: account.name,
@@ -166,7 +166,7 @@ export const BusinessList = () => {
               console.error("Error storing location:", error);
               errorCount++;
             } else {
-              console.log(`Successfully saved business: ${location.locationName}`);
+              console.log(`Successfully saved business: ${location.title}`);
               addedCount++;
             }
           }
