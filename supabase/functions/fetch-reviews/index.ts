@@ -18,11 +18,11 @@ Deno.serve(async (req) => {
     console.log(`Starting review fetch for place ID: ${placeId}`)
 
     // Format the location name correctly for the API
-    const locationName = placeId.includes('locations/') ? placeId : `locations/${placeId}`
-    console.log('Location name:', locationName)
+    const locationId = placeId.replace('locations/', '')
+    console.log('Location ID:', locationId)
 
-    // Use the Business Profile API v1 endpoint
-    const reviewsUrl = `https://mybusiness.googleapis.com/v1/${locationName}/reviews`
+    // Use the Business Profile Performance API endpoint
+    const reviewsUrl = `https://businessprofileperformance.googleapis.com/v1/locations/${locationId}/reviews`
     console.log('Fetching reviews from URL:', reviewsUrl)
 
     const reviewsResponse = await fetch(reviewsUrl, {
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     }
 
     const reviewsData = await reviewsResponse.json()
-    console.log(`Successfully fetched reviews for location ${locationName}`)
+    console.log(`Successfully fetched reviews for location ${locationId}`)
 
     return new Response(
       JSON.stringify(reviewsData),
