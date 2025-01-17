@@ -27,10 +27,15 @@ export const BusinessList = () => {
         }
 
         if (!response.ok) {
+          console.error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return await response.json();
+        const data = await response.json();
+        console.log(`API Response for ${url}:`, data);
+        return data;
       } catch (error) {
         console.error(`Attempt ${i + 1} failed:`, error);
         if (i === retries - 1) throw error;
@@ -43,7 +48,11 @@ export const BusinessList = () => {
 
   const fetchGoogleBusinesses = async () => {
     try {
+      console.log("Starting fetchGoogleBusinesses function");
+      console.log("Google Auth Token:", googleAuthToken);
+      
       if (!googleAuthToken?.access_token) {
+        console.error("No Google auth token found");
         toast({
           title: "Error",
           description: "Please connect your Google account first",
@@ -63,7 +72,17 @@ export const BusinessList = () => {
         { headers }
       );
 
-      console.log("Google accounts:", accountsData);
+      console.log("Google accounts response:", accountsData);
+
+      if (!accountsData.accounts || accountsData.accounts.length === 0) {
+        console.log("No Google Business accounts found");
+        toast({
+          title: "No businesses found",
+          description: "No Google Business accounts were found for your account.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // For each account, get its locations with retry logic
       for (const account of accountsData.accounts) {
@@ -76,11 +95,17 @@ export const BusinessList = () => {
 
           console.log(`Locations for account ${account.name}:`, locationsData);
 
+          if (!locationsData.locations || locationsData.locations.length === 0) {
+            console.log(`No locations found for account ${account.name}`);
+            continue;
+          }
+
           // Store each location in Supabase
           for (const location of locationsData.locations) {
+            console.log("Storing location:", location);
             const { error } = await supabase.from("businesses").insert({
               name: location.locationName,
-              location: `${location.address.addressLines.join(", ")}, ${location.address.locality}, ${location.address.regionCode}`,
+              location: location.address ? `${location.address.addressLines?.join(", ")}, ${location.address.locality}, ${location.address.regionCode}` : "Address not available",
               google_place_id: location.name,
               google_business_account_id: account.name,
               user_id: session?.user.id,
