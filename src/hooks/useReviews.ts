@@ -86,9 +86,16 @@ export const useReviews = () => {
         });
       }
 
-      return allReviews.sort((a, b) => 
-        new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
-      );
+      // Even if there are no reviews, return an empty array with the business data
+      return {
+        reviews: allReviews.sort((a, b) => 
+          new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+        ),
+        businesses: reviewsData.businesses.map(b => ({
+          name: b.name,
+          id: b.google_place_id
+        }))
+      };
     },
   });
 };

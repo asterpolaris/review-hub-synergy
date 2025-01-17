@@ -14,14 +14,14 @@ import { useReviews } from "@/hooks/useReviews";
 
 const Reviews = () => {
   const [selectedVenue, setSelectedVenue] = useState<string>("all");
-  const { data: reviews, isLoading, error } = useReviews();
+  const { data, isLoading, error } = useReviews();
 
-  const filteredReviews = reviews?.filter(review => 
+  const filteredReviews = data?.reviews?.filter(review => 
     selectedVenue === "all" || review.venueName === selectedVenue
   );
 
-  const venues = reviews 
-    ? ["all", ...new Set(reviews.map(review => review.venueName))]
+  const venues = data?.businesses 
+    ? ["all", ...data.businesses.map(b => b.name)]
     : ["all"];
 
   if (isLoading) {
@@ -85,7 +85,7 @@ const Reviews = () => {
           ))}
         </div>
 
-        {filteredReviews?.length === 0 && (
+        {(!filteredReviews || filteredReviews.length === 0) && (
           <div className="text-center text-muted-foreground py-8">
             No reviews found for the selected business.
           </div>
