@@ -16,7 +16,11 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Starting review fetch for place ID: ${placeId}`)
-    console.log('Access token length:', accessToken.length)
+
+    // Extract the actual location ID from the full path if needed
+    const locationId = placeId.includes('locations/') 
+      ? placeId.split('locations/')[1]
+      : placeId;
 
     // First get the account ID using the Business Profile API
     const accountsResponse = await fetch(
@@ -29,25 +33,17 @@ Deno.serve(async (req) => {
       }
     )
 
-    const errorText = await accountsResponse.text()
-    console.log('Accounts API response:', {
-      status: accountsResponse.status,
-      statusText: accountsResponse.statusText,
-      body: errorText
-    })
-
     if (!accountsResponse.ok) {
+      const errorText = await accountsResponse.text()
+      console.error('Accounts API error response:', {
+        status: accountsResponse.status,
+        statusText: accountsResponse.statusText,
+        body: errorText
+      })
       throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText} - ${errorText}`)
     }
 
-    let accountsData
-    try {
-      accountsData = JSON.parse(errorText)
-    } catch (e) {
-      console.error('Failed to parse accounts response:', e)
-      throw new Error('Invalid response from accounts API')
-    }
-
+    const accountsData = await accountsResponse.json()
     console.log('Accounts data:', accountsData)
 
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
@@ -56,7 +52,7 @@ Deno.serve(async (req) => {
 
     // Use the correct endpoint format for the Business Profile API
     const reviewsResponse = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`,
+      `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}/reviews`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -65,26 +61,18 @@ Deno.serve(async (req) => {
       }
     )
 
-    const reviewsErrorText = await reviewsResponse.text()
-    console.log('Reviews API response:', {
-      status: reviewsResponse.status,
-      statusText: reviewsResponse.statusText,
-      body: reviewsErrorText
-    })
-
     if (!reviewsResponse.ok) {
-      throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText} - ${reviewsErrorText}`)
+      const errorText = await reviewsResponse.text()
+      console.error('Reviews API error response:', {
+        status: reviewsResponse.status,
+        statusText: reviewsResponse.statusText,
+        body: errorText
+      })
+      throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText} - ${errorText}`)
     }
 
-    let reviewsData
-    try {
-      reviewsData = JSON.parse(reviewsErrorText)
-    } catch (e) {
-      console.error('Failed to parse reviews response:', e)
-      throw new Error('Invalid response from reviews API')
-    }
-
-    console.log(`Successfully fetched reviews for ${placeId}`)
+    const reviewsData = await reviewsResponse.json()
+    console.log(`Successfully fetched reviews for location ${locationId}`)
 
     return new Response(
       JSON.stringify(reviewsData),
