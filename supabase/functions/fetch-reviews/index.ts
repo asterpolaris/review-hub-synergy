@@ -17,11 +17,6 @@ Deno.serve(async (req) => {
 
     console.log(`Starting review fetch for place ID: ${placeId}`)
 
-    // Extract the actual location ID from the full path if needed
-    const locationId = placeId.includes('locations/') 
-      ? placeId.split('locations/')[1]
-      : placeId;
-
     // First get the account ID using the Business Profile API
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
@@ -50,9 +45,15 @@ Deno.serve(async (req) => {
       throw new Error('No accounts found')
     }
 
+    // Ensure we have the full location path
+    const locationPath = placeId.startsWith('locations/') ? placeId : `locations/${placeId}`
+
     // Use the correct endpoint format for the Business Profile API
+    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationPath}/reviews`
+    console.log('Fetching reviews from URL:', reviewsUrl)
+
     const reviewsResponse = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}/reviews`,
+      reviewsUrl,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -66,13 +67,14 @@ Deno.serve(async (req) => {
       console.error('Reviews API error response:', {
         status: reviewsResponse.status,
         statusText: reviewsResponse.statusText,
-        body: errorText
+        body: errorText,
+        url: reviewsUrl
       })
       throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText} - ${errorText}`)
     }
 
     const reviewsData = await reviewsResponse.json()
-    console.log(`Successfully fetched reviews for location ${locationId}`)
+    console.log(`Successfully fetched reviews for location ${locationPath}`)
 
     return new Response(
       JSON.stringify(reviewsData),
