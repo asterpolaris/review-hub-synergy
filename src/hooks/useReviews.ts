@@ -21,7 +21,7 @@ export const useReviews = () => {
       console.log("Fetching business data...");
       
       // First get the business data and access token
-      const { data: reviewsData, error: reviewsError } = await supabase.rpc<ReviewsRPCResponse>('reviews');
+      const { data: reviewsData, error: reviewsError } = await supabase.rpc<ReviewsRPCResponse, never>('reviews');
       
       if (reviewsError) {
         console.error("Error fetching reviews data:", reviewsError);
