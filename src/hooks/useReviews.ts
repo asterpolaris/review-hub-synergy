@@ -39,6 +39,7 @@ export const useReviews = () => {
             headers: {
               'Authorization': `Bearer ${reviewsData.access_token}`,
               'Content-Type': 'application/json',
+              'Accept': 'application/json'
             }
           }
         );
@@ -48,7 +49,7 @@ export const useReviews = () => {
 
         if (!accountsResponse.ok) {
           console.error("Google accounts error response:", accountsText);
-          throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
+          throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}\nResponse: ${accountsText}`);
         }
 
         const accountsData = JSON.parse(accountsText);
@@ -58,10 +59,12 @@ export const useReviews = () => {
           throw new Error("No Google Business accounts found");
         }
 
-        const accountId = accountsData.accounts[0].name.split('/')[1];
+        const accountId = accountsData.accounts[0].name;
+        console.log("Using account ID:", accountId);
         
         // Prepare location names array for batch request
         const locationNames = reviewsData.businesses.map(business => business.google_place_id);
+        console.log("Location names for batch request:", locationNames);
 
         // Make batch request for reviews
         const batchResponse = await fetch(
@@ -71,6 +74,7 @@ export const useReviews = () => {
             headers: {
               'Authorization': `Bearer ${reviewsData.access_token}`,
               'Content-Type': 'application/json',
+              'Accept': 'application/json'
             },
             body: JSON.stringify({
               locationNames,
