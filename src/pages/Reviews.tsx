@@ -15,13 +15,21 @@ import { useToast } from "@/hooks/use-toast";
 import { Review } from "@/types/review";
 import { supabase } from "@/integrations/supabase/client";
 
+interface ReviewsFunctionResponse {
+  access_token: string;
+  businesses: Array<{
+    name: string;
+    google_place_id: string;
+  }>;
+}
+
 const fetchReviews = async (): Promise<Review[]> => {
   try {
     console.log("Fetching reviews...");
     
     // First get the access token and businesses from our database function
     const { data: functionData, error: functionError } = await supabase
-      .rpc('reviews');
+      .rpc('reviews') as { data: ReviewsFunctionResponse | null, error: Error | null };
 
     if (functionError) {
       console.error("Database function error:", functionError);
