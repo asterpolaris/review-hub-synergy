@@ -31,42 +31,11 @@ export const useReviews = () => {
       const errors: string[] = [];
 
       try {
-        // First get the account ID
-        const accountsResponse = await fetch(
-          'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-          {
-            headers: {
-              'Authorization': `Bearer ${reviewsData.access_token}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            }
-          }
-        );
-
-        if (!accountsResponse.ok) {
-          throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
-        }
-
-        const accountsData = await accountsResponse.json();
-        console.log("Google accounts raw response:", JSON.stringify(accountsData, null, 2));
-        console.log("Google accounts parsed response:", accountsData);
-
-        if (!accountsData.accounts || accountsData.accounts.length === 0) {
-          throw new Error('No Google Business accounts found');
-        }
-
-        const accountId = accountsData.accounts[0].name;
-        console.log("Using account ID:", accountId);
-
-        const locationNames = reviewsData.businesses.map(b => b.google_place_id);
-        console.log("Location names for batch request:", locationNames);
-
         // Call our Edge Function for batch reviews
         const { data: batchReviews, error } = await supabase.functions.invoke('reviews/batch', {
           body: {
             access_token: reviewsData.access_token,
-            locationNames,
-            accountId
+            locationNames: reviewsData.businesses.map(b => b.google_place_id),
           }
         });
 
