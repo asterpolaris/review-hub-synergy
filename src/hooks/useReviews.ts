@@ -72,7 +72,7 @@ export const useReviews = () => {
             },
             body: JSON.stringify({
               locationNames,
-              pageSize: 50, // Adjust this value based on your needs
+              pageSize: 50,
               ignoreRatingOnlyReviews: false
             })
           }
