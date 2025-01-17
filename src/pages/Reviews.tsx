@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ReviewCard } from "@/components/reviews/ReviewCard";
@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Review } from "@/types/review";
 
 const fetchReviews = async (): Promise<Review[]> => {
-  const response = await fetch("/api/reviews");
+  const response = await fetch("/api/reviews?limit=100");
   if (!response.ok) {
     throw new Error("Failed to fetch reviews");
   }
@@ -24,6 +24,8 @@ const fetchReviews = async (): Promise<Review[]> => {
 
 const Reviews = () => {
   const { toast } = useToast();
+  const [selectedVenue, setSelectedVenue] = useState<string>("all");
+  
   const { data: reviews, isLoading, error } = useQuery({
     queryKey: ["reviews"],
     queryFn: fetchReviews,
@@ -37,6 +39,14 @@ const Reviews = () => {
       },
     },
   });
+
+  const filteredReviews = reviews?.filter(review => 
+    selectedVenue === "all" || review.venueName === selectedVenue
+  ).slice(0, 100);
+
+  const venues = reviews 
+    ? ["all", ...new Set(reviews.map(review => review.venueName))]
+    : ["all"];
 
   if (isLoading) {
     return (
@@ -71,15 +81,17 @@ const Reviews = () => {
       <div className="space-y-6 animate-fadeIn">
         <div className="flex justify-between items-center">
           <h1 className="text-4xl font-semibold tracking-tight">Reviews</h1>
-          <Select>
+          <Select
+            value={selectedVenue}
+            onValueChange={setSelectedVenue}
+          >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Filter by business" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Businesses</SelectItem>
-              {reviews && [...new Set(reviews.map(review => review.venueName))].map(venue => (
+              {venues.map(venue => (
                 <SelectItem key={venue} value={venue}>
-                  {venue}
+                  {venue === "all" ? "All Businesses" : venue}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -87,7 +99,7 @@ const Reviews = () => {
         </div>
 
         <div className="grid gap-6">
-          {reviews?.map((review) => (
+          {filteredReviews?.map((review) => (
             <ReviewCard key={review.id} review={review} />
           ))}
         </div>
