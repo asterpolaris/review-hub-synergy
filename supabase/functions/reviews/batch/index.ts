@@ -44,6 +44,7 @@ serve(async (req) => {
 
     const accountId = accountsData.accounts[0].name;
 
+    // Fetch reviews using batchGetReviews endpoint
     const response = await fetch(
       `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`,
       {
@@ -62,16 +63,20 @@ serve(async (req) => {
     )
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Error fetching reviews:', error)
-      throw new Error(`Failed to fetch reviews: ${error}`)
+      const errorText = await response.text();
+      console.error('Error response from Google API:', errorText);
+      throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json()
-    console.log('Reviews fetched successfully')
+    const data = await response.json();
+    console.log('Reviews response from Google API:', data);
+
+    // Transform the response to match the expected format
+    const locationReviews = data.locationReviews || [];
+    console.log('Transformed location reviews:', locationReviews);
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ locationReviews }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
