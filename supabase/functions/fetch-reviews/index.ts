@@ -17,39 +17,16 @@ Deno.serve(async (req) => {
 
     console.log(`Starting review fetch for place ID: ${placeId}`)
 
-    // First get the account ID using the Business Profile API
-    const accountsResponse = await fetch(
-      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
-      }
-    )
+    // Extract the account name from the place ID
+    const accountName = placeId.split('/')[0]
+    console.log('Account name:', accountName)
 
-    if (!accountsResponse.ok) {
-      const errorText = await accountsResponse.text()
-      console.error('Accounts API error response:', {
-        status: accountsResponse.status,
-        statusText: accountsResponse.statusText,
-        body: errorText
-      })
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText} - ${errorText}`)
-    }
+    // Format the location name correctly
+    const locationName = placeId.includes('locations/') ? placeId : `locations/${placeId}`
+    console.log('Location name:', locationName)
 
-    const accountsData = await accountsResponse.json()
-    console.log('Accounts data:', accountsData)
-
-    if (!accountsData.accounts || accountsData.accounts.length === 0) {
-      throw new Error('No accounts found')
-    }
-
-    // Ensure we have the full location path
-    const locationPath = placeId.startsWith('locations/') ? placeId : `locations/${placeId}`
-
-    // Use the correct endpoint format for the Business Profile API
-    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationPath}/reviews`
+    // Use the v4 API endpoint for fetching reviews
+    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v4/${locationName}/reviews`
     console.log('Fetching reviews from URL:', reviewsUrl)
 
     const reviewsResponse = await fetch(
@@ -74,7 +51,7 @@ Deno.serve(async (req) => {
     }
 
     const reviewsData = await reviewsResponse.json()
-    console.log(`Successfully fetched reviews for location ${locationPath}`)
+    console.log(`Successfully fetched reviews for location ${locationName}`)
 
     return new Response(
       JSON.stringify(reviewsData),
