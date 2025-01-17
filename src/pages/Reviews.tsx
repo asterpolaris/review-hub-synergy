@@ -13,11 +13,20 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Review } from "@/types/review";
+import { supabase } from "@/integrations/supabase/client";
 
 const fetchReviews = async (): Promise<Review[]> => {
   try {
     console.log("Fetching reviews...");
-    const response = await fetch("/api/reviews?limit=100");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("No session found");
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reviews`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+    
     console.log("Reviews response status:", response.status);
     
     if (!response.ok) {
@@ -38,7 +47,7 @@ const fetchReviews = async (): Promise<Review[]> => {
 const Reviews = () => {
   const { toast } = useToast();
   const [selectedVenue, setSelectedVenue] = useState<string>("all");
-  
+
   const { data: reviews, isLoading, error } = useQuery({
     queryKey: ["reviews"],
     queryFn: fetchReviews,
