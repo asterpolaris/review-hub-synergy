@@ -89,9 +89,9 @@ export const BusinessList = () => {
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
-          // Using the correct API endpoint format
+          // Using the correct field mask format according to the API specifications
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,locationName,address`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile.locationName,profile.address`,
             { headers }
           );
 
@@ -106,8 +106,10 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Storing location:", location);
             const { error } = await supabase.from("businesses").insert({
-              name: location.locationName,
-              location: location.address ? `${location.address.addressLines?.join(", ")}, ${location.address.locality}, ${location.address.regionCode}` : "Address not available",
+              name: location.profile?.locationName || "Unnamed Location",
+              location: location.profile?.address ? 
+                `${location.profile.address.addressLines?.join(", ")}, ${location.profile.address.locality}, ${location.profile.address.regionCode}` 
+                : "Address not available",
               google_place_id: location.name,
               google_business_account_id: account.name,
               user_id: session?.user.id,
