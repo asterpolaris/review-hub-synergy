@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const BusinessList = () => {
-  const { data: businesses, isLoading } = useBusinesses();
+  const { data: businesses, isLoading, refetch } = useBusinesses();
   const { session, googleAuthToken } = useAuth();
   const { toast } = useToast();
 
@@ -105,18 +105,20 @@ export const BusinessList = () => {
 
             console.log("Location details:", locationDetails);
 
-            const { error } = await supabase.from("businesses").insert({
-              name: locationDetails.profile?.locationName || "Unnamed Location",
-              location: locationDetails.profile?.address ? 
-                `${locationDetails.profile.address.addressLines?.join(", ")}, ${locationDetails.profile.address.locality}, ${locationDetails.profile.address.regionCode}` 
-                : "Address not available",
-              google_place_id: location.name,
-              google_business_account_id: account.name,
-              user_id: session?.user.id,
-            });
+            if (locationDetails.profile) {
+              const { error } = await supabase.from("businesses").upsert({
+                name: locationDetails.profile.locationName || "Unnamed Location",
+                location: locationDetails.profile.address ? 
+                  `${locationDetails.profile.address.addressLines?.join(", ")}, ${locationDetails.profile.address.locality}, ${locationDetails.profile.address.regionCode}` 
+                  : "Address not available",
+                google_place_id: location.name,
+                google_business_account_id: account.name,
+                user_id: session?.user.id,
+              });
 
-            if (error && error.code !== "23505") {
-              console.error("Error storing location:", error);
+              if (error && error.code !== "23505") { // Ignore unique constraint violations
+                console.error("Error storing location:", error);
+              }
             }
           }
         } catch (error) {
@@ -129,6 +131,8 @@ export const BusinessList = () => {
         }
       }
 
+      await refetch();
+      
       toast({
         title: "Success",
         description: "Successfully imported Google businesses",
@@ -145,7 +149,7 @@ export const BusinessList = () => {
 
   if (isLoading) {
     return (
-      <div className="col-span-full text-center py-12 text-muted-foreground">
+      <div className="text-center py-12 text-muted-foreground">
         Loading businesses...
       </div>
     );
@@ -165,7 +169,7 @@ export const BusinessList = () => {
           business.
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="divide-y border-t border-b">
           {businesses.map((business) => (
             <BusinessCard
               key={business.id}

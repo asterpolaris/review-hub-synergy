@@ -29,18 +29,16 @@ export const BusinessCard = ({ name, location, googleBusinessAccountId }: Busine
   };
 
   return (
-    <div className="glass-panel rounded-lg p-6 space-y-4">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold">{name}</h3>
-        <p className="text-muted-foreground">{location}</p>
+    <div className="flex items-center justify-between py-4 border-b">
+      <div className="flex-1">
+        <h3 className="text-lg font-medium">{name || "Unnamed Location"}</h3>
+        <p className="text-sm text-muted-foreground">{location || "Address not available"}</p>
       </div>
       
       {googleBusinessAccountId ? (
-        <div className="flex items-center text-sm text-green-600">
-          <span className="flex-1">Connected to Google</span>
-        </div>
+        <span className="text-sm text-green-600">Connected to Google</span>
       ) : (
-        <Button onClick={handleConnect} variant="outline" size="sm" className="w-full">
+        <Button onClick={handleConnect} variant="outline" size="sm">
           Connect to Google
         </Button>
       )}
