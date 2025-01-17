@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from "../../_shared/cors.ts"
 
+console.log('Edge Function loaded');
+
 serve(async (req) => {
   console.log('Reviews batch function called');
+  console.log('Request method:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -11,20 +15,29 @@ serve(async (req) => {
   }
 
   try {
-    const { access_token, locationNames } = await req.json()
-    console.log('Received request with locationNames:', locationNames);
+    const requestBody = await req.text();
+    console.log('Raw request body:', requestBody);
+
+    const { access_token, locationNames } = JSON.parse(requestBody);
+    console.log('Parsed request parameters:', {
+      hasAccessToken: !!access_token,
+      locationNames: locationNames,
+      accessTokenPreview: access_token ? `${access_token.substring(0, 10)}...` : 'none'
+    });
 
     if (!access_token || !locationNames) {
-      console.error('Missing required parameters:', { access_token: !!access_token, locationNames: !!locationNames });
+      console.error('Missing required parameters:', { 
+        hasAccessToken: !!access_token, 
+        hasLocationNames: !!locationNames 
+      });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('Fetching accounts with access token:', access_token.substring(0, 10) + '...');
-
     // First get the account ID
+    console.log('Fetching Google Business accounts...');
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       {
@@ -38,8 +51,12 @@ serve(async (req) => {
 
     if (!accountsResponse.ok) {
       const errorText = await accountsResponse.text();
-      console.error('Error fetching accounts:', errorText);
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
+      console.error('Error response from accounts endpoint:', {
+        status: accountsResponse.status,
+        statusText: accountsResponse.statusText,
+        body: errorText
+      });
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`);
     }
 
     const accountsData = await accountsResponse.json();
@@ -55,7 +72,14 @@ serve(async (req) => {
 
     // Fetch reviews using batchGetReviews endpoint
     const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
-    console.log('Making request to:', batchReviewsUrl);
+    console.log('Making batch reviews request to:', batchReviewsUrl);
+
+    const batchRequestBody = {
+      locationNames,
+      pageSize: 50,
+      ignoreRatingOnlyReviews: false
+    };
+    console.log('Batch reviews request body:', batchRequestBody);
 
     const response = await fetch(
       batchReviewsUrl,
@@ -66,29 +90,22 @@ serve(async (req) => {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          locationNames,
-          pageSize: 50,
-          ignoreRatingOnlyReviews: false
-        })
+        body: JSON.stringify(batchRequestBody)
       }
     );
 
-    console.log('Batch reviews request URL:', batchReviewsUrl);
-    console.log('Batch reviews request body:', {
-      locationNames,
-      pageSize: 50,
-      ignoreRatingOnlyReviews: false
-    });
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Error response from Google API:', errorText);
-      throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`);
+      console.error('Error response from batch reviews endpoint:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`Failed to fetch reviews: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Raw response from Google API:', data);
+    console.log('Raw response from batch reviews endpoint:', data);
 
     // Transform the response to match the expected format
     const locationReviews = data.locationReviews || [];
@@ -100,8 +117,12 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in batch reviews function:', error);
+    console.error('Error stack:', error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
