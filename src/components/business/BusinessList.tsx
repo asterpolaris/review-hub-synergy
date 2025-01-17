@@ -81,11 +81,19 @@ export const BusinessList = () => {
         return;
       }
 
+      // Get existing businesses for deduplication
+      const { data: existingBusinesses } = await supabase
+        .from("businesses")
+        .select("google_place_id")
+        .eq("user_id", session?.user.id);
+
+      const existingPlaceIds = new Set(existingBusinesses?.map(b => b.google_place_id) || []);
+
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile`,
             { headers }
           );
 
@@ -97,20 +105,18 @@ export const BusinessList = () => {
           }
 
           for (const location of locationsData.locations) {
-            console.log("Fetching details for location:", location.name);
-            const locationDetails = await fetchWithRetry(
-              `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=name,profile`,
-              { headers }
-            );
+            // Skip if we already have this location
+            if (existingPlaceIds.has(location.name)) {
+              console.log(`Skipping existing location: ${location.name}`);
+              continue;
+            }
 
-            console.log("Location details:", locationDetails);
-
-            if (locationDetails.profile) {
-              const locationName = locationDetails.profile.locationName;
+            if (location.profile) {
+              const locationName = location.profile.locationName;
               let formattedAddress = "Address not available";
               
-              if (locationDetails.profile.address) {
-                const { address } = locationDetails.profile;
+              if (location.profile.address) {
+                const { address } = location.profile;
                 const addressParts = [];
                 
                 if (address.addressLines && address.addressLines.length > 0) {
@@ -128,7 +134,7 @@ export const BusinessList = () => {
                 }
               }
 
-              const { error } = await supabase.from("businesses").upsert({
+              const { error } = await supabase.from("businesses").insert({
                 name: locationName || "Unnamed Location",
                 location: formattedAddress,
                 google_place_id: location.name,
@@ -136,7 +142,7 @@ export const BusinessList = () => {
                 user_id: session?.user.id,
               });
 
-              if (error && error.code !== "23505") {
+              if (error) {
                 console.error("Error storing location:", error);
               }
             }
