@@ -17,16 +17,12 @@ Deno.serve(async (req) => {
 
     console.log(`Starting review fetch for place ID: ${placeId}`)
 
-    // Extract the account name from the place ID
-    const accountName = placeId.split('/')[0]
-    console.log('Account name:', accountName)
-
     // Format the location name correctly
     const locationName = placeId.includes('locations/') ? placeId : `locations/${placeId}`
     console.log('Location name:', locationName)
 
-    // Use the v4 API endpoint for fetching reviews
-    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v4/${locationName}/reviews`
+    // Use the correct v4 API endpoint for fetching reviews
+    const reviewsUrl = `https://mybusiness.googleapis.com/v4/${locationName}/reviews`
     console.log('Fetching reviews from URL:', reviewsUrl)
 
     const reviewsResponse = await fetch(
@@ -44,8 +40,8 @@ Deno.serve(async (req) => {
       console.error('Reviews API error response:', {
         status: reviewsResponse.status,
         statusText: reviewsResponse.statusText,
-        body: errorText,
-        url: reviewsUrl
+        url: reviewsUrl,
+        body: errorText
       })
       throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText} - ${errorText}`)
     }
