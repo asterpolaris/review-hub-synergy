@@ -170,3 +170,5 @@ const Reviews = () => {
     </AppLayout>
   );
 };
+
+export default Reviews;
