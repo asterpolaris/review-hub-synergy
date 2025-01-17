@@ -32,64 +32,83 @@ export const useReviews = () => {
       const allReviews: Review[] = [];
       const errors: string[] = [];
 
-      for (const business of reviewsData.businesses) {
-        try {
-          console.log(`Fetching reviews for ${business.name}`);
-          
-          const headers = {
-            'Authorization': `Bearer ${reviewsData.access_token}`,
-            'Content-Type': 'application/json',
-          };
-
-          // First get the account ID
-          console.log("Fetching Google accounts...");
-          const accountsResponse = await fetch(
-            "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
-            { headers }
-          );
-
-          if (!accountsResponse.ok) {
-            throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
+      try {
+        // First get the account ID
+        console.log("Fetching Google accounts...");
+        const accountsResponse = await fetch(
+          "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
+          { 
+            headers: {
+              'Authorization': `Bearer ${reviewsData.access_token}`,
+              'Content-Type': 'application/json',
+            }
           }
+        );
 
-          const accountsData = await accountsResponse.json();
-          console.log("Google accounts response:", accountsData);
-
-          if (!accountsData.accounts || accountsData.accounts.length === 0) {
-            throw new Error("No Google Business accounts found");
-          }
-
-          const accountId = accountsData.accounts[0].name.split('/')[1];
-          const locationId = business.google_place_id.split('/').pop();
-
-          // Fetch reviews using the account ID and location ID
-          const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews`;
-          console.log('Using reviews API URL:', reviewsUrl);
-
-          const reviewsResponse = await fetch(reviewsUrl, { headers });
-
-          if (!reviewsResponse.ok) {
-            const errorText = await reviewsResponse.text();
-            console.error(`Error response for ${business.name}:`, errorText);
-            throw new Error(`API Error: ${errorText}`);
-          }
-
-          const data = await reviewsResponse.json();
-          console.log(`Reviews received for ${business.name}:`, data);
-
-          if (data?.reviews) {
-            allReviews.push(
-              ...data.reviews.map((review: any) => ({
-                ...review,
-                venueName: business.name,
-                placeId: business.google_place_id,
-              }))
-            );
-          }
-        } catch (error) {
-          console.error(`Failed to fetch reviews for ${business.name}:`, error);
-          errors.push(`${business.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (!accountsResponse.ok) {
+          throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
         }
+
+        const accountsData = await accountsResponse.json();
+        console.log("Google accounts response:", accountsData);
+
+        if (!accountsData.accounts || accountsData.accounts.length === 0) {
+          throw new Error("No Google Business accounts found");
+        }
+
+        const accountId = accountsData.accounts[0].name.split('/')[1];
+        
+        // Prepare location names array for batch request
+        const locationNames = reviewsData.businesses.map(business => business.google_place_id);
+
+        // Make batch request for reviews
+        const batchResponse = await fetch(
+          `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations:batchGetReviews`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${reviewsData.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              locationNames,
+              pageSize: 50, // Adjust this value based on your needs
+              ignoreRatingOnlyReviews: false
+            })
+          }
+        );
+
+        if (!batchResponse.ok) {
+          const errorText = await batchResponse.text();
+          console.error("Batch reviews error response:", errorText);
+          throw new Error(`Failed to fetch reviews batch: ${errorText}`);
+        }
+
+        const batchData = await batchResponse.json();
+        console.log("Batch reviews response:", batchData);
+
+        // Process the batch response
+        if (batchData.locationReviews) {
+          batchData.locationReviews.forEach((locationReview: any) => {
+            const business = reviewsData.businesses.find(
+              b => b.google_place_id === locationReview.locationName
+            );
+            
+            if (business && locationReview.reviews) {
+              allReviews.push(
+                ...locationReview.reviews.map((review: any) => ({
+                  ...review,
+                  venueName: business.name,
+                  placeId: business.google_place_id,
+                }))
+              );
+            }
+          });
+        }
+
+      } catch (error) {
+        console.error("Failed to fetch reviews batch:", error);
+        errors.push(`Batch request: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
       if (errors.length > 0) {
