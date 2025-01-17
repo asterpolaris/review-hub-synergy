@@ -92,8 +92,9 @@ export const BusinessList = () => {
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
+          // Request all necessary fields in the readMask
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile.locationName,profile.address`,
             { headers }
           );
 
@@ -105,46 +106,62 @@ export const BusinessList = () => {
           }
 
           for (const location of locationsData.locations) {
-            // Skip if we already have this location
             if (existingPlaceIds.has(location.name)) {
               console.log(`Skipping existing location: ${location.name}`);
               continue;
             }
 
-            if (location.profile) {
-              const locationName = location.profile.locationName;
-              let formattedAddress = "Address not available";
+            console.log("Processing location:", location);
+
+            if (!location.profile?.locationName) {
+              console.log(`Skipping location with no name: ${location.name}`);
+              continue;
+            }
+
+            let formattedAddress = "";
+            const address = location.profile.address;
+            
+            if (address) {
+              const addressParts = [];
               
-              if (location.profile.address) {
-                const { address } = location.profile;
-                const addressParts = [];
-                
-                if (address.addressLines && address.addressLines.length > 0) {
-                  addressParts.push(address.addressLines.join(", "));
-                }
-                if (address.locality) {
-                  addressParts.push(address.locality);
-                }
-                if (address.regionCode) {
-                  addressParts.push(address.regionCode);
-                }
-                
-                if (addressParts.length > 0) {
-                  formattedAddress = addressParts.join(", ");
-                }
+              if (address.addressLines?.length > 0) {
+                addressParts.push(...address.addressLines);
               }
+              if (address.locality) {
+                addressParts.push(address.locality);
+              }
+              if (address.regionCode) {
+                addressParts.push(address.regionCode);
+              }
+              if (address.postalCode) {
+                addressParts.push(address.postalCode);
+              }
+              
+              formattedAddress = addressParts.join(", ");
+            }
 
-              const { error } = await supabase.from("businesses").insert({
-                name: locationName || "Unnamed Location",
-                location: formattedAddress,
-                google_place_id: location.name,
-                google_business_account_id: account.name,
-                user_id: session?.user.id,
+            if (!formattedAddress) {
+              console.log(`No address found for location: ${location.profile.locationName}`);
+              continue;
+            }
+
+            const { error } = await supabase.from("businesses").insert({
+              name: location.profile.locationName,
+              location: formattedAddress,
+              google_place_id: location.name,
+              google_business_account_id: account.name,
+              user_id: session?.user.id,
+            });
+
+            if (error) {
+              console.error("Error storing location:", error);
+              toast({
+                title: "Error",
+                description: `Failed to save business: ${location.profile.locationName}`,
+                variant: "destructive",
               });
-
-              if (error) {
-                console.error("Error storing location:", error);
-              }
+            } else {
+              console.log(`Successfully saved business: ${location.profile.locationName}`);
             }
           }
         } catch (error) {
