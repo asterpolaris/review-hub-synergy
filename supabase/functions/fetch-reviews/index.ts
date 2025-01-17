@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
 
   try {
     const { placeId, accessToken } = await req.json()
-
+    
     if (!placeId || !accessToken) {
       throw new Error('Missing required parameters')
     }
@@ -50,33 +50,33 @@ Deno.serve(async (req) => {
       throw new Error('Invalid location ID format')
     }
 
-    // Construct the full Google API URL according to documentation
-    const googleApiUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`
-    console.log(`Making request to: ${googleApiUrl}`)
+    // Fetch reviews using the correct endpoint
+    const reviewsResponse = await fetch(
+      `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
 
-    // Fetch reviews from Google API
-    const response = await fetch(googleApiUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      console.error('Google API error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: await response.text(),
-        url: response.url
+    if (!reviewsResponse.ok) {
+      console.error('Failed to fetch reviews:', {
+        status: reviewsResponse.status,
+        statusText: reviewsResponse.statusText,
+        body: await reviewsResponse.text(),
+        accountId,
+        locationId
       })
-      throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`)
+      throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText}`)
     }
 
-    const data = await response.json()
+    const reviewsData = await reviewsResponse.json()
     console.log(`Successfully fetched reviews for ${placeId}`)
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(reviewsData),
       { 
         headers: { 
           ...corsHeaders,
