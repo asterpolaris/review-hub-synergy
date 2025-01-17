@@ -7,7 +7,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get the request body
     const { placeId, accessToken } = await req.json()
 
     if (!placeId || !accessToken) {
@@ -16,11 +15,37 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching reviews for place: ${placeId}`)
 
-    // Extract the location ID from the placeId (removing the "locations/" prefix)
+    // Extract the location ID from the placeId
     const locationId = placeId.replace('locations/', '')
 
-    // Construct the full Google API URL - using the correct Business Profile API endpoint
-    const googleApiUrl = `https://mybusiness.googleapis.com/v4/${placeId}/reviews`
+    // First, get the account ID using the locations.list endpoint
+    const accountsResponse = await fetch(
+      'https://mybusiness.googleapis.com/v4/accounts',
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+
+    if (!accountsResponse.ok) {
+      console.error('Failed to fetch accounts:', await accountsResponse.text())
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`)
+    }
+
+    const accountsData = await accountsResponse.json()
+    console.log('Accounts data:', accountsData)
+
+    if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      throw new Error('No accounts found')
+    }
+
+    const accountId = accountsData.accounts[0].name.split('/')[1]
+    console.log(`Using account ID: ${accountId}`)
+
+    // Construct the full Google API URL with the correct endpoint structure
+    const googleApiUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
@@ -32,11 +57,10 @@ Deno.serve(async (req) => {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
       console.error('Google API error response:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText,
+        body: await response.text(),
         url: googleApiUrl
       })
       throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}`)
