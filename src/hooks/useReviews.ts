@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
-interface ReviewsResponse {
+// Define the response type for the reviews RPC call
+interface ReviewsRPCResponse {
   access_token: string;
   businesses: Array<{
     name: string;
@@ -20,33 +21,32 @@ export const useReviews = () => {
       console.log("Fetching business data...");
       
       // First get the business data and access token
-      const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
-        data: ReviewsResponse | null;
-        error: Error | null;
-      };
+      const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews');
       
       if (reviewsError) {
         console.error("Error fetching reviews data:", reviewsError);
         throw reviewsError;
       }
 
-      if (!reviewsData?.access_token || !reviewsData?.businesses) {
-        throw new Error("No business data or access token found");
+      // Type guard to ensure reviewsData matches our expected structure
+      if (!reviewsData || typeof reviewsData !== 'object' || !('access_token' in reviewsData) || !('businesses' in reviewsData)) {
+        throw new Error("Invalid response format from reviews function");
       }
 
-      console.log("Business data received:", reviewsData);
+      const typedReviewsData = reviewsData as ReviewsRPCResponse;
+      console.log("Business data received:", typedReviewsData);
 
       // Fetch reviews for all businesses
       const allReviews: Review[] = [];
       const errors: string[] = [];
 
-      for (const business of reviewsData.businesses) {
+      for (const business of typedReviewsData.businesses) {
         try {
           console.log(`Fetching reviews for ${business.name}`);
           const { data, error } = await supabase.functions.invoke('fetch-reviews', {
             body: {
               placeId: business.google_place_id,
-              accessToken: reviewsData.access_token
+              accessToken: typedReviewsData.access_token
             }
           });
 

@@ -14,21 +14,23 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching reviews for location: ${placeId}`)
 
-    const response = await fetch(
-      `https://mybusinessreviews.googleapis.com/v1/${placeId}/reviews`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    // Construct the correct URL format for the Google My Business API
+    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/accounts/-/locations/${placeId}/reviews`
+    console.log('Using API URL:', reviewsUrl)
+
+    const response = await fetch(reviewsUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
 
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Google API error:', {
         status: response.status,
         statusText: response.statusText,
+        url: reviewsUrl,
         body: errorText
       })
       throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText} - ${errorText}`)
