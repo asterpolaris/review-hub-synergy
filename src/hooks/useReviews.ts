@@ -44,6 +44,8 @@ export const useReviews = () => {
           throw error;
         }
 
+        console.log("Batch reviews response:", batchReviews);
+
         if (batchReviews?.locationReviews) {
           batchReviews.locationReviews.forEach((locationReview: any) => {
             const business = reviewsData.businesses.find(

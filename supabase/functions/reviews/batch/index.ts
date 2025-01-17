@@ -2,14 +2,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from "../../_shared/cors.ts"
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { access_token, locationNames, accountId } = await req.json()
+    const { access_token, locationNames } = await req.json()
 
-    if (!access_token || !locationNames || !accountId) {
+    if (!access_token || !locationNames) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -17,6 +18,31 @@ serve(async (req) => {
     }
 
     console.log('Fetching reviews for locations:', locationNames)
+
+    // First get the account ID
+    const accountsResponse = await fetch(
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+      {
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!accountsResponse.ok) {
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
+    }
+
+    const accountsData = await accountsResponse.json();
+    console.log("Google accounts response:", accountsData);
+
+    if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      throw new Error('No Google Business accounts found');
+    }
+
+    const accountId = accountsData.accounts[0].name;
 
     const response = await fetch(
       `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`,
@@ -38,10 +64,7 @@ serve(async (req) => {
     if (!response.ok) {
       const error = await response.text()
       console.error('Error fetching reviews:', error)
-      return new Response(
-        JSON.stringify({ error: `Failed to fetch reviews: ${error}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      throw new Error(`Failed to fetch reviews: ${error}`)
     }
 
     const data = await response.json()
