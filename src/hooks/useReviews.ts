@@ -44,18 +44,27 @@ export const useReviews = () => {
       for (const business of reviewsData.businesses) {
         try {
           console.log(`Fetching reviews for ${business.name}`);
-          const { data, error } = await supabase.functions.invoke('fetch-reviews', {
-            body: {
+          
+          const response = await fetch('/functions/v1/fetch-reviews', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${reviewsData.access_token}`,
+            },
+            body: JSON.stringify({
               placeId: business.google_place_id,
               accessToken: reviewsData.access_token
-            }
+            }),
           });
 
-          if (error) {
-            console.error(`Error fetching reviews for ${business.name}:`, error);
-            errors.push(`${business.name}: ${error.message}`);
-            continue;
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error response for ${business.name}:`, errorText);
+            throw new Error(`API Error: ${errorText}`);
           }
+
+          const data = await response.json();
+          console.log(`Reviews received for ${business.name}:`, data);
 
           if (data?.reviews) {
             allReviews.push(
