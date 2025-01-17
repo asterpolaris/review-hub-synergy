@@ -21,32 +21,15 @@ export const useReviews = () => {
       console.log("Fetching business data...");
       
       // First get the business data and access token
-      const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews');
+      const { data: reviewsData, error: reviewsError } = await supabase.rpc<ReviewsRPCResponse>('reviews');
       
       if (reviewsError) {
         console.error("Error fetching reviews data:", reviewsError);
         throw reviewsError;
       }
 
-      // Type guard to ensure reviewsData matches our expected structure
-      const isValidReviewsResponse = (data: unknown): data is ReviewsRPCResponse => {
-        if (!data || typeof data !== 'object') return false;
-        const d = data as Record<string, unknown>;
-        return (
-          typeof d.access_token === 'string' &&
-          Array.isArray(d.businesses) &&
-          d.businesses.every(b => 
-            typeof b === 'object' &&
-            b !== null &&
-            typeof (b as any).name === 'string' &&
-            typeof (b as any).google_place_id === 'string'
-          )
-        );
-      };
-
-      if (!isValidReviewsResponse(reviewsData)) {
-        console.error("Invalid response format:", reviewsData);
-        throw new Error("Invalid response format from reviews function");
+      if (!reviewsData) {
+        throw new Error("No data returned from reviews function");
       }
 
       console.log("Business data received:", reviewsData);
