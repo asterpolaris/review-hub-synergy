@@ -43,14 +43,16 @@ export const useReviews = () => {
           }
         );
 
+        const accountsText = await accountsResponse.text();
+        console.log("Google accounts raw response:", accountsText);
+
         if (!accountsResponse.ok) {
-          const errorText = await accountsResponse.text();
-          console.error("Google accounts error response:", errorText);
+          console.error("Google accounts error response:", accountsText);
           throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
         }
 
-        const accountsData = await accountsResponse.json();
-        console.log("Google accounts response:", accountsData);
+        const accountsData = JSON.parse(accountsText);
+        console.log("Google accounts parsed response:", accountsData);
 
         if (!accountsData.accounts || accountsData.accounts.length === 0) {
           throw new Error("No Google Business accounts found");
@@ -78,14 +80,16 @@ export const useReviews = () => {
           }
         );
 
+        const batchText = await batchResponse.text();
+        console.log("Batch reviews raw response:", batchText);
+
         if (!batchResponse.ok) {
-          const errorText = await batchResponse.text();
-          console.error("Batch reviews error response:", errorText);
-          throw new Error(`Failed to fetch reviews batch: ${errorText}`);
+          console.error("Batch reviews error response:", batchText);
+          throw new Error(`Failed to fetch reviews batch: ${batchText}`);
         }
 
-        const batchData = await batchResponse.json();
-        console.log("Batch reviews response:", batchData);
+        const batchData = JSON.parse(batchText);
+        console.log("Batch reviews parsed response:", batchData);
 
         // Process the batch response
         if (batchData.locationReviews) {
