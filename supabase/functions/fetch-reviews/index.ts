@@ -20,8 +20,9 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching reviews for location: ${placeId}`);
 
-    // Use the correct API endpoint format
-    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`;
+    // Ensure the placeId is properly formatted as a full name
+    const locationName = placeId.startsWith('locations/') ? placeId : `locations/${placeId}`;
+    const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews`;
     console.log('Using API URL:', reviewsUrl);
 
     const response = await fetch(reviewsUrl, {
