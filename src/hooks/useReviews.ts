@@ -32,7 +32,7 @@ export const useReviews = () => {
 
       try {
         // Call our Edge Function for batch reviews
-        const { data: batchResponse, error } = await supabase.functions.invoke('reviews/batch', {
+        const { data: batchResponse, error } = await supabase.functions.invoke('reviews-batch', {
           body: {
             access_token: reviewsData.access_token,
             locationNames: reviewsData.businesses.map(b => b.google_place_id),
