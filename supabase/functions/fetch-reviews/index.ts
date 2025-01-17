@@ -12,10 +12,46 @@ Deno.serve(async (req) => {
       throw new Error('Missing required parameters')
     }
 
-    console.log(`Using location path: ${placeId}`)
+    console.log('Starting review fetch process...')
+    
+    // First, get the account ID
+    const accountsResponse = await fetch(
+      'https://mybusiness.googleapis.com/v4/accounts',
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
 
-    // Construct the full Google API URL with the correct endpoint structure
-    const googleApiUrl = `https://mybusinessprofileservice.googleapis.com/v4/${placeId}/reviews`
+    if (!accountsResponse.ok) {
+      console.error('Failed to fetch accounts:', {
+        status: accountsResponse.status,
+        statusText: accountsResponse.statusText,
+        body: await accountsResponse.text()
+      })
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`)
+    }
+
+    const accountsData = await accountsResponse.json()
+    console.log('Accounts data received:', accountsData)
+
+    if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      throw new Error('No accounts found')
+    }
+
+    const accountId = accountsData.accounts[0].name
+    console.log(`Using account ID: ${accountId}`)
+
+    // Extract location ID from placeId (assuming format "locations/LOCATION_ID")
+    const locationId = placeId.split('/').pop()
+    if (!locationId) {
+      throw new Error('Invalid location ID format')
+    }
+
+    // Construct the full Google API URL according to documentation
+    const googleApiUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
