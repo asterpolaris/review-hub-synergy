@@ -16,8 +16,11 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching reviews for place: ${placeId}`)
 
+    // Extract the location ID from the placeId (removing the "locations/" prefix)
+    const locationId = placeId.replace('locations/', '')
+
     // Construct the full Google API URL - using the correct Business Profile API endpoint
-    const googleApiUrl = `https://businessprofileperformance.googleapis.com/v1/${placeId}/reviews`
+    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
