@@ -1,7 +1,9 @@
-import { corsHeaders } from '../_shared/cors.ts'
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 Deno.serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -23,7 +25,7 @@ Deno.serve(async (req) => {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
-        },
+        }
       }
     )
 
@@ -52,14 +54,14 @@ Deno.serve(async (req) => {
       throw new Error('No accounts found')
     }
 
-    // Get reviews using the Business Profile API
+    // Use the correct endpoint format for the Business Profile API
     const reviewsResponse = await fetch(
       `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
-        },
+        }
       }
     )
 
