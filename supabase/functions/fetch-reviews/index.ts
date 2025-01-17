@@ -21,8 +21,8 @@ Deno.serve(async (req) => {
     const locationName = placeId.includes('locations/') ? placeId : `locations/${placeId}`
     console.log('Location name:', locationName)
 
-    // Use the Business Profile API v4 endpoint
-    const reviewsUrl = `https://mybusiness.googleapis.com/v4/${locationName}/reviews`
+    // Use the Business Profile API v1 endpoint
+    const reviewsUrl = `https://mybusiness.googleapis.com/v1/${locationName}/reviews`
     console.log('Fetching reviews from URL:', reviewsUrl)
 
     const reviewsResponse = await fetch(reviewsUrl, {
