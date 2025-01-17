@@ -1,7 +1,4 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,11 +14,6 @@ Deno.serve(async (req) => {
 
     console.log(`Starting review fetch for place ID: ${placeId}`)
 
-    // Format the location name correctly for the API
-    const locationId = placeId.replace('locations/', '')
-    console.log('Location ID:', locationId)
-
-    // Use the correct My Business Reviews API endpoint
     const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/${placeId}/reviews`
     console.log('Fetching reviews from URL:', reviewsUrl)
 
@@ -44,7 +36,7 @@ Deno.serve(async (req) => {
     }
 
     const reviewsData = await reviewsResponse.json()
-    console.log(`Successfully fetched reviews for location ${locationId}`)
+    console.log(`Successfully fetched reviews for location ${placeId}`)
 
     return new Response(
       JSON.stringify(reviewsData),
