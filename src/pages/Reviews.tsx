@@ -23,96 +23,85 @@ interface ReviewsFunctionResponse {
   }>;
 }
 
-const fetchReviews = async (): Promise<Review[]> => {
-  try {
-    console.log("Fetching reviews...");
-    
-    // First get the access token and businesses from our database function
-    const { data: functionData, error: functionError } = await supabase
-      .rpc('reviews') as { data: ReviewsFunctionResponse | null, error: Error | null };
-
-    if (functionError) {
-      console.error("Database function error:", functionError);
-      throw new Error(functionError.message);
-    }
-
-    if (!functionData || !functionData.access_token) {
-      throw new Error("No Google access token found");
-    }
-
-    console.log("Got function data:", functionData);
-
-    const allReviews: Review[] = [];
-    
-    // Fetch reviews for each business using our Edge Function
-    for (const business of functionData.businesses || []) {
-      try {
-        console.log(`Fetching reviews for business: ${business.name} (${business.google_place_id})`);
-        
-        const { data, error } = await supabase.functions.invoke('fetch-reviews', {
-          body: { 
-            placeId: business.google_place_id,
-            accessToken: functionData.access_token
-          }
-        });
-
-        if (error) {
-          console.error(`Failed to fetch reviews for ${business.name}:`, error);
-          continue;
-        }
-
-        if (data && Array.isArray(data.reviews)) {
-          allReviews.push(
-            ...data.reviews.map((review: any) => ({
-              ...review,
-              venueName: business.name,
-              placeId: business.google_place_id,
-            }))
-          );
-          console.log(`Successfully fetched ${data.reviews.length} reviews for ${business.name}`);
-        } else {
-          console.log(`No reviews found for ${business.name}`);
-        }
-      } catch (error) {
-        console.error(`Error fetching reviews for ${business.name}:`, error);
-      }
-    }
-
-    // Sort by date and limit to 100
-    return allReviews
-      .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
-      .slice(0, 100);
-  } catch (error) {
-    console.error("Error in fetchReviews:", error);
-    throw error;
-  }
-};
-
 const Reviews = () => {
   const { toast } = useToast();
   const [selectedVenue, setSelectedVenue] = useState<string>("all");
 
-  const { data: reviews, isLoading, error } = useQuery({
-    queryKey: ["reviews"],
-    queryFn: fetchReviews,
-    meta: {
-      onError: (error: Error) => {
-        console.error("Query error:", error);
-        toast({
-          title: "Error fetching reviews",
-          description: error.message || "Please try again later",
-          variant: "destructive",
-        });
-      },
+  // Fetch businesses and access token from the database function
+  const { data: businessData, isLoading: isLoadingBusinesses, error: businessError } = useQuery({
+    queryKey: ["business-data"],
+    queryFn: async () => {
+      console.log("Fetching business data...");
+      const { data, error } = await supabase.rpc('reviews') as { 
+        data: ReviewsFunctionResponse | null, 
+        error: Error | null 
+      };
+
+      if (error) throw error;
+      if (!data) throw new Error("No business data found");
+
+      console.log("Business data received:", data);
+      return data;
     },
   });
+
+  // Fetch reviews for all businesses
+  const { data: reviews, isLoading: isLoadingReviews, error: reviewsError } = useQuery({
+    queryKey: ["reviews", businessData?.businesses],
+    queryFn: async () => {
+      if (!businessData?.access_token || !businessData?.businesses) {
+        throw new Error("Missing required business data");
+      }
+
+      console.log("Fetching reviews for businesses...");
+      const allReviews: Review[] = [];
+
+      for (const business of businessData.businesses) {
+        try {
+          console.log(`Fetching reviews for ${business.name}`);
+          const { data, error } = await supabase.functions.invoke('fetch-reviews', {
+            body: {
+              placeId: business.google_place_id,
+              accessToken: businessData.access_token
+            }
+          });
+
+          if (error) {
+            console.error(`Error fetching reviews for ${business.name}:`, error);
+            continue;
+          }
+
+          if (data?.reviews) {
+            allReviews.push(
+              ...data.reviews.map((review: any) => ({
+                ...review,
+                venueName: business.name,
+                placeId: business.google_place_id,
+              }))
+            );
+          }
+        } catch (error) {
+          console.error(`Failed to fetch reviews for ${business.name}:`, error);
+        }
+      }
+
+      // Sort reviews by date
+      return allReviews.sort((a, b) => 
+        new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+      );
+    },
+    enabled: !!businessData?.access_token && !!businessData?.businesses,
+  });
+
+  const error = businessError || reviewsError;
+  const isLoading = isLoadingBusinesses || isLoadingReviews;
 
   const filteredReviews = reviews?.filter(review => 
     selectedVenue === "all" || review.venueName === selectedVenue
   );
 
-  const venues = reviews 
-    ? ["all", ...new Set(reviews.map(review => review.venueName))]
+  const venues = businessData?.businesses 
+    ? ["all", ...businessData.businesses.map(b => b.name)]
     : ["all"];
 
   if (isLoading) {
@@ -175,6 +164,12 @@ const Reviews = () => {
             <ReviewCard key={review.id} review={review} />
           ))}
         </div>
+
+        {filteredReviews?.length === 0 && (
+          <div className="text-center text-muted-foreground py-8">
+            No reviews found for the selected business.
+          </div>
+        )}
       </div>
     </AppLayout>
   );

@@ -17,23 +17,20 @@ Deno.serve(async (req) => {
 
     console.log(`Starting review fetch for place ID: ${placeId}`)
 
-    // Format the location name correctly
+    // Format the location name correctly for the API
     const locationName = placeId.includes('locations/') ? placeId : `locations/${placeId}`
     console.log('Location name:', locationName)
 
-    // Use the correct v4 API endpoint for fetching reviews
+    // Use the Business Profile API v4 endpoint
     const reviewsUrl = `https://mybusiness.googleapis.com/v4/${locationName}/reviews`
     console.log('Fetching reviews from URL:', reviewsUrl)
 
-    const reviewsResponse = await fetch(
-      reviewsUrl,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        }
+    const reviewsResponse = await fetch(reviewsUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       }
-    )
+    })
 
     if (!reviewsResponse.ok) {
       const errorText = await reviewsResponse.text()
