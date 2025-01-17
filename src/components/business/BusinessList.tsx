@@ -89,9 +89,8 @@ export const BusinessList = () => {
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
-          // Using the correct field mask format according to the API specifications
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile.locationName,profile.address`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name`,
             { headers }
           );
 
@@ -102,13 +101,21 @@ export const BusinessList = () => {
             continue;
           }
 
-          // Store each location in Supabase
+          // For each location, get its details
           for (const location of locationsData.locations) {
-            console.log("Storing location:", location);
+            console.log("Fetching details for location:", location.name);
+            const locationDetails = await fetchWithRetry(
+              `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}`,
+              { headers }
+            );
+
+            console.log("Location details:", locationDetails);
+
+            // Store location in Supabase
             const { error } = await supabase.from("businesses").insert({
-              name: location.profile?.locationName || "Unnamed Location",
-              location: location.profile?.address ? 
-                `${location.profile.address.addressLines?.join(", ")}, ${location.profile.address.locality}, ${location.profile.address.regionCode}` 
+              name: locationDetails.profile?.locationName || "Unnamed Location",
+              location: locationDetails.profile?.address ? 
+                `${locationDetails.profile.address.addressLines?.join(", ")}, ${locationDetails.profile.address.locality}, ${locationDetails.profile.address.regionCode}` 
                 : "Address not available",
               google_place_id: location.name,
               google_business_account_id: account.name,
