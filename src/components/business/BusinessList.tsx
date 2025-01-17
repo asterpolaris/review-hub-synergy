@@ -30,7 +30,7 @@ export const BusinessList = () => {
           console.error(`HTTP error! status: ${response.status}`);
           const errorText = await response.text();
           console.error('Error response:', errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`API Error: ${errorText}`);
         }
 
         const data = await response.json();
@@ -63,6 +63,7 @@ export const BusinessList = () => {
 
       const headers = {
         Authorization: `Bearer ${googleAuthToken.access_token}`,
+        'Content-Type': 'application/json',
       };
 
       // First, get the accounts with retry logic
@@ -88,8 +89,9 @@ export const BusinessList = () => {
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
+          // Using the correct API endpoint format
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,locationName,address`,
             { headers }
           );
 
@@ -133,7 +135,7 @@ export const BusinessList = () => {
       console.error("Error fetching Google businesses:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch Google businesses. Please wait a few minutes and try again.",
+        description: "Failed to fetch Google businesses. Please try again.",
         variant: "destructive",
       });
     }
