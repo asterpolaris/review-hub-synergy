@@ -73,6 +73,7 @@ serve(async (req) => {
     // Fetch reviews using batchGetReviews endpoint
     const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
     console.log('Making batch reviews request to:', batchReviewsUrl);
+    console.log('With location names:', locationNames);
 
     const batchRequestBody = {
       locationNames,
