@@ -106,17 +106,37 @@ export const BusinessList = () => {
             console.log("Location details:", locationDetails);
 
             if (locationDetails.profile) {
+              const locationName = locationDetails.profile.locationName;
+              let formattedAddress = "Address not available";
+              
+              if (locationDetails.profile.address) {
+                const { address } = locationDetails.profile;
+                const addressParts = [];
+                
+                if (address.addressLines && address.addressLines.length > 0) {
+                  addressParts.push(address.addressLines.join(", "));
+                }
+                if (address.locality) {
+                  addressParts.push(address.locality);
+                }
+                if (address.regionCode) {
+                  addressParts.push(address.regionCode);
+                }
+                
+                if (addressParts.length > 0) {
+                  formattedAddress = addressParts.join(", ");
+                }
+              }
+
               const { error } = await supabase.from("businesses").upsert({
-                name: locationDetails.profile.locationName || "Unnamed Location",
-                location: locationDetails.profile.address ? 
-                  `${locationDetails.profile.address.addressLines?.join(", ")}, ${locationDetails.profile.address.locality}, ${locationDetails.profile.address.regionCode}` 
-                  : "Address not available",
+                name: locationName || "Unnamed Location",
+                location: formattedAddress,
                 google_place_id: location.name,
                 google_business_account_id: account.name,
                 user_id: session?.user.id,
               });
 
-              if (error && error.code !== "23505") { // Ignore unique constraint violations
+              if (error && error.code !== "23505") {
                 console.error("Error storing location:", error);
               }
             }

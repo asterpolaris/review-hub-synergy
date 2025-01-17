@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface BusinessCardProps {
   name: string;
@@ -29,10 +28,10 @@ export const BusinessCard = ({ name, location, googleBusinessAccountId }: Busine
   };
 
   return (
-    <div className="flex items-center justify-between py-4 border-b">
+    <div className="flex items-center justify-between py-4">
       <div className="flex-1">
-        <h3 className="text-lg font-medium">{name || "Unnamed Location"}</h3>
-        <p className="text-sm text-muted-foreground">{location || "Address not available"}</p>
+        <h3 className="text-lg font-medium">{name}</h3>
+        <p className="text-sm text-muted-foreground">{location}</p>
       </div>
       
       {googleBusinessAccountId ? (
