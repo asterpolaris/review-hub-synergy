@@ -1,7 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
-  // Handle CORS
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const locationId = placeId.replace('locations/', '')
 
     // Construct the full Google API URL - using the correct Business Profile API endpoint
-    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}/reviews`
+    const googleApiUrl = `https://mybusiness.googleapis.com/v4/${placeId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
