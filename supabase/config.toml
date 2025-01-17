@@ -1,3 +1,4 @@
+# A string used as a project reference
 project_id = "eqgtvisxqjfntyhqkadj"
 
 [api]
@@ -21,13 +22,14 @@ enabled = true
 
 [auth]
 enabled = true
-port = 54325
 
 [realtime]
 enabled = true
 
-[edge_functions]
-[edge_functions.reviews]
+[[functions]]
+name = "reviews"
 verify_jwt = true
-[edge_functions.reviews.batch]
+
+[[functions]]
+name = "reviews-batch"
 verify_jwt = true

@@ -335,6 +335,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      reviews_batch: {
+        Args: {
+          access_token: string
+          location_names: string[]
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
