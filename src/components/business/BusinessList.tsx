@@ -104,7 +104,7 @@ export const BusinessList = () => {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,locationName,address`,
             { headers }
           );
 
@@ -118,16 +118,16 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Processing location:", location);
 
-            // Skip if location profile or locationName is missing
-            if (!location.profile?.locationName) {
+            // Skip if location name is missing
+            if (!location.locationName) {
               console.log(`Skipping location with no name: ${location.name}`);
               continue;
             }
 
-            // Extract and format address from profile
+            // Extract and format address
             let formattedAddress = "";
-            if (location.profile.address) {
-              const address = location.profile.address;
+            if (location.address) {
+              const address = location.address;
               const addressParts = [];
 
               if (address.addressLines?.length > 0) {
@@ -155,7 +155,7 @@ export const BusinessList = () => {
             }
 
             const { error } = await supabase.from("businesses").insert({
-              name: location.profile.locationName,
+              name: location.locationName,
               location: formattedAddress,
               google_place_id: location.name,
               google_business_account_id: account.name,
@@ -166,7 +166,7 @@ export const BusinessList = () => {
               console.error("Error storing location:", error);
               errorCount++;
             } else {
-              console.log(`Successfully saved business: ${location.profile.locationName}`);
+              console.log(`Successfully saved business: ${location.locationName}`);
               addedCount++;
             }
           }
