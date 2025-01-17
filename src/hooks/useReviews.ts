@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
+interface ReviewsResponse {
+  access_token: string;
+  businesses: Array<{
+    name: string;
+    google_place_id: string;
+  }>;
+}
+
 export const useReviews = () => {
   const { toast } = useToast();
 
@@ -12,7 +20,10 @@ export const useReviews = () => {
       console.log("Fetching business data...");
       
       // First get the business data and access token
-      const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews');
+      const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
+        data: ReviewsResponse | null;
+        error: Error | null;
+      };
       
       if (reviewsError) {
         console.error("Error fetching reviews data:", reviewsError);
