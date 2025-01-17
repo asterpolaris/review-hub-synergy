@@ -1,7 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -15,12 +14,9 @@ Deno.serve(async (req) => {
 
     console.log(`Fetching reviews for place: ${placeId}`)
 
-    // Extract the location ID from the placeId
-    const locationId = placeId.replace('locations/', '')
-
-    // First, get the account ID using the locations.list endpoint
+    // First, get the account ID using the accounts.list endpoint
     const accountsResponse = await fetch(
-      'https://mybusiness.googleapis.com/v4/accounts',
+      'https://mybusinessbusinessinformation.googleapis.com/v1/accounts',
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -41,11 +37,11 @@ Deno.serve(async (req) => {
       throw new Error('No accounts found')
     }
 
-    const accountId = accountsData.accounts[0].name.split('/')[1]
+    const accountId = accountsData.accounts[0].name
     console.log(`Using account ID: ${accountId}`)
 
     // Construct the full Google API URL with the correct endpoint structure
-    const googleApiUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews`
+    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations/${placeId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
