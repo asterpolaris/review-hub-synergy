@@ -27,12 +27,14 @@ const Reviews = () => {
   const { data: reviews, isLoading, error } = useQuery({
     queryKey: ["reviews"],
     queryFn: fetchReviews,
-    onError: (error) => {
-      toast({
-        title: "Error fetching reviews",
-        description: error instanceof Error ? error.message : "Please try again later",
-        variant: "destructive",
-      });
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          title: "Error fetching reviews",
+          description: error.message || "Please try again later",
+          variant: "destructive",
+        });
+      },
     },
   });
 
