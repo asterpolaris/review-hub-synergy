@@ -14,9 +14,9 @@ Deno.serve(async (req) => {
 
     console.log('Starting review fetch process...')
     
-    // First, get the account ID
+    // First, get the account ID using the correct endpoint
     const accountsResponse = await fetch(
-      'https://mybusiness.googleapis.com/v4/accounts',
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
