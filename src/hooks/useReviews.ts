@@ -3,13 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
-interface ReviewsRPCResponse {
-  access_token: string;
-  businesses: Array<{
-    name: string;
-    google_place_id: string;
-  }>;
-}
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const useReviews = () => {
   const { toast } = useToast();
@@ -20,7 +14,7 @@ export const useReviews = () => {
       console.log("Fetching business data...");
       
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
-        data: ReviewsRPCResponse | null;
+        data: { access_token: string; businesses: Array<{ name: string; google_place_id: string }> } | null;
         error: Error | null;
       };
       
@@ -42,25 +36,45 @@ export const useReviews = () => {
         try {
           console.log(`Fetching reviews for ${business.name}`);
           
-          const response = await fetch(`${supabase.supabaseUrl}/functions/v1/fetch-reviews`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${reviewsData.access_token}`,
-            },
-            body: JSON.stringify({
-              placeId: business.google_place_id,
-              accessToken: reviewsData.access_token
-            }),
-          });
+          const headers = {
+            'Authorization': `Bearer ${reviewsData.access_token}`,
+            'Content-Type': 'application/json',
+          };
 
-          if (!response.ok) {
-            const errorText = await response.text();
+          // First get the account ID
+          console.log("Fetching Google accounts...");
+          const accountsResponse = await fetch(
+            "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
+            { headers }
+          );
+
+          if (!accountsResponse.ok) {
+            throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
+          }
+
+          const accountsData = await accountsResponse.json();
+          console.log("Google accounts response:", accountsData);
+
+          if (!accountsData.accounts || accountsData.accounts.length === 0) {
+            throw new Error("No Google Business accounts found");
+          }
+
+          const accountId = accountsData.accounts[0].name.split('/')[1];
+          const locationId = business.google_place_id.split('/').pop();
+
+          // Fetch reviews using the account ID and location ID
+          const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews`;
+          console.log('Using reviews API URL:', reviewsUrl);
+
+          const reviewsResponse = await fetch(reviewsUrl, { headers });
+
+          if (!reviewsResponse.ok) {
+            const errorText = await reviewsResponse.text();
             console.error(`Error response for ${business.name}:`, errorText);
             throw new Error(`API Error: ${errorText}`);
           }
 
-          const data = await response.json();
+          const data = await reviewsResponse.json();
           console.log(`Reviews received for ${business.name}:`, data);
 
           if (data?.reviews) {
