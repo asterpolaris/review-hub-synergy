@@ -44,24 +44,18 @@ const fetchReviews = async (): Promise<Review[]> => {
 
     const allReviews: Review[] = [];
     
-    // Fetch reviews for each business
+    // Fetch reviews for each business using our Edge Function
     for (const business of functionData.businesses || []) {
       try {
-        const response = await fetch(
-          `https://mybusinessbusinessinformation.googleapis.com/v1/${business.google_place_id}/reviews`,
-          {
-            headers: {
-              Authorization: `Bearer ${functionData.access_token}`,
-            },
-          }
-        );
+        const { data, error } = await supabase.functions.invoke('fetch-reviews', {
+          body: { placeId: business.google_place_id }
+        });
 
-        if (!response.ok) {
-          console.error(`Failed to fetch reviews for ${business.name}:`, await response.text());
+        if (error) {
+          console.error(`Failed to fetch reviews for ${business.name}:`, error);
           continue;
         }
 
-        const data = await response.json();
         const reviews = data.reviews || [];
         allReviews.push(
           ...reviews.map((review: any) => ({
@@ -176,5 +170,3 @@ const Reviews = () => {
     </AppLayout>
   );
 };
-
-export default Reviews;
