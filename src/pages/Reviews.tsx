@@ -48,7 +48,10 @@ const fetchReviews = async (): Promise<Review[]> => {
     for (const business of functionData.businesses || []) {
       try {
         const { data, error } = await supabase.functions.invoke('fetch-reviews', {
-          body: { placeId: business.google_place_id }
+          body: { 
+            placeId: business.google_place_id,
+            accessToken: functionData.access_token
+          }
         });
 
         if (error) {
@@ -56,14 +59,17 @@ const fetchReviews = async (): Promise<Review[]> => {
           continue;
         }
 
-        const reviews = data.reviews || [];
-        allReviews.push(
-          ...reviews.map((review: any) => ({
-            ...review,
-            venueName: business.name,
-            placeId: business.google_place_id,
-          }))
-        );
+        if (data && Array.isArray(data.reviews)) {
+          allReviews.push(
+            ...data.reviews.map((review: any) => ({
+              ...review,
+              venueName: business.name,
+              placeId: business.google_place_id,
+            }))
+          );
+        } else {
+          console.log(`No reviews found for ${business.name}`);
+        }
       } catch (error) {
         console.error(`Error fetching reviews for ${business.name}:`, error);
       }
@@ -100,7 +106,7 @@ const Reviews = () => {
 
   const filteredReviews = reviews?.filter(review => 
     selectedVenue === "all" || review.venueName === selectedVenue
-  ).slice(0, 100);
+  );
 
   const venues = reviews 
     ? ["all", ...new Set(reviews.map(review => review.venueName))]
