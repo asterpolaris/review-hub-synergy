@@ -26,10 +26,9 @@ enabled = true
 [realtime]
 enabled = true
 
-[[functions]]
-name = "reviews"
+[functions]
+[functions.reviews]
 verify_jwt = true
 
-[[functions]]
-name = "reviews-batch"
+[functions.reviews-batch]
 verify_jwt = true
