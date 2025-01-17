@@ -15,11 +15,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Review } from "@/types/review";
 
 const fetchReviews = async (): Promise<Review[]> => {
-  const response = await fetch("/api/reviews?limit=100");
-  if (!response.ok) {
-    throw new Error("Failed to fetch reviews");
+  try {
+    console.log("Fetching reviews...");
+    const response = await fetch("/api/reviews?limit=100");
+    console.log("Reviews response status:", response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Error fetching reviews:", errorData);
+      throw new Error(`Failed to fetch reviews: ${errorData}`);
+    }
+
+    const data = await response.json();
+    console.log("Reviews data:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in fetchReviews:", error);
+    throw error;
   }
-  return response.json();
 };
 
 const Reviews = () => {
@@ -31,6 +44,7 @@ const Reviews = () => {
     queryFn: fetchReviews,
     meta: {
       onError: (error: Error) => {
+        console.error("Query error:", error);
         toast({
           title: "Error fetching reviews",
           description: error.message || "Please try again later",
@@ -70,6 +84,11 @@ const Reviews = () => {
         <Alert variant="destructive">
           <AlertDescription>
             Failed to load reviews. Please try again later.
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-2 text-xs">
+                Error details: {error.message}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       </AppLayout>
