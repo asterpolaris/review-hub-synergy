@@ -47,6 +47,8 @@ const fetchReviews = async (): Promise<Review[]> => {
     // Fetch reviews for each business using our Edge Function
     for (const business of functionData.businesses || []) {
       try {
+        console.log(`Fetching reviews for business: ${business.name} (${business.google_place_id})`);
+        
         const { data, error } = await supabase.functions.invoke('fetch-reviews', {
           body: { 
             placeId: business.google_place_id,
@@ -67,6 +69,7 @@ const fetchReviews = async (): Promise<Review[]> => {
               placeId: business.google_place_id,
             }))
           );
+          console.log(`Successfully fetched ${data.reviews.length} reviews for ${business.name}`);
         } else {
           console.log(`No reviews found for ${business.name}`);
         }
