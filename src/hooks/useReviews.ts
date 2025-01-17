@@ -31,38 +31,72 @@ export const useReviews = () => {
       const errors: string[] = [];
 
       try {
-        // Call our Edge Function instead of making direct API calls
-        const response = await fetch('/api/reviews/batch', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            access_token: reviewsData.access_token,
-            businesses: reviewsData.businesses
-          })
-        });
+        // First get the account ID
+        const accountsResponse = await fetch(
+          'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+          {
+            headers: {
+              'Authorization': `Bearer ${reviewsData.access_token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          }
+        );
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Error response from Edge Function:", errorText);
-          throw new Error(`Failed to fetch reviews: ${response.status} ${response.statusText}\nResponse: ${errorText}`);
+        if (!accountsResponse.ok) {
+          throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`);
         }
 
-        const data = await response.json();
-        console.log("Reviews data received:", data);
+        const accountsData = await accountsResponse.json();
+        console.log("Google accounts raw response:", JSON.stringify(accountsData, null, 2));
+        console.log("Google accounts parsed response:", accountsData);
 
-        if (data.reviews) {
-          data.reviews.forEach((review: any) => {
+        if (!accountsData.accounts || accountsData.accounts.length === 0) {
+          throw new Error('No Google Business accounts found');
+        }
+
+        const accountId = accountsData.accounts[0].name;
+        console.log("Using account ID:", accountId);
+
+        const locationNames = reviewsData.businesses.map(b => b.google_place_id);
+        console.log("Location names for batch request:", locationNames);
+
+        // Call our Edge Function for batch reviews
+        const { data: batchReviews, error } = await supabase.functions.invoke('reviews/batch', {
+          body: {
+            access_token: reviewsData.access_token,
+            locationNames,
+            accountId
+          }
+        });
+
+        if (error) {
+          console.error("Failed to fetch reviews batch:", error);
+          throw error;
+        }
+
+        if (batchReviews?.locationReviews) {
+          batchReviews.locationReviews.forEach((locationReview: any) => {
             const business = reviewsData.businesses.find(
-              b => b.google_place_id === review.locationName
+              b => b.google_place_id === locationReview.locationName
             );
             
-            if (business) {
-              allReviews.push({
-                ...review,
-                venueName: business.name,
-                placeId: business.google_place_id,
+            if (business && locationReview.reviews) {
+              locationReview.reviews.forEach((review: any) => {
+                allReviews.push({
+                  id: review.reviewId,
+                  authorName: review.reviewer.displayName,
+                  rating: review.starRating,
+                  comment: review.comment,
+                  createTime: review.createTime,
+                  reply: review.reviewReply ? {
+                    comment: review.reviewReply.comment,
+                    createTime: review.reviewReply.updateTime
+                  } : undefined,
+                  photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
+                  venueName: business.name,
+                  placeId: business.google_place_id,
+                });
               });
             }
           });

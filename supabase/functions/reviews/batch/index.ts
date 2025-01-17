@@ -1,5 +1,5 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { corsHeaders } from '../../_shared/cors.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { corsHeaders } from "../../_shared/cors.ts"
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -7,47 +7,18 @@ serve(async (req) => {
   }
 
   try {
-    const { access_token, businesses } = await req.json()
+    const { access_token, locationNames, accountId } = await req.json()
 
-    if (!access_token) {
+    if (!access_token || !locationNames || !accountId) {
       return new Response(
-        JSON.stringify({ error: 'Access token is required' }),
+        JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // First get the account ID
-    const accountsResponse = await fetch(
-      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-      {
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    )
+    console.log('Fetching reviews for locations:', locationNames)
 
-    if (!accountsResponse.ok) {
-      const error = await accountsResponse.text()
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}\nResponse: ${error}`)
-    }
-
-    const accountsData = await accountsResponse.json()
-    
-    if (!accountsData.accounts || accountsData.accounts.length === 0) {
-      throw new Error('No Google Business accounts found')
-    }
-
-    const accountId = accountsData.accounts[0].name
-    console.log('Using account ID:', accountId)
-
-    // Prepare location names array for batch request
-    const locationNames = businesses.map((business: any) => business.google_place_id)
-    console.log('Location names for batch request:', locationNames)
-
-    // Make batch request for reviews
-    const batchResponse = await fetch(
+    const response = await fetch(
       `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`,
       {
         method: 'POST',
@@ -64,21 +35,24 @@ serve(async (req) => {
       }
     )
 
-    if (!batchResponse.ok) {
-      const error = await batchResponse.text()
-      throw new Error(`Failed to fetch reviews batch: ${error}`)
+    if (!response.ok) {
+      const error = await response.text()
+      console.error('Error fetching reviews:', error)
+      return new Response(
+        JSON.stringify({ error: `Failed to fetch reviews: ${error}` }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const batchData = await batchResponse.json()
-    console.log('Batch reviews response:', batchData)
+    const data = await response.json()
+    console.log('Reviews fetched successfully')
 
     return new Response(
-      JSON.stringify(batchData),
+      JSON.stringify(data),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in batch reviews function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
