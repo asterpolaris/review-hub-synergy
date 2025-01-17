@@ -15,7 +15,7 @@ export const useGoogleAuth = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/businessprofileperformance',
+          scopes: 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/businessprofileperformance.readonly',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
