@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Longer delay between retries and more retries
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const BusinessList = () => {
@@ -19,7 +18,6 @@ export const BusinessList = () => {
         const response = await fetch(url, options);
         
         if (response.status === 429) {
-          // Much longer exponential backoff: 2^i * 2000ms (2s, 4s, 8s, 16s, 32s)
           const waitTime = Math.pow(2, i) * 2000;
           console.log(`Rate limited, attempt ${i + 1} of ${retries}. Waiting ${waitTime}ms before retry...`);
           await delay(waitTime);
@@ -39,7 +37,6 @@ export const BusinessList = () => {
       } catch (error) {
         console.error(`Attempt ${i + 1} failed:`, error);
         if (i === retries - 1) throw error;
-        // Add additional delay even for non-429 errors
         await delay(Math.pow(2, i) * 1000);
       }
     }
@@ -66,7 +63,6 @@ export const BusinessList = () => {
         'Content-Type': 'application/json',
       };
 
-      // First, get the accounts with retry logic
       console.log("Fetching Google accounts...");
       const accountsData = await fetchWithRetry(
         "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
@@ -85,7 +81,6 @@ export const BusinessList = () => {
         return;
       }
 
-      // For each account, get its locations with retry logic
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
@@ -101,17 +96,15 @@ export const BusinessList = () => {
             continue;
           }
 
-          // For each location, get its details
           for (const location of locationsData.locations) {
             console.log("Fetching details for location:", location.name);
             const locationDetails = await fetchWithRetry(
-              `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}`,
+              `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=profile.locationName,profile.address`,
               { headers }
             );
 
             console.log("Location details:", locationDetails);
 
-            // Store location in Supabase
             const { error } = await supabase.from("businesses").insert({
               name: locationDetails.profile?.locationName || "Unnamed Location",
               location: locationDetails.profile?.address ? 
@@ -122,7 +115,7 @@ export const BusinessList = () => {
               user_id: session?.user.id,
             });
 
-            if (error && error.code !== "23505") { // Ignore duplicate key errors
+            if (error && error.code !== "23505") {
               console.error("Error storing location:", error);
             }
           }
