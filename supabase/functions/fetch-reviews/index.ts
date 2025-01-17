@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     console.log('Location ID:', locationId)
 
     // Use the correct My Business Reviews API endpoint
-    const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${locationId}/reviews`
+    const reviewsUrl = `https://mybusinessreviews.googleapis.com/v1/${placeId}/reviews`
     console.log('Fetching reviews from URL:', reviewsUrl)
 
     const reviewsResponse = await fetch(reviewsUrl, {
