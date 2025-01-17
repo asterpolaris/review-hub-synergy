@@ -103,7 +103,6 @@ export const BusinessList = () => {
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
-          // Updated readMask to use the correct field paths
           const locationsData = await fetchWithRetry(
             `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,profile`,
             { headers }
@@ -119,36 +118,40 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Processing location:", location);
 
+            // Skip if location profile or locationName is missing
             if (!location.profile?.locationName) {
               console.log(`Skipping location with no name: ${location.name}`);
               continue;
             }
 
+            // Extract and format address from profile
             let formattedAddress = "";
-            const address = location.profile.address;
-            
-            if (address) {
+            if (location.profile.address) {
+              const address = location.profile.address;
               const addressParts = [];
-              
+
               if (address.addressLines?.length > 0) {
                 addressParts.push(...address.addressLines);
               }
               if (address.locality) {
                 addressParts.push(address.locality);
               }
-              if (address.regionCode) {
-                addressParts.push(address.regionCode);
+              if (address.administrativeArea) {
+                addressParts.push(address.administrativeArea);
               }
               if (address.postalCode) {
                 addressParts.push(address.postalCode);
               }
-              
+              if (address.regionCode) {
+                addressParts.push(address.regionCode);
+              }
+
               formattedAddress = addressParts.join(", ");
             }
 
+            // If no address is available, use a default message
             if (!formattedAddress) {
-              console.log(`No address found for location: ${location.profile.locationName}`);
-              continue;
+              formattedAddress = "Address not provided";
             }
 
             const { error } = await supabase.from("businesses").insert({
