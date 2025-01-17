@@ -3,32 +3,45 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Star } from "lucide-react";
+import { Star, MapPin } from "lucide-react";
+import { Review } from "@/types/review";
 
 interface ReviewCardProps {
-  review: {
-    id: string;
-    authorName: string;
-    rating: number;
-    comment: string;
-    createTime: string;
-    photoUrls?: string[];
-    reply?: {
-      comment: string;
-      createTime: string;
-    };
-  };
+  review: Review;
 }
 
 export const ReviewCard = ({ review }: ReviewCardProps) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleSubmitReply = async () => {
+    if (!replyText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a reply before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      // TODO: Implement actual Google API call
-      console.log("Submitting reply:", replyText, "for review:", review.id);
+      const response = await fetch(`/api/reviews/${review.placeId}/reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reviewId: review.id,
+          reply: replyText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit reply");
+      }
       
       toast({
         title: "Reply submitted",
@@ -41,9 +54,11 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
       console.error("Error submitting reply:", error);
       toast({
         title: "Error",
-        description: "Failed to submit reply. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to submit reply. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -53,6 +68,10 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-semibold">{review.authorName}</h3>
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <MapPin size={16} />
+              <span>{review.venueName}</span>
+            </div>
             <div className="flex items-center gap-1 text-yellow-500">
               {Array.from({ length: review.rating }).map((_, i) => (
                 <Star key={i} className="fill-current" size={16} />
@@ -110,6 +129,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               className="min-h-[100px]"
+              disabled={isSubmitting}
             />
             <div className="flex gap-2 justify-end">
               <Button
@@ -118,10 +138,16 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
                   setIsReplying(false);
                   setReplyText("");
                 }}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button onClick={handleSubmitReply}>Submit Reply</Button>
+              <Button 
+                onClick={handleSubmitReply}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Submit Reply"}
+              </Button>
             </div>
           </div>
         )}

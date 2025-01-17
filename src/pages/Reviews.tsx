@@ -1,5 +1,9 @@
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ReviewCard } from "@/components/reviews/ReviewCard";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -7,34 +11,59 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Review } from "@/types/review";
 
-// Mock data for testing
-const mockReviews = [
-  {
-    id: "1",
-    authorName: "John Doe",
-    rating: 4,
-    comment: "Great service and atmosphere! The staff was very friendly and helpful. Would definitely recommend to others.",
-    createTime: "2024-01-15T10:30:00Z",
-    photoUrls: [
-      "https://picsum.photos/200/300",
-      "https://picsum.photos/201/300"
-    ]
-  },
-  {
-    id: "2",
-    authorName: "Jane Smith",
-    rating: 3,
-    comment: "Decent experience overall. Could improve on wait times but food was good.",
-    createTime: "2024-01-14T15:45:00Z",
-    reply: {
-      comment: "Thank you for your feedback! We're working on improving our service times.",
-      createTime: "2024-01-14T16:30:00Z"
-    }
+const fetchReviews = async (): Promise<Review[]> => {
+  const response = await fetch("/api/reviews");
+  if (!response.ok) {
+    throw new Error("Failed to fetch reviews");
   }
-];
+  return response.json();
+};
 
 const Reviews = () => {
+  const { toast } = useToast();
+  const { data: reviews, isLoading, error } = useQuery({
+    queryKey: ["reviews"],
+    queryFn: fetchReviews,
+    onError: (error) => {
+      toast({
+        title: "Error fetching reviews",
+        description: error instanceof Error ? error.message : "Please try again later",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-4xl font-semibold tracking-tight">Reviews</h1>
+            <Skeleton className="h-10 w-[200px]" />
+          </div>
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-[200px] w-full" />
+          ))}
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <Alert variant="destructive">
+          <AlertDescription>
+            Failed to load reviews. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fadeIn">
@@ -46,12 +75,17 @@ const Reviews = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Businesses</SelectItem>
+              {reviews && [...new Set(reviews.map(review => review.venueName))].map(venue => (
+                <SelectItem key={venue} value={venue}>
+                  {venue}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div className="grid gap-6">
-          {mockReviews.map((review) => (
+          {reviews?.map((review) => (
             <ReviewCard key={review.id} review={review} />
           ))}
         </div>

@@ -9,4 +9,6 @@ export interface Review {
     comment: string;
     createTime: string;
   };
+  venueName: string;
+  placeId: string;
 }
