@@ -1,6 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts'
 
 Deno.serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -12,7 +13,8 @@ Deno.serve(async (req) => {
       throw new Error('Missing required parameters')
     }
 
-    console.log(`Starting review fetch process for place ID: ${placeId}`)
+    console.log(`Starting review fetch for place ID: ${placeId}`)
+    console.log('Using access token:', accessToken)
 
     // First get the account ID
     const accountsResponse = await fetch(
@@ -26,12 +28,13 @@ Deno.serve(async (req) => {
     )
 
     if (!accountsResponse.ok) {
-      console.error('Failed to fetch accounts:', {
+      const errorText = await accountsResponse.text()
+      console.error('Accounts API error:', {
         status: accountsResponse.status,
         statusText: accountsResponse.statusText,
-        body: await accountsResponse.text()
+        body: errorText
       })
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText}`)
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${accountsResponse.statusText} - ${errorText}`)
     }
 
     const accountsData = await accountsResponse.json()
@@ -41,18 +44,9 @@ Deno.serve(async (req) => {
       throw new Error('No accounts found')
     }
 
-    const accountId = accountsData.accounts[0].name
-    console.log(`Using account ID: ${accountId}`)
-
-    // Extract location ID from placeId
-    const locationId = placeId.split('/').pop()
-    if (!locationId) {
-      throw new Error('Invalid location ID format')
-    }
-
-    // Fetch reviews using the Business Profile API v4 endpoint
+    // Get reviews using the Business Profile API
     const reviewsResponse = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations/${locationId}/reviews`,
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -62,16 +56,17 @@ Deno.serve(async (req) => {
     )
 
     if (!reviewsResponse.ok) {
-      console.error('Failed to fetch reviews:', {
+      const errorText = await reviewsResponse.text()
+      console.error('Reviews API error:', {
         status: reviewsResponse.status,
         statusText: reviewsResponse.statusText,
-        body: await reviewsResponse.text()
+        body: errorText
       })
-      throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText}`)
+      throw new Error(`Failed to fetch reviews: ${reviewsResponse.status} ${reviewsResponse.statusText} - ${errorText}`)
     }
 
     const reviewsData = await reviewsResponse.json()
-    console.log(`Successfully fetched reviews for ${placeId}`)
+    console.log(`Successfully fetched reviews for ${placeId}:`, reviewsData)
 
     return new Response(
       JSON.stringify(reviewsData),
