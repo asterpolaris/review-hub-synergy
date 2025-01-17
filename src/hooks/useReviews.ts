@@ -29,24 +29,39 @@ export const useReviews = () => {
       }
 
       // Type guard to ensure reviewsData matches our expected structure
-      if (!reviewsData || typeof reviewsData !== 'object' || !('access_token' in reviewsData) || !('businesses' in reviewsData)) {
+      const isValidReviewsResponse = (data: unknown): data is ReviewsRPCResponse => {
+        if (!data || typeof data !== 'object') return false;
+        const d = data as Record<string, unknown>;
+        return (
+          typeof d.access_token === 'string' &&
+          Array.isArray(d.businesses) &&
+          d.businesses.every(b => 
+            typeof b === 'object' &&
+            b !== null &&
+            typeof (b as any).name === 'string' &&
+            typeof (b as any).google_place_id === 'string'
+          )
+        );
+      };
+
+      if (!isValidReviewsResponse(reviewsData)) {
+        console.error("Invalid response format:", reviewsData);
         throw new Error("Invalid response format from reviews function");
       }
 
-      const typedReviewsData = reviewsData as ReviewsRPCResponse;
-      console.log("Business data received:", typedReviewsData);
+      console.log("Business data received:", reviewsData);
 
       // Fetch reviews for all businesses
       const allReviews: Review[] = [];
       const errors: string[] = [];
 
-      for (const business of typedReviewsData.businesses) {
+      for (const business of reviewsData.businesses) {
         try {
           console.log(`Fetching reviews for ${business.name}`);
           const { data, error } = await supabase.functions.invoke('fetch-reviews', {
             body: {
               placeId: business.google_place_id,
-              accessToken: typedReviewsData.access_token
+              accessToken: reviewsData.access_token
             }
           });
 
