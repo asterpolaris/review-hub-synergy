@@ -37,15 +37,12 @@ Deno.serve(async (req) => {
       throw new Error('No accounts found')
     }
 
-    const accountId = accountsData.accounts[0].name
-    console.log(`Using account ID: ${accountId}`)
-
-    // Extract location ID from the full placeId
-    const locationId = placeId.split('/').pop()
-    console.log(`Extracted location ID: ${locationId}`)
+    // The location name should already be in the correct format from the database
+    // The placeId should be in the format "locations/LOCATION_ID"
+    console.log(`Using location path: ${placeId}`)
 
     // Construct the full Google API URL with the correct endpoint structure
-    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations/${locationId}/reviews`
+    const googleApiUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${placeId}/reviews`
     console.log(`Making request to: ${googleApiUrl}`)
 
     // Fetch reviews from Google API
