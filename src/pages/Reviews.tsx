@@ -83,6 +83,7 @@ const Reviews = () => {
                 <SelectValue placeholder="Filter by location" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">All Businesses</SelectItem>
                 {uniqueLocations.map((location) => (
                   <SelectItem key={location} value={location}>
                     {data?.businesses?.find(b => b.google_place_id === location)?.name || location}
@@ -101,6 +102,7 @@ const Reviews = () => {
                 <SelectValue placeholder="Filter by rating" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">All Ratings</SelectItem>
                 {ratingOptions.map((rating) => (
                   <SelectItem key={rating} value={rating}>
                     {rating} Stars
