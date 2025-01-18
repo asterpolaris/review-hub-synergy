@@ -1,18 +1,11 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReviews } from "@/hooks/useReviews";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useState } from "react";
+import { ReviewFilters } from "@/components/reviews/ReviewFilters";
+import { ReviewList } from "@/components/reviews/ReviewList";
+import { convertGoogleRating } from "@/utils/reviewUtils";
 
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -34,17 +27,6 @@ const Reviews = () => {
 
   const handleApplyFilters = () => {
     refetch();
-  };
-
-  const convertGoogleRating = (rating: string): string => {
-    const ratingMap: { [key: string]: string } = {
-      'ONE': '1',
-      'TWO': '2',
-      'THREE': '3',
-      'FOUR': '4',
-      'FIVE': '5'
-    };
-    return ratingMap[rating] || '0';
   };
 
   if (isLoading) {
@@ -80,20 +62,17 @@ const Reviews = () => {
   }
 
   const filteredReviews = data?.reviews?.filter((review) => {
-    // Location filter
     const locationMatch = 
       selectedLocations.length === 0 || 
       selectedLocations.includes('all_businesses') ||
       selectedLocations.includes(review.placeId);
     
-    // Rating filter - convert Google rating string to numeric string
     const numericRating = convertGoogleRating(review.rating.toString());
     const ratingMatch = 
       selectedRatings.length === 0 || 
       selectedRatings.includes('all_ratings') ||
-      selectedRatings.includes(numericRating);
+      selectedRatings.includes(numericRating.toString());
     
-    // Reply status filter
     const replyStatusMatch = 
       selectedReplyStatus.length === 0 || 
       selectedReplyStatus.includes('all_status') ||
@@ -110,81 +89,18 @@ const Reviews = () => {
           <h1 className="text-4xl font-semibold tracking-tight">Reviews</h1>
         </div>
 
-        <div className="flex gap-4 mb-6 items-end">
-          <div className="w-64">
-            <Select
-              value={selectedLocations.join(",")}
-              onValueChange={handleLocationChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all_businesses">All Businesses</SelectItem>
-                {data?.businesses?.map((business) => (
-                  <SelectItem key={business.google_place_id} value={business.google_place_id}>
-                    {business.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <ReviewFilters
+          businesses={data?.businesses || []}
+          selectedLocations={selectedLocations}
+          selectedRatings={selectedRatings}
+          selectedReplyStatus={selectedReplyStatus}
+          onLocationChange={handleLocationChange}
+          onRatingChange={handleRatingChange}
+          onReplyStatusChange={handleReplyStatusChange}
+          onApplyFilters={handleApplyFilters}
+        />
 
-          <div className="w-64">
-            <Select
-              value={selectedRatings.join(",")}
-              onValueChange={handleRatingChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by rating" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all_ratings">All Ratings</SelectItem>
-                {['1', '2', '3', '4', '5'].map((rating) => (
-                  <SelectItem key={rating} value={rating}>
-                    {rating} Stars
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-64">
-            <Select
-              value={selectedReplyStatus.join(",")}
-              onValueChange={handleReplyStatusChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by reply status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all_status">All</SelectItem>
-                <SelectItem value="waiting">Waiting for Reply</SelectItem>
-                <SelectItem value="replied">Replied</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button 
-            onClick={handleApplyFilters}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Apply Filters
-          </Button>
-        </div>
-
-        <div className="grid gap-6">
-          {filteredReviews?.map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))}
-        </div>
-
-        {(!filteredReviews || filteredReviews.length === 0) && (
-          <div className="text-center text-muted-foreground py-8">
-            No reviews found.
-          </div>
-        )}
+        <ReviewList reviews={filteredReviews || []} />
       </div>
     </AppLayout>
   );

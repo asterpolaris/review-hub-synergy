@@ -1,15 +1,13 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MapPin, Reply, Sparkles } from "lucide-react";
+import { MapPin, Reply } from "lucide-react";
 import { Review } from "@/types/review";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 import { useReviewReply } from "@/hooks/useReviewReply";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ReviewReplyForm } from "./ReviewReplyForm";
 
 interface ReviewCardProps {
   review: Review;
@@ -36,15 +34,10 @@ const getRatingColor = (rating: number): string => {
   return "text-red-500";
 };
 
-interface ReplyFormData {
-  comment: string;
-}
-
 export const ReviewCard = ({ review }: ReviewCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const { mutate: submitReply, isPending } = useReviewReply();
-  const form = useForm<ReplyFormData>();
   const { toast } = useToast();
   const rating = convertRating(review.rating);
 
@@ -73,7 +66,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
     }
   };
 
-  const onSubmit = (data: ReplyFormData) => {
+  const onSubmit = (data: { comment: string }) => {
     if (!review.placeId) {
       toast({
         title: "Error",
@@ -90,7 +83,6 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
     }, {
       onSuccess: () => {
         setIsOpen(false);
-        form.reset();
       }
     });
   };
@@ -159,50 +151,13 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="flex justify-end mb-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={generateReply}
-                      disabled={isGenerating}
-                      className="flex items-center gap-2"
-                    >
-                      <Sparkles size={16} />
-                      {isGenerating ? "Generating..." : "Generate AI Response"}
-                    </Button>
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="comment"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Write your reply..."
-                            className="min-h-[100px]"
-                            {...field}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isPending}>
-                      {isPending ? "Sending..." : "Send Reply"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
+              <ReviewReplyForm
+                onSubmit={onSubmit}
+                onCancel={() => setIsOpen(false)}
+                onGenerateReply={generateReply}
+                isGenerating={isGenerating}
+                isPending={isPending}
+              />
             </CollapsibleContent>
           </Collapsible>
         )}
