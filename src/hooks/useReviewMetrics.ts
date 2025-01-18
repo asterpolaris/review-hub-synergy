@@ -10,8 +10,11 @@ export const useReviewMetrics = (period: string = 'last-30-days') => {
     queryKey: ["reviewMetrics", period],
     queryFn: () => {
       if (!reviewsData?.reviews) {
+        console.log("No reviews data available");
         return null;
       }
+
+      console.log("Raw reviews data:", reviewsData.reviews);
 
       const now = new Date();
       let startDate: Date;
@@ -19,18 +22,15 @@ export const useReviewMetrics = (period: string = 'last-30-days') => {
 
       switch (period) {
         case 'last-month':
-          // Last complete calendar month
           startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
           const endDate = new Date(now.getFullYear(), now.getMonth(), 0);
           previousStartDate = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
           break;
         case 'last-year':
-          // Last complete calendar year
           startDate = new Date(now.getFullYear() - 1, 0, 1);
           previousStartDate = new Date(now.getFullYear() - 2, 0, 1);
           break;
         case 'lifetime':
-          // Last two calendar years
           startDate = new Date(now.getFullYear() - 2, 0, 1);
           previousStartDate = new Date(now.getFullYear() - 3, 0, 1);
           break;
@@ -44,15 +44,25 @@ export const useReviewMetrics = (period: string = 'last-30-days') => {
         return reviewDate >= startDate && reviewDate <= now;
       });
 
+      console.log("Filtered period reviews:", periodReviews);
+
       const previousPeriodReviews = reviewsData.reviews.filter(review => {
         const reviewDate = new Date(review.createTime);
         return reviewDate >= previousStartDate && reviewDate < startDate;
       });
 
+      console.log("Previous period reviews:", previousPeriodReviews);
+
       const currentMetrics = calculatePeriodMetrics(periodReviews);
+      console.log("Current period metrics:", currentMetrics);
+
       const previousMetrics = calculatePeriodMetrics(previousPeriodReviews);
+      console.log("Previous period metrics:", previousMetrics);
+
       const monthOverMonth = calculateMetricVariance(currentMetrics, previousMetrics);
       const venueMetrics = calculateVenueMetrics(reviewsData.reviews, period);
+
+      console.log("Venue metrics:", venueMetrics);
 
       const metrics: ReviewMetrics = {
         ...currentMetrics,

@@ -2,7 +2,10 @@ import { Review } from "@/types/review";
 import { PeriodMetrics, VenueMetrics } from "@/types/metrics";
 
 export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
+  console.log("Calculating period metrics for reviews:", reviews);
+  
   if (reviews.length === 0) {
+    console.log("No reviews found, returning zero metrics");
     return {
       totalReviews: 0,
       averageRating: 0,
@@ -12,7 +15,14 @@ export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
   }
 
   const totalReviews = reviews.length;
-  const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / totalReviews;
+  const totalRating = reviews.reduce((acc, review) => {
+    console.log(`Adding rating: ${review.rating} to accumulator: ${acc}`);
+    return acc + review.rating;
+  }, 0);
+  
+  const averageRating = totalRating / totalReviews;
+  console.log(`Calculated average rating: ${averageRating} (total: ${totalRating} / count: ${totalReviews})`);
+
   const responseRate = (reviews.filter(review => review.reply).length / totalReviews) * 100;
   
   const badReviews = reviews.filter(review => review.rating <= 3);
