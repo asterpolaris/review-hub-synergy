@@ -29,7 +29,7 @@ export const useReviewReply = () => {
         .from('cached_reviews')
         .select('review_data, business_id')
         .eq('google_review_id', reviewId)
-        .single();
+        .maybeSingle();
 
       if (cachedReview && cachedReview.review_data) {
         const reviewData = cachedReview.review_data as unknown as Review;

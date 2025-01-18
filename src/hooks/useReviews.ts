@@ -48,28 +48,32 @@ export const useReviews = () => {
 
       try {
         // First, try to get cached reviews
-        const { data: cachedReviews, error: cacheError } = await supabase
-          .from('cached_reviews')
-          .select('review_data, business_id')
-          .in('business_id', reviewsData.businesses.map(b => b.id));
+        const businessIds = reviewsData.businesses.map(b => b.id).filter(Boolean);
+        
+        if (businessIds.length > 0) {
+          const { data: cachedReviews, error: cacheError } = await supabase
+            .from('cached_reviews')
+            .select('review_data, business_id')
+            .in('business_id', businessIds);
 
-        if (cacheError) {
-          console.error("Error fetching cached reviews:", cacheError);
-        } else if (cachedReviews) {
-          console.log("Found cached reviews:", cachedReviews);
-          cachedReviews.forEach(cached => {
-            const business = reviewsData.businesses.find(
-              b => b.id === cached.business_id
-            );
-            if (business && cached.review_data) {
-              const reviewData = cached.review_data as unknown as Review;
-              allReviews.push({
-                ...reviewData,
-                venueName: business.name,
-                placeId: business.google_place_id,
-              });
-            }
-          });
+          if (cacheError) {
+            console.error("Error fetching cached reviews:", cacheError);
+          } else if (cachedReviews) {
+            console.log("Found cached reviews:", cachedReviews);
+            cachedReviews.forEach(cached => {
+              const business = reviewsData.businesses.find(
+                b => b.id === cached.business_id
+              );
+              if (business && cached.review_data) {
+                const reviewData = cached.review_data as unknown as Review;
+                allReviews.push({
+                  ...reviewData,
+                  venueName: business.name,
+                  placeId: business.google_place_id,
+                });
+              }
+            });
+          }
         }
 
         // Fetch fresh reviews from Google API

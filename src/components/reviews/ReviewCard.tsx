@@ -41,7 +41,7 @@ interface ReplyFormData {
 
 export const ReviewCard = ({ review }: ReviewCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { mutate: submitReply, isLoading } = useReviewReply();
+  const { mutate: submitReply, isPending } = useReviewReply();
   const form = useForm<ReplyFormData>();
   const { toast } = useToast();
   const rating = convertRating(review.rating);
@@ -157,8 +157,8 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Sending..." : "Send Reply"}
+                    <Button type="submit" disabled={isPending}>
+                      {isPending ? "Sending..." : "Send Reply"}
                     </Button>
                   </div>
                 </form>
