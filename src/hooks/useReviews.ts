@@ -4,9 +4,9 @@ import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
 interface Business {
+  id: string;
   name: string;
   google_place_id: string;
-  id: string;
 }
 
 interface ReviewsData {
@@ -92,7 +92,7 @@ export const useReviews = () => {
             if (business && locationReview.reviews) {
               // Update cache for each review
               for (const review of locationReview.reviews) {
-                const reviewData = {
+                const reviewData: Review = {
                   id: review.reviewId,
                   authorName: review.reviewer.displayName,
                   rating: review.starRating,
@@ -103,6 +103,8 @@ export const useReviews = () => {
                     createTime: review.reviewReply.updateTime
                   } : undefined,
                   photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
+                  venueName: business.name,
+                  placeId: business.google_place_id,
                 };
 
                 // Upsert to cache
@@ -119,11 +121,7 @@ export const useReviews = () => {
                 }
 
                 // Add to allReviews array
-                allReviews.push({
-                  ...reviewData,
-                  venueName: business.name,
-                  placeId: business.google_place_id,
-                });
+                allReviews.push(reviewData);
               }
             }
           }

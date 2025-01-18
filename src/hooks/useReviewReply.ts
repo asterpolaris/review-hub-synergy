@@ -1,20 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Review } from "@/types/review";
 
 interface ReplyParams {
   reviewId: string;
   comment: string;
   placeId: string;
-}
-
-interface ReviewData {
-  id: string;
-  reply?: {
-    comment: string;
-    createTime: string;
-  };
-  [key: string]: any;
 }
 
 export const useReviewReply = () => {
@@ -39,8 +31,8 @@ export const useReviewReply = () => {
         .single();
 
       if (cachedReview && cachedReview.review_data) {
-        const reviewData = cachedReview.review_data as ReviewData;
-        const updatedReviewData = {
+        const reviewData = cachedReview.review_data as Review;
+        const updatedReviewData: Review = {
           ...reviewData,
           reply: {
             comment,
