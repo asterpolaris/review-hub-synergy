@@ -114,7 +114,7 @@ export const useReviews = () => {
                 });
               }
             }
-          });
+          }
         }
 
       } catch (error) {
