@@ -36,6 +36,10 @@ export const useReviews = () => {
         throw new Error("No data returned from reviews function");
       }
 
+      if (!reviewsData.businesses || reviewsData.businesses.length === 0) {
+        return { reviews: [], businesses: [] };
+      }
+
       console.log("Reviews data received:", reviewsData);
 
       const allReviews: Review[] = [];
@@ -57,7 +61,7 @@ export const useReviews = () => {
               b => b.id === cached.business_id
             );
             if (business && cached.review_data) {
-              const reviewData = cached.review_data as Review;
+              const reviewData = cached.review_data as unknown as Review;
               allReviews.push({
                 ...reviewData,
                 venueName: business.name,
@@ -107,17 +111,21 @@ export const useReviews = () => {
                   placeId: business.google_place_id,
                 };
 
-                // Upsert to cache
-                const { error: upsertError } = await supabase
-                  .from('cached_reviews')
-                  .upsert({
-                    business_id: business.id,
-                    google_review_id: review.reviewId,
-                    review_data: reviewData,
-                  });
+                try {
+                  // Upsert to cache
+                  const { error: upsertError } = await supabase
+                    .from('cached_reviews')
+                    .upsert({
+                      business_id: business.id,
+                      google_review_id: review.reviewId,
+                      review_data: reviewData as unknown as Json,
+                    });
 
-                if (upsertError) {
-                  console.error("Failed to cache review:", upsertError);
+                  if (upsertError) {
+                    console.error("Failed to cache review:", upsertError);
+                  }
+                } catch (error) {
+                  console.error("Failed to cache review:", error);
                 }
 
                 // Add to allReviews array

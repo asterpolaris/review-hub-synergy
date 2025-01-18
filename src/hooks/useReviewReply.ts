@@ -31,7 +31,7 @@ export const useReviewReply = () => {
         .single();
 
       if (cachedReview && cachedReview.review_data) {
-        const reviewData = cachedReview.review_data as Review;
+        const reviewData = cachedReview.review_data as unknown as Review;
         const updatedReviewData: Review = {
           ...reviewData,
           reply: {
@@ -42,7 +42,9 @@ export const useReviewReply = () => {
 
         await supabase
           .from('cached_reviews')
-          .update({ review_data: updatedReviewData })
+          .update({ 
+            review_data: updatedReviewData as unknown as Json 
+          })
           .eq('google_review_id', reviewId);
       }
 
