@@ -19,7 +19,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
             </div>
             <div className="flex items-center gap-1 mt-2">
               <span className="text-sm font-medium text-yellow-500">
-                {review.rating}/5
+                {Number(review.rating).toFixed(1)}/5
               </span>
             </div>
           </div>
