@@ -3,10 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useReviewMetrics } from "@/hooks/useReviewMetrics";
+import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const MetricVariance = ({ value }: { value: number }) => {
+  const isPositive = value > 0;
+  return (
+    <div className={cn(
+      "text-xs flex items-center gap-1",
+      isPositive ? "text-green-600" : "text-red-600"
+    )}>
+      {isPositive ? <ArrowUpIcon className="h-3 w-3" /> : <ArrowDownIcon className="h-3 w-3" />}
+      <span>{Math.abs(value).toFixed(1)}% MoM</span>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { session, isLoading } = useAuth();
+  const { data: metrics, isLoading: isMetricsLoading } = useReviewMetrics();
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -15,7 +32,7 @@ const Dashboard = () => {
     }
   }, [session, isLoading, navigate]);
 
-  if (isLoading) {
+  if (isLoading || isMetricsLoading) {
     return <div>Loading...</div>;
   }
 
@@ -33,7 +50,10 @@ const Dashboard = () => {
               <CardTitle>Total Reviews</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">0</p>
+              <p className="text-3xl font-bold">{metrics?.totalReviews || 0}</p>
+              {metrics?.monthOverMonth.totalReviews !== 0 && (
+                <MetricVariance value={metrics?.monthOverMonth.totalReviews || 0} />
+              )}
             </CardContent>
           </Card>
           <Card className="glass-panel">
@@ -41,7 +61,12 @@ const Dashboard = () => {
               <CardTitle>Average Rating</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">-</p>
+              <p className="text-3xl font-bold">
+                {metrics?.averageRating ? metrics.averageRating.toFixed(1) : "-"}
+              </p>
+              {metrics?.monthOverMonth.averageRating !== 0 && (
+                <MetricVariance value={metrics?.monthOverMonth.averageRating || 0} />
+              )}
             </CardContent>
           </Card>
           <Card className="glass-panel">
@@ -49,7 +74,12 @@ const Dashboard = () => {
               <CardTitle>Response Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">0%</p>
+              <p className="text-3xl font-bold">
+                {metrics?.responseRate ? `${Math.round(metrics.responseRate)}%` : "0%"}
+              </p>
+              {metrics?.monthOverMonth.responseRate !== 0 && (
+                <MetricVariance value={metrics?.monthOverMonth.responseRate || 0} />
+              )}
             </CardContent>
           </Card>
         </div>
