@@ -5,18 +5,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 
 interface ReviewFiltersProps {
   businesses: Array<{ google_place_id: string; name: string }>;
   selectedLocations: string[];
   selectedRatings: string[];
   selectedReplyStatus: string[];
+  selectedSort: string;
   onLocationChange: (value: string) => void;
   onRatingChange: (value: string) => void;
   onReplyStatusChange: (value: string) => void;
-  onApplyFilters: () => void;
+  onSortChange: (value: string) => void;
 }
 
 export const ReviewFilters = ({
@@ -24,10 +24,11 @@ export const ReviewFilters = ({
   selectedLocations,
   selectedRatings,
   selectedReplyStatus,
+  selectedSort,
   onLocationChange,
   onRatingChange,
   onReplyStatusChange,
-  onApplyFilters,
+  onSortChange,
 }: ReviewFiltersProps) => {
   return (
     <div className="flex gap-4 mb-6 items-end">
@@ -85,13 +86,30 @@ export const ReviewFilters = ({
         </Select>
       </div>
 
-      <Button 
-        onClick={onApplyFilters}
-        className="flex items-center gap-2"
-      >
-        <RefreshCw className="h-4 w-4" />
-        Apply Filters
-      </Button>
+      <div className="w-64">
+        <Select
+          value={selectedSort}
+          onValueChange={onSortChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sort by date" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                Newest First
+              </div>
+            </SelectItem>
+            <SelectItem value="oldest">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                Oldest First
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 };

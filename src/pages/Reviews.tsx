@@ -11,7 +11,8 @@ const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
-  const { data, isLoading, error, refetch } = useReviews();
+  const [selectedSort, setSelectedSort] = useState<string>("newest");
+  const { data, isLoading, error } = useReviews();
 
   const handleLocationChange = (value: string) => {
     setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
@@ -25,8 +26,8 @@ const Reviews = () => {
     setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
   };
 
-  const handleApplyFilters = () => {
-    refetch();
+  const handleSortChange = (value: string) => {
+    setSelectedSort(value);
   };
 
   if (isLoading) {
@@ -80,6 +81,10 @@ const Reviews = () => {
       (selectedReplyStatus.includes('replied') && review.reply);
     
     return locationMatch && ratingMatch && replyStatusMatch;
+  }).sort((a, b) => {
+    const dateA = new Date(a.createTime).getTime();
+    const dateB = new Date(b.createTime).getTime();
+    return selectedSort === "newest" ? dateB - dateA : dateA - dateB;
   });
 
   return (
@@ -94,10 +99,11 @@ const Reviews = () => {
           selectedLocations={selectedLocations}
           selectedRatings={selectedRatings}
           selectedReplyStatus={selectedReplyStatus}
+          selectedSort={selectedSort}
           onLocationChange={handleLocationChange}
           onRatingChange={handleRatingChange}
           onReplyStatusChange={handleReplyStatusChange}
-          onApplyFilters={handleApplyFilters}
+          onSortChange={handleSortChange}
         />
 
         <ReviewList reviews={filteredReviews || []} />
