@@ -64,8 +64,8 @@ const Reviews = () => {
     const replyStatusMatch = 
       selectedReplyStatus.length === 0 || 
       selectedReplyStatus.includes('all_status') ||
-      (selectedReplyStatus.includes('waiting') && !review.replyText) ||
-      (selectedReplyStatus.includes('replied') && review.replyText);
+      (selectedReplyStatus.includes('waiting') && !review.reply) ||
+      (selectedReplyStatus.includes('replied') && review.reply);
     
     return locationMatch && ratingMatch && replyStatusMatch;
   });
