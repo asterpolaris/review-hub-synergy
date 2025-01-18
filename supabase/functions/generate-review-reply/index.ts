@@ -3,6 +3,33 @@ import { corsHeaders } from "../_shared/cors.ts"
 
 const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
 
+const venueDescriptions = {
+  "YOKO Luna": {
+    long: "Housed within dreamlike environments, Yoko Luna merges fine dining with nightlife. Features neo-tokyo inspired nightclub, international DJs, performance dancers, aerialists, and specialty acts. Located at 1234 De La Montagne with eight distinct areas.",
+    short: "Canada's premier destination for dining and nightlife. Nikkei cuisine and Neo-Tokyo inspired nightlife in downtown Montreal."
+  },
+  "Bord'Elle Boutique Bar & Eatery": {
+    long: "A 1920s-inspired venue celebrating glitz and glamour in Old Montréal. Combines European boutique hotel sophistication with high-energy nightlife, featuring creative cuisine, world-class burlesque, aerial performances, and flapper girls.",
+    short: "1920's inspired boutique bar & burlesque club with international cuisine and live performances in Old Montreal."
+  },
+  "MUZIQUE": {
+    long: "Montreal's famous club since 2009 with two distinct rooms featuring local and international DJs playing house and hip hop. Includes a rooftop terrace bar for warmer nights.",
+    short: "Montreal's most famous club & rooftop since 2009."
+  },
+  "HANG Bar": {
+    long: "An upscale Vietnamese culinary and mixology experience. Features DIY mixology platters, specialty cocktails with Vietnamese spices, and a vibrant atmosphere that transports guests to Vietnam.",
+    short: "Haute-Viet dining and mixology bar in Old Montreal, blending refined cuisine with sophisticated nightlife."
+  },
+  "THE FARSIDES BROSSARD": {
+    long: "Thai-American Restaurant & Tiki Bar inspired by hip hop & pop culture from the 80's & 90's. Features street art, graffiti-inspired decor, and nightly DJs at Solar Uniquartier.",
+    short: "Thai-American restaurant and tiki bar with 80s/90s hip-hop inspiration in Brossard."
+  },
+  "THE FARSIDES": {
+    long: "Thai-American Restaurant & Tiki Bar in Old Montreal combining upscale dining with hip hop culture. Features contemporary street art, creative cocktails, and nightly DJs.",
+    short: "Thai-American restaurant and tiki bar with 80s/90s hip-hop vibes in Old Montreal."
+  }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -10,17 +37,27 @@ serve(async (req) => {
 
   try {
     const { review } = await req.json()
-
-    // Determine response length based on rating and review length
+    
+    // Determine response length and model based on rating and review length
     const isNegative = review.rating <= 3;
     const isLongReview = review.comment.length > 200;
-    let maxTokens = 400; // Default length
-
-    if (isNegative) {
-      maxTokens = isLongReview ? 800 : 600; // Longer responses for negative reviews
-    } else {
-      maxTokens = isLongReview ? 600 : 400; // Shorter responses for positive reviews
+    
+    // Use different models and token limits based on review sentiment
+    const model = isNegative ? 'claude-3-sonnet-20240229' : 'claude-3-haiku-20240307';
+    let maxTokens = isNegative ? 800 : 300; // Shorter responses for positive reviews
+    
+    // Adjust tokens based on review length
+    if (isLongReview && isNegative) {
+      maxTokens = 1000;
+    } else if (isLongReview && !isNegative) {
+      maxTokens = 400;
     }
+
+    // Get venue description
+    const venueInfo = venueDescriptions[review.venueName as keyof typeof venueDescriptions] || {
+      long: review.venueName,
+      short: review.venueName
+    };
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -30,16 +67,14 @@ serve(async (req) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model,
         max_tokens: maxTokens,
         messages: [{
           role: 'user',
-          content: `You are responding as ${review.venueName}. Generate a professional and friendly response to this customer review.
+          content: `You are responding as ${review.venueName}. Generate a professional response to this customer review.
           
           Business Context:
-          - You are ${review.venueName}, known for providing excellent customer service
-          - You value customer feedback and take all reviews seriously
-          - You aim to maintain a professional yet warm tone in all communications
+          ${isNegative ? venueInfo.long : venueInfo.short}
           
           Review: ${review.comment}
           Rating: ${review.rating}/5
@@ -47,41 +82,33 @@ serve(async (req) => {
           Guidelines:
           - ${isNegative ? 'Show genuine empathy and provide specific solutions' : 'Express sincere gratitude and highlight mentioned positives'}
           - Keep the tone ${isNegative ? 'understanding and solution-focused' : 'warm and appreciative'}
-          - Length: ${isNegative ? 'Be thorough but concise' : 'Keep it brief but meaningful'}
-          - Thank them for their feedback
-          - Address specific points they mentioned
-          - If rating is low (3 or below):
-            * Show genuine understanding of their concerns
-            * Explain how you'll address specific issues
-            * Provide a way for them to follow up if needed
-          - If rating is high (4 or 5):
-            * Express genuine appreciation
-            * Reinforce positive experiences
-            * Warmly invite them back
-          - End with a professional closing
-          ${isLongReview ? '- Address multiple points they raised in their detailed review' : '- Focus on their main point concisely'}
-          - Maximum ${isNegative ? '2-3' : '1-2'} paragraphs`
+          - Length: ${isNegative ? 'Be thorough but concise' : 'Keep it brief and warm'}
+          ${isNegative ? `
+          - Address their specific concerns
+          - Show understanding of their experience
+          - Explain how you'll address the issues
+          - Provide a way to follow up
+          - Maximum 2-3 paragraphs
+          ` : `
+          - Thank them warmly
+          - Highlight one specific positive they mentioned
+          - Brief invitation to return
+          - Maximum 1-2 short paragraphs
+          `}`
         }]
       })
     });
 
     const data = await response.json();
     return new Response(
-      JSON.stringify({ 
-        reply: data.content[0].text 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      JSON.stringify({ reply: data.content[0].text }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (error) {
     console.error('Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   }
 })
