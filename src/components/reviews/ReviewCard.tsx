@@ -6,6 +6,21 @@ interface ReviewCardProps {
   review: Review;
 }
 
+const convertRating = (rating: string | number): number => {
+  const ratingMap: { [key: string]: number } = {
+    'ONE': 1,
+    'TWO': 2,
+    'THREE': 3,
+    'FOUR': 4,
+    'FIVE': 5
+  };
+  
+  if (typeof rating === 'string' && rating in ratingMap) {
+    return ratingMap[rating];
+  }
+  return Number(rating);
+};
+
 export const ReviewCard = ({ review }: ReviewCardProps) => {
   return (
     <Card className="w-full">
@@ -19,7 +34,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
             </div>
             <div className="flex items-center gap-1 mt-2">
               <span className="text-sm font-medium text-yellow-500">
-                {Number(review.rating).toFixed(1)}/5
+                {convertRating(review.rating).toFixed(1)}/5
               </span>
             </div>
           </div>
