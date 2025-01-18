@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MapPin, Reply } from "lucide-react";
+import { MapPin, Reply, Sparkles } from "lucide-react";
 import { Review } from "@/types/review";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReviewCardProps {
   review: Review;
@@ -41,10 +42,36 @@ interface ReplyFormData {
 
 export const ReviewCard = ({ review }: ReviewCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { mutate: submitReply, isPending } = useReviewReply();
   const form = useForm<ReplyFormData>();
   const { toast } = useToast();
   const rating = convertRating(review.rating);
+
+  const generateReply = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-review-reply', {
+        body: { review }
+      });
+
+      if (error) throw error;
+      
+      form.setValue('comment', data.reply);
+      toast({
+        title: "Response generated",
+        description: "AI-generated response has been added to the reply box.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error generating response",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const onSubmit = (data: ReplyFormData) => {
     if (!review.placeId) {
@@ -134,6 +161,19 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
             <CollapsibleContent className="mt-4">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateReply}
+                      disabled={isGenerating}
+                      className="flex items-center gap-2"
+                    >
+                      <Sparkles size={16} />
+                      {isGenerating ? "Generating..." : "Generate AI Response"}
+                    </Button>
+                  </div>
                   <FormField
                     control={form.control}
                     name="comment"
