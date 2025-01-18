@@ -62,13 +62,21 @@ export const processReviewData = async (reviewsData: ReviewsData) => {
       });
     }
 
+    // Get current session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error("No valid session found:", sessionError);
+      throw new Error("Authentication required");
+    }
+
     const { data: batchResponse, error: batchError } = await supabase.functions.invoke('reviews-batch', {
       body: {
         access_token: reviewsData.access_token,
         location_names: reviewsData.businesses.map(b => b.google_place_id),
       },
       headers: {
-        Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        Authorization: `Bearer ${session.access_token}`
       }
     });
 
