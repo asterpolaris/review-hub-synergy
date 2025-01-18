@@ -51,13 +51,21 @@ export const useReviews = () => {
         const businessIds = reviewsData.businesses.map(b => b.id);
         const { data: cachedReviews, error: cacheError } = await supabase
           .from('cached_reviews')
-          .select('review_data, business_id')
+          .select('review_data, business_id, google_review_id')
           .in('business_id', businessIds);
 
         if (cacheError) {
           console.error("Error fetching cached reviews:", cacheError);
           throw cacheError;
         }
+
+        // Create a map of existing reviews for quick lookup
+        const existingReviews = new Map(
+          cachedReviews?.map(review => [
+            `${review.business_id}-${review.google_review_id}`,
+            review
+          ]) || []
+        );
 
         if (cachedReviews) {
           console.log("Found cached reviews:", cachedReviews);
@@ -90,9 +98,6 @@ export const useReviews = () => {
         }
 
         if (batchResponse?.locationReviews) {
-          // Process reviews in chunks to avoid large transactions
-          const CHUNK_SIZE = 50;
-          
           for (const locationReview of batchResponse.locationReviews) {
             const business = reviewsData.businesses.find(
               b => b.google_place_id === locationReview.locationName
@@ -117,31 +122,44 @@ export const useReviews = () => {
 
                 allReviews.push(reviewData);
 
-                // First try to update existing review
-                const { error: updateError } = await supabase
-                  .from('cached_reviews')
-                  .update({
-                    review_data: reviewData as unknown as Json,
-                  })
-                  .match({ 
-                    business_id: business.id,
-                    google_review_id: review.reviewId 
-                  });
+                const reviewKey = `${business.id}-${review.reviewId}`;
+                const existingReview = existingReviews.get(reviewKey);
 
-                // If update fails (review doesn't exist), try to insert
-                if (updateError) {
-                  const { error: insertError } = await supabase
-                    .from('cached_reviews')
-                    .insert({
-                      business_id: business.id,
-                      google_review_id: review.reviewId,
-                      review_data: reviewData as unknown as Json,
-                    });
+                try {
+                  if (existingReview) {
+                    // Update existing review
+                    const { error: updateError } = await supabase
+                      .from('cached_reviews')
+                      .update({
+                        review_data: reviewData as unknown as Json,
+                      })
+                      .match({ 
+                        business_id: business.id,
+                        google_review_id: review.reviewId 
+                      });
 
-                  if (insertError) {
-                    console.error("Failed to cache review:", insertError);
-                    errors.push(`Cache update failed for review ${review.reviewId}: ${insertError.message}`);
+                    if (updateError) {
+                      console.error("Failed to update cached review:", updateError);
+                      errors.push(`Failed to update review ${review.reviewId}: ${updateError.message}`);
+                    }
+                  } else {
+                    // Insert new review
+                    const { error: insertError } = await supabase
+                      .from('cached_reviews')
+                      .insert({
+                        business_id: business.id,
+                        google_review_id: review.reviewId,
+                        review_data: reviewData as unknown as Json,
+                      });
+
+                    if (insertError) {
+                      console.error("Failed to insert cached review:", insertError);
+                      errors.push(`Failed to insert review ${review.reviewId}: ${insertError.message}`);
+                    }
                   }
+                } catch (error) {
+                  console.error("Error processing review:", error);
+                  errors.push(`Error processing review ${review.reviewId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
               }
             }
