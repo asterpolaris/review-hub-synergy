@@ -87,7 +87,8 @@ serve(async (req) => {
     const locationReviews = [];
     for (const locationName of location_names) {
       try {
-        const locationId = locationName;
+        // Extract the location ID from the full path (e.g., "locations/123456" -> "123456")
+        const locationId = locationName.replace('locations/', '');
         const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
