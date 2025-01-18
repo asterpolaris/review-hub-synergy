@@ -43,6 +43,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     className={location.pathname === item.path ? "bg-accent" : ""}
+                    tooltip={item.title}
                   >
                     <Link to={item.path} className="flex items-center gap-3">
                       <item.icon className="h-4 w-4" />
