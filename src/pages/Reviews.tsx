@@ -56,22 +56,26 @@ const Reviews = () => {
   }
 
   const filteredReviews = data?.reviews?.filter((review) => {
+    // Location filter
     const locationMatch = 
       selectedLocations.length === 0 || 
       selectedLocations.includes('all_businesses') ||
       selectedLocations.includes(review.placeId);
     
+    // Rating filter - convert string rating to number for comparison
     const ratingMatch = 
       selectedRatings.length === 0 || 
       selectedRatings.includes('all_ratings') ||
-      selectedRatings.includes(review.rating.toString());
+      selectedRatings.includes(String(review.rating));
     
+    // Reply status filter
     const replyStatusMatch = 
       selectedReplyStatus.length === 0 || 
       selectedReplyStatus.includes('all_status') ||
       (selectedReplyStatus.includes('waiting') && !review.reply) ||
       (selectedReplyStatus.includes('replied') && review.reply);
     
+    // All filters must match for the review to be included
     return locationMatch && ratingMatch && replyStatusMatch;
   });
 
