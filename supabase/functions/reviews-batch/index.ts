@@ -70,42 +70,48 @@ serve(async (req) => {
     const accountId = accountsData.accounts[0].name;
     console.log('Using account ID:', accountId);
 
-    // Extract location IDs from the full paths and remove the "locations/" prefix
-    const locationIds = location_names.map(path => {
-      const parts = path.split('/');
-      return parts[parts.length - 1];
-    });
-
     // Fetch reviews for each location
     const locationReviews = [];
-    for (const locationId of locationIds) {
-      const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations/${locationId}/reviews`;
-      console.log('Fetching reviews from:', reviewsUrl);
+    for (const locationName of location_names) {
+      try {
+        // The locationName should already be in the correct format (e.g., "locations/123456")
+        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews`;
+        console.log('Fetching reviews from:', reviewsUrl);
 
-      const reviewsResponse = await fetch(reviewsUrl, {
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!reviewsResponse.ok) {
-        console.error(`Failed to fetch reviews for location ${locationId}:`, {
-          status: reviewsResponse.status,
-          statusText: reviewsResponse.statusText
+        const reviewsResponse = await fetch(reviewsUrl, {
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
         });
-        continue; // Skip this location and continue with others
-      }
 
-      const reviewsData = await reviewsResponse.json();
-      locationReviews.push({
-        locationName: `locations/${locationId}`,
-        reviews: reviewsData.reviews || []
-      });
+        if (!reviewsResponse.ok) {
+          console.error(`Failed to fetch reviews for location ${locationName}:`, {
+            status: reviewsResponse.status,
+            statusText: reviewsResponse.statusText
+          });
+          const errorText = await reviewsResponse.text();
+          console.error('Error response:', errorText);
+          continue; // Skip this location and continue with others
+        }
+
+        const reviewsData = await reviewsResponse.json();
+        console.log(`Reviews data for location ${locationName}:`, reviewsData);
+        
+        locationReviews.push({
+          locationName,
+          reviews: reviewsData.reviews || []
+        });
+      } catch (error) {
+        console.error(`Error processing location ${locationName}:`, error);
+        // Continue with other locations even if one fails
+        continue;
+      }
     }
 
     console.log('Successfully fetched reviews for locations:', locationReviews.length);
+    console.log('Location reviews:', locationReviews);
 
     return new Response(
       JSON.stringify({ locationReviews }),
