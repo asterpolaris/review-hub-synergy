@@ -58,6 +58,14 @@ const Reviews = () => {
   const uniqueLocations = [...new Set(data?.reviews?.map(review => review.placeId) || [])];
   const ratingOptions = ["1", "2", "3", "4", "5"];
 
+  const handleLocationChange = (value: string) => {
+    setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
+  };
+
+  const handleRatingChange = (value: string) => {
+    setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fadeIn">
@@ -69,7 +77,7 @@ const Reviews = () => {
           <div className="w-64">
             <Select
               value={selectedLocations.join(",")}
-              onValueChange={(value) => setSelectedLocations(value ? value.split(",") : [])}
+              onValueChange={handleLocationChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Filter by location" />
@@ -87,7 +95,7 @@ const Reviews = () => {
           <div className="w-64">
             <Select
               value={selectedRatings.join(",")}
-              onValueChange={(value) => setSelectedRatings(value ? value.split(",") : [])}
+              onValueChange={handleRatingChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Filter by rating" />
