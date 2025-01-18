@@ -1,24 +1,37 @@
 import { Review } from "@/types/review";
-import { VenueMetrics, PeriodMetrics } from "@/types/metrics";
-import { 
-  filterReviewsByDate, 
-  calculateResponseRate, 
-  calculateBadReviewResponseRate, 
-  calculateAverageRating 
-} from "./reviewUtils";
+import { PeriodMetrics, VenueMetrics } from "@/types/metrics";
 
 export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
+  if (reviews.length === 0) {
+    return {
+      totalReviews: 0,
+      averageRating: 0,
+      responseRate: 0,
+      badReviewResponseRate: 0
+    };
+  }
+
+  const totalReviews = reviews.length;
+  const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / totalReviews;
+  const responseRate = (reviews.filter(review => review.reply).length / totalReviews) * 100;
+  
+  const badReviews = reviews.filter(review => review.rating <= 3);
+  const badReviewResponseRate = badReviews.length > 0 
+    ? (badReviews.filter(review => review.reply).length / badReviews.length) * 100
+    : 0;
+
   return {
-    totalReviews: reviews.length,
-    averageRating: calculateAverageRating(reviews),
-    responseRate: calculateResponseRate(reviews),
-    badReviewResponseRate: calculateBadReviewResponseRate(reviews)
+    totalReviews,
+    averageRating,
+    responseRate,
+    badReviewResponseRate
   };
 };
 
 export const calculateMetricVariance = (current: PeriodMetrics, previous: PeriodMetrics) => {
   const calculateVariance = (current: number, previous: number) => {
-    return previous > 0 ? ((current - previous) / previous) * 100 : current > 0 ? 100 : 0;
+    if (previous === 0) return current === 0 ? 0 : 100;
+    return ((current - previous) / previous) * 100;
   };
 
   return {
@@ -29,10 +42,28 @@ export const calculateMetricVariance = (current: PeriodMetrics, previous: Period
   };
 };
 
-export const calculateVenueMetrics = (reviews: Review[], daysAgo: number): VenueMetrics[] => {
+export const calculateVenueMetrics = (reviews: Review[], period: string): VenueMetrics[] => {
   const now = new Date();
-  const startDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-  const previousStartDate = new Date(startDate.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+  let startDate: Date;
+  let previousStartDate: Date;
+
+  switch (period) {
+    case 'last-month':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      previousStartDate = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
+      break;
+    case 'last-year':
+      startDate = new Date(now.getFullYear() - 1, 0, 1);
+      previousStartDate = new Date(now.getFullYear() - 2, 0, 1);
+      break;
+    case 'lifetime':
+      startDate = new Date(now.getFullYear() - 2, 0, 1);
+      previousStartDate = new Date(now.getFullYear() - 3, 0, 1);
+      break;
+    default: // 'last-30-days'
+      startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+      previousStartDate = new Date(startDate.getTime() - (30 * 24 * 60 * 60 * 1000));
+  }
 
   const venueReviews = reviews.reduce((acc, review) => {
     if (!acc[review.venueName]) {
@@ -42,13 +73,13 @@ export const calculateVenueMetrics = (reviews: Review[], daysAgo: number): Venue
     return acc;
   }, {} as { [key: string]: Review[] });
 
-  return Object.entries(venueReviews).map(([venueName, reviews]) => {
-    const periodReviews = reviews.filter(review => {
+  return Object.entries(venueReviews).map(([venueName, venueReviews]) => {
+    const periodReviews = venueReviews.filter(review => {
       const reviewDate = new Date(review.createTime);
       return reviewDate >= startDate && reviewDate <= now;
     });
 
-    const previousPeriodReviews = reviews.filter(review => {
+    const previousPeriodReviews = venueReviews.filter(review => {
       const reviewDate = new Date(review.createTime);
       return reviewDate >= previousStartDate && reviewDate < startDate;
     });

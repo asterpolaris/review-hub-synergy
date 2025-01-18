@@ -3,19 +3,41 @@ import { useReviews } from "./useReviews";
 import { ReviewMetrics } from "@/types/metrics";
 import { calculatePeriodMetrics, calculateMetricVariance, calculateVenueMetrics } from "@/utils/metricCalculations";
 
-export const useReviewMetrics = (days: number = 30) => {
+export const useReviewMetrics = (period: string = 'last-30-days') => {
   const { data: reviewsData, isLoading: isReviewsLoading, error: reviewsError } = useReviews();
 
   return useQuery({
-    queryKey: ["reviewMetrics", days],
+    queryKey: ["reviewMetrics", period],
     queryFn: () => {
       if (!reviewsData?.reviews) {
         return null;
       }
 
       const now = new Date();
-      const startDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
-      const previousStartDate = new Date(startDate.getTime() - (days * 24 * 60 * 60 * 1000));
+      let startDate: Date;
+      let previousStartDate: Date;
+
+      switch (period) {
+        case 'last-month':
+          // Last complete calendar month
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          previousStartDate = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
+          break;
+        case 'last-year':
+          // Last complete calendar year
+          startDate = new Date(now.getFullYear() - 1, 0, 1);
+          previousStartDate = new Date(now.getFullYear() - 2, 0, 1);
+          break;
+        case 'lifetime':
+          // Last two calendar years
+          startDate = new Date(now.getFullYear() - 2, 0, 1);
+          previousStartDate = new Date(now.getFullYear() - 3, 0, 1);
+          break;
+        default: // 'last-30-days'
+          startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+          previousStartDate = new Date(startDate.getTime() - (30 * 24 * 60 * 60 * 1000));
+      }
 
       const periodReviews = reviewsData.reviews.filter(review => {
         const reviewDate = new Date(review.createTime);
@@ -30,7 +52,7 @@ export const useReviewMetrics = (days: number = 30) => {
       const currentMetrics = calculatePeriodMetrics(periodReviews);
       const previousMetrics = calculatePeriodMetrics(previousPeriodReviews);
       const monthOverMonth = calculateMetricVariance(currentMetrics, previousMetrics);
-      const venueMetrics = calculateVenueMetrics(reviewsData.reviews, days);
+      const venueMetrics = calculateVenueMetrics(reviewsData.reviews, period);
 
       const metrics: ReviewMetrics = {
         ...currentMetrics,
