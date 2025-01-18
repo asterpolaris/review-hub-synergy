@@ -92,7 +92,6 @@ export const useReviews = () => {
         if (batchResponse?.locationReviews) {
           // Process reviews in chunks to avoid large transactions
           const CHUNK_SIZE = 50;
-          const upsertData = [];
           
           for (const locationReview of batchResponse.locationReviews) {
             const business = reviewsData.businesses.find(
@@ -117,27 +116,34 @@ export const useReviews = () => {
                 };
 
                 allReviews.push(reviewData);
-                upsertData.push({
-                  business_id: business.id,
-                  google_review_id: review.reviewId,
-                  review_data: reviewData as unknown as Json,
-                });
+
+                // First try to update existing review
+                const { error: updateError } = await supabase
+                  .from('cached_reviews')
+                  .update({
+                    review_data: reviewData as unknown as Json,
+                  })
+                  .match({ 
+                    business_id: business.id,
+                    google_review_id: review.reviewId 
+                  });
+
+                // If update fails (review doesn't exist), try to insert
+                if (updateError) {
+                  const { error: insertError } = await supabase
+                    .from('cached_reviews')
+                    .insert({
+                      business_id: business.id,
+                      google_review_id: review.reviewId,
+                      review_data: reviewData as unknown as Json,
+                    });
+
+                  if (insertError) {
+                    console.error("Failed to cache review:", insertError);
+                    errors.push(`Cache update failed for review ${review.reviewId}: ${insertError.message}`);
+                  }
+                }
               }
-            }
-          }
-
-          // Upsert reviews in chunks
-          for (let i = 0; i < upsertData.length; i += CHUNK_SIZE) {
-            const chunk = upsertData.slice(i, i + CHUNK_SIZE);
-            const { error: upsertError } = await supabase
-              .from('cached_reviews')
-              .upsert(chunk, {
-                onConflict: 'business_id,google_review_id'
-              });
-
-            if (upsertError) {
-              console.error("Failed to cache reviews chunk:", upsertError);
-              errors.push(`Cache update failed for chunk ${i}: ${upsertError.message}`);
             }
           }
         }
@@ -166,6 +172,6 @@ export const useReviews = () => {
       };
     },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep unused data in cache for 30 minutes (replaced cacheTime)
+    gcTime: 30 * 60 * 1000, // Keep unused data in cache for 30 minutes
   });
 };
