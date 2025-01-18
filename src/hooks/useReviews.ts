@@ -31,6 +31,31 @@ export const useReviews = () => {
       const errors: string[] = [];
 
       try {
+        // First, try to get cached reviews
+        const { data: cachedReviews, error: cacheError } = await supabase
+          .from('cached_reviews')
+          .select('review_data, business_id')
+          .in('business_id', reviewsData.businesses.map(b => b.id));
+
+        if (cacheError) {
+          console.error("Error fetching cached reviews:", cacheError);
+        } else if (cachedReviews) {
+          console.log("Found cached reviews:", cachedReviews);
+          cachedReviews.forEach(cached => {
+            const business = reviewsData.businesses.find(
+              b => b.id === cached.business_id
+            );
+            if (business) {
+              allReviews.push({
+                ...cached.review_data,
+                venueName: business.name,
+                placeId: business.google_place_id,
+              });
+            }
+          });
+        }
+
+        // Fetch fresh reviews from Google API
         const { data: batchResponse, error } = await supabase.functions.invoke('reviews-batch', {
           body: {
             access_token: reviewsData.access_token,
@@ -46,14 +71,16 @@ export const useReviews = () => {
         console.log("Batch reviews response:", batchResponse);
 
         if (batchResponse?.locationReviews) {
-          batchResponse.locationReviews.forEach((locationReview: any) => {
+          // Update cache and reviews array
+          for (const locationReview of batchResponse.locationReviews) {
             const business = reviewsData.businesses.find(
               b => b.google_place_id === locationReview.locationName
             );
             
             if (business && locationReview.reviews) {
-              locationReview.reviews.forEach((review: any) => {
-                allReviews.push({
+              // Update cache for each review
+              for (const review of locationReview.reviews) {
+                const reviewData = {
                   id: review.reviewId,
                   authorName: review.reviewer.displayName,
                   rating: review.starRating,
@@ -64,10 +91,28 @@ export const useReviews = () => {
                     createTime: review.reviewReply.updateTime
                   } : undefined,
                   photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
+                };
+
+                // Upsert to cache
+                const { error: upsertError } = await supabase
+                  .from('cached_reviews')
+                  .upsert({
+                    business_id: business.id,
+                    google_review_id: review.reviewId,
+                    review_data: reviewData,
+                  });
+
+                if (upsertError) {
+                  console.error("Failed to cache review:", upsertError);
+                }
+
+                // Add to allReviews array
+                allReviews.push({
+                  ...reviewData,
                   venueName: business.name,
                   placeId: business.google_place_id,
                 });
-              });
+              }
             }
           });
         }
@@ -85,8 +130,11 @@ export const useReviews = () => {
         });
       }
 
+      // Remove duplicates (in case a review was both in cache and fresh data)
+      const uniqueReviews = Array.from(new Map(allReviews.map(review => [review.id, review])).values());
+
       return {
-        reviews: allReviews.sort((a, b) => 
+        reviews: uniqueReviews.sort((a, b) => 
           new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
         ),
         businesses: reviewsData.businesses
