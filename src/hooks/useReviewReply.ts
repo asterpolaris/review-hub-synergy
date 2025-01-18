@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Review } from "@/types/review";
+import { Json } from "@/integrations/supabase/types";
 
 interface ReplyParams {
   reviewId: string;
