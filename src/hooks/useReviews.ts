@@ -48,7 +48,7 @@ export const useReviews = () => {
         if (batchResponse?.locationReviews) {
           batchResponse.locationReviews.forEach((locationReview: any) => {
             const business = reviewsData.businesses.find(
-              b => locationReview.locationName.includes(b.google_place_id)
+              b => b.google_place_id === locationReview.locationName.split('/').pop()
             );
             
             if (business && locationReview.reviews) {

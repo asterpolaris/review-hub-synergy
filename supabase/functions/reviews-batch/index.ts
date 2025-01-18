@@ -87,8 +87,9 @@ serve(async (req) => {
     const locationReviews = [];
     for (const locationName of location_names) {
       try {
-        // Use the correct API endpoint format with the account path
-        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationName.split('/').pop()}/reviews?pageSize=10&orderBy=updateTime desc`;
+        // Extract location ID from the full path
+        const locationId = locationName.split('/').pop();
+        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
