@@ -9,7 +9,7 @@ export const useReviews = () => {
   return useQuery({
     queryKey: ["reviews"],
     queryFn: async () => {
-      console.log("Fetching business data...");
+      console.log("Fetching reviews data...");
       
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
         data: { access_token: string; businesses: Array<{ name: string; google_place_id: string }> } | null;
@@ -25,13 +25,12 @@ export const useReviews = () => {
         throw new Error("No data returned from reviews function");
       }
 
-      console.log("Business data received:", reviewsData);
+      console.log("Reviews data received:", reviewsData);
 
       const allReviews: Review[] = [];
       const errors: string[] = [];
 
       try {
-        // Call our Edge Function for batch reviews
         const { data: batchResponse, error } = await supabase.functions.invoke('reviews-batch', {
           body: {
             access_token: reviewsData.access_token,
@@ -86,15 +85,11 @@ export const useReviews = () => {
         });
       }
 
-      // Even if there are no reviews, return an empty array with the business data
       return {
         reviews: allReviews.sort((a, b) => 
           new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
         ),
-        businesses: reviewsData.businesses.map(b => ({
-          name: b.name,
-          id: b.google_place_id
-        }))
+        businesses: reviewsData.businesses
       };
     },
   });

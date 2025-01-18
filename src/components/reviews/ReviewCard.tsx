@@ -29,11 +29,11 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent>
         <p className="text-sm">{review.comment}</p>
         
         {review.photoUrls && review.photoUrls.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 mt-4">
             {review.photoUrls.map((url, index) => (
               <img
                 key={index}
@@ -42,16 +42,6 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
                 className="h-24 w-24 object-cover rounded-md"
               />
             ))}
-          </div>
-        )}
-
-        {review.reply && (
-          <div className="bg-muted p-3 rounded-md">
-            <p className="text-sm font-medium mb-1">Previous response:</p>
-            <p className="text-sm">{review.reply.comment}</p>
-            <span className="text-xs text-muted-foreground">
-              {new Date(review.reply.createTime).toLocaleDateString()}
-            </span>
           </div>
         )}
       </CardContent>

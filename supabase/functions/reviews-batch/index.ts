@@ -19,17 +19,10 @@ serve(async (req) => {
     console.log('Raw request body:', requestBody);
 
     const { access_token, location_names } = JSON.parse(requestBody);
-    console.log('Parsed request parameters:', {
-      hasAccessToken: !!access_token,
-      locationNames: location_names,
-      accessTokenPreview: access_token ? `${access_token.substring(0, 10)}...` : 'none'
-    });
+    console.log('Processing request for locations:', location_names);
 
     if (!access_token || !location_names) {
-      console.error('Missing required parameters:', { 
-        hasAccessToken: !!access_token, 
-        hasLocationNames: !!location_names 
-      });
+      console.error('Missing required parameters');
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -70,7 +63,7 @@ serve(async (req) => {
     const locationReviews = [];
     for (const locationName of location_names) {
       try {
-        // Using the correct API endpoint as per documentation
+        // Construct the full location path
         const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews?pageSize=10&orderBy=updateTime desc`;
         console.log('Fetching reviews from:', reviewsUrl);
 
@@ -83,12 +76,12 @@ serve(async (req) => {
         });
 
         if (!reviewsResponse.ok) {
+          const errorText = await reviewsResponse.text();
           console.error(`Failed to fetch reviews for location ${locationName}:`, {
             status: reviewsResponse.status,
-            statusText: reviewsResponse.statusText
+            statusText: reviewsResponse.statusText,
+            response: errorText
           });
-          const errorText = await reviewsResponse.text();
-          console.error('Error response:', errorText);
           continue; // Skip this location and continue with others
         }
 
@@ -107,7 +100,6 @@ serve(async (req) => {
     }
 
     console.log('Successfully fetched reviews for locations:', locationReviews.length);
-    console.log('Location reviews:', locationReviews);
 
     return new Response(
       JSON.stringify({ locationReviews }),
