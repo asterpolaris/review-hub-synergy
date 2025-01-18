@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +20,33 @@ serve(async (req) => {
   }
 
   try {
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header found');
+      throw new Error('No authorization header');
+    }
+
+    // Initialize Supabase client with service role key
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+    });
+
+    // Verify the JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: verificationError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (verificationError || !user) {
+      console.error('Token verification failed:', verificationError);
+      throw new Error('Invalid token');
+    }
+
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
