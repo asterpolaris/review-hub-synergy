@@ -15,6 +15,7 @@ import { useState } from "react";
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
+  const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const { data, isLoading, error } = useReviews();
 
   if (isLoading) {
@@ -60,11 +61,22 @@ const Reviews = () => {
       selectedRatings.includes('all_ratings') ||
       selectedRatings.includes(review.rating.toString());
     
-    return locationMatch && ratingMatch;
+    const replyStatusMatch = 
+      selectedReplyStatus.length === 0 || 
+      selectedReplyStatus.includes('all_status') ||
+      (selectedReplyStatus.includes('waiting') && !review.replyText) ||
+      (selectedReplyStatus.includes('replied') && review.replyText);
+    
+    return locationMatch && ratingMatch && replyStatusMatch;
   });
 
   const uniqueLocations = [...new Set(data?.reviews?.map(review => review.placeId) || [])];
   const ratingOptions = ["1", "2", "3", "4", "5"];
+  const replyStatusOptions = [
+    { value: "all_status", label: "All" },
+    { value: "waiting", label: "Waiting for Reply" },
+    { value: "replied", label: "Replied" }
+  ];
 
   const handleLocationChange = (value: string) => {
     setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
@@ -72,6 +84,10 @@ const Reviews = () => {
 
   const handleRatingChange = (value: string) => {
     setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
+  };
+
+  const handleReplyStatusChange = (value: string) => {
+    setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
   };
 
   return (
@@ -114,6 +130,24 @@ const Reviews = () => {
                 {ratingOptions.map((rating) => (
                   <SelectItem key={rating} value={rating}>
                     {rating} Stars
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-64">
+            <Select
+              value={selectedReplyStatus.join(",")}
+              onValueChange={handleReplyStatusChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by reply status" />
+              </SelectTrigger>
+              <SelectContent>
+                {replyStatusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
