@@ -8,12 +8,19 @@ interface MetricVariance {
   responseRate: number;
 }
 
+interface PeriodMetrics {
+  totalReviews: number;
+  averageRating: number;
+  responseRate: number;
+}
+
 interface VenueMetrics {
   name: string;
   totalReviews: number;
   averageRating: number;
   responseRate: number;
   monthOverMonth: MetricVariance;
+  previousPeriodMetrics?: PeriodMetrics;
 }
 
 interface ReviewMetrics {
@@ -21,6 +28,7 @@ interface ReviewMetrics {
   averageRating: number;
   responseRate: number;
   monthOverMonth: MetricVariance;
+  previousPeriodMetrics?: PeriodMetrics;
   venueMetrics: VenueMetrics[];
 }
 
@@ -105,6 +113,11 @@ const calculateVenueMetrics = (reviews: Review[], daysAgo: number): VenueMetrics
         totalReviews: totalReviewsChange,
         averageRating: averageRatingChange,
         responseRate: responseRateChange
+      },
+      previousPeriodMetrics: {
+        totalReviews: prevTotalReviews,
+        averageRating: prevAverageRating,
+        responseRate: prevResponseRate
       }
     };
   });
@@ -174,6 +187,11 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
       totalReviews: totalReviewsChange,
       averageRating: averageRatingChange,
       responseRate: responseRateChange
+    },
+    previousPeriodMetrics: {
+      totalReviews: prevTotalReviews,
+      averageRating: prevAverageRating,
+      responseRate: prevResponseRate
     },
     venueMetrics
   };

@@ -1,16 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReviewMetrics } from "@/hooks/useReviewMetrics";
-import { ArrowDownIcon, ArrowUpIcon, RefreshCwIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, RefreshCwIcon, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQueryClient } from "@tanstack/react-query";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 
-const MetricVariance = ({ value }: { value: number }) => {
+const MetricVariance = ({ value, absoluteChange }: { value: number, absoluteChange: number }) => {
   const isPositive = value > 0;
   return (
     <div className={cn(
@@ -18,7 +21,7 @@ const MetricVariance = ({ value }: { value: number }) => {
       isPositive ? "text-green-600" : "text-red-600"
     )}>
       {isPositive ? <ArrowUpIcon className="h-3 w-3" /> : <ArrowDownIcon className="h-3 w-3" />}
-      <span>{Math.abs(value).toFixed(1)}% MoM</span>
+      <span>{Math.abs(value).toFixed(1)}% ({absoluteChange > 0 ? '+' : ''}{absoluteChange})</span>
     </div>
   );
 };
@@ -27,7 +30,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { session, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics();
+  const [date, setDate] = useState<Date>(new Date());
+  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(30);
 
   useEffect(() => {
     if (!isLoading && !session) {
@@ -37,9 +41,7 @@ const Dashboard = () => {
   }, [session, isLoading, navigate]);
 
   const handleRefresh = async () => {
-    // Invalidate and refetch reviews data first
     await queryClient.invalidateQueries({ queryKey: ["reviews"] });
-    // Then refetch metrics
     await refetch();
   };
 
@@ -56,15 +58,33 @@ const Dashboard = () => {
       <div className="space-y-6 animate-fadeIn">
         <div className="flex justify-between items-center">
           <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
-          <Button 
-            onClick={handleRefresh}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <RefreshCwIcon className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <CalendarIcon className="h-4 w-4" />
+                  {format(date, "PPP")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(newDate) => newDate && setDate(newDate)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Button 
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <RefreshCwIcon className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -75,7 +95,10 @@ const Dashboard = () => {
             <CardContent>
               <p className="text-3xl font-bold">{metrics?.totalReviews || 0}</p>
               {metrics?.monthOverMonth.totalReviews !== 0 && (
-                <MetricVariance value={metrics?.monthOverMonth.totalReviews || 0} />
+                <MetricVariance 
+                  value={metrics?.monthOverMonth.totalReviews || 0} 
+                  absoluteChange={metrics?.totalReviews - (metrics?.previousPeriodMetrics?.totalReviews || 0) || 0}
+                />
               )}
             </CardContent>
           </Card>
@@ -88,7 +111,10 @@ const Dashboard = () => {
                 {metrics?.averageRating ? metrics.averageRating.toFixed(1) : "-"}
               </p>
               {metrics?.monthOverMonth.averageRating !== 0 && (
-                <MetricVariance value={metrics?.monthOverMonth.averageRating || 0} />
+                <MetricVariance 
+                  value={metrics?.monthOverMonth.averageRating || 0}
+                  absoluteChange={Number((metrics?.averageRating - (metrics?.previousPeriodMetrics?.averageRating || 0)).toFixed(1)) || 0}
+                />
               )}
             </CardContent>
           </Card>
@@ -101,7 +127,10 @@ const Dashboard = () => {
                 {metrics?.responseRate ? `${Math.round(metrics.responseRate)}%` : "0%"}
               </p>
               {metrics?.monthOverMonth.responseRate !== 0 && (
-                <MetricVariance value={metrics?.monthOverMonth.responseRate || 0} />
+                <MetricVariance 
+                  value={metrics?.monthOverMonth.responseRate || 0}
+                  absoluteChange={Math.round(metrics?.responseRate - (metrics?.previousPeriodMetrics?.responseRate || 0)) || 0}
+                />
               )}
             </CardContent>
           </Card>
@@ -128,19 +157,28 @@ const Dashboard = () => {
                     <TableCell className="text-right">
                       {venue.totalReviews}
                       {venue.monthOverMonth.totalReviews !== 0 && (
-                        <MetricVariance value={venue.monthOverMonth.totalReviews} />
+                        <MetricVariance 
+                          value={venue.monthOverMonth.totalReviews}
+                          absoluteChange={venue.totalReviews - (venue.previousPeriodMetrics?.totalReviews || 0)}
+                        />
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       {venue.averageRating.toFixed(1)}
                       {venue.monthOverMonth.averageRating !== 0 && (
-                        <MetricVariance value={venue.monthOverMonth.averageRating} />
+                        <MetricVariance 
+                          value={venue.monthOverMonth.averageRating}
+                          absoluteChange={Number((venue.averageRating - (venue.previousPeriodMetrics?.averageRating || 0)).toFixed(1))}
+                        />
                       )}
                     </TableCell>
                     <TableCell className="text-right">
                       {Math.round(venue.responseRate)}%
                       {venue.monthOverMonth.responseRate !== 0 && (
-                        <MetricVariance value={venue.monthOverMonth.responseRate} />
+                        <MetricVariance 
+                          value={venue.monthOverMonth.responseRate}
+                          absoluteChange={Math.round(venue.responseRate - (venue.previousPeriodMetrics?.responseRate || 0))}
+                        />
                       )}
                     </TableCell>
                   </TableRow>
