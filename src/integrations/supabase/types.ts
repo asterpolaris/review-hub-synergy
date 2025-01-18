@@ -398,6 +398,10 @@ export type Database = {
         }
         Returns: Json
       }
+      update_metrics_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
