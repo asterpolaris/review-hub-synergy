@@ -18,17 +18,17 @@ serve(async (req) => {
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
-    const { access_token, locationNames } = JSON.parse(requestBody);
+    const { access_token, location_names } = JSON.parse(requestBody);
     console.log('Parsed request parameters:', {
       hasAccessToken: !!access_token,
-      locationNames,
+      locationNames: location_names,
       accessTokenPreview: access_token ? `${access_token.substring(0, 10)}...` : 'none'
     });
 
-    if (!access_token || !locationNames) {
+    if (!access_token || !location_names) {
       console.error('Missing required parameters:', { 
         hasAccessToken: !!access_token, 
-        hasLocationNames: !!locationNames 
+        hasLocationNames: !!location_names 
       });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
@@ -73,10 +73,10 @@ serve(async (req) => {
     // Fetch reviews using batchGetReviews endpoint
     const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
     console.log('Making batch reviews request to:', batchReviewsUrl);
-    console.log('With location names:', locationNames);
+    console.log('With location names:', location_names);
 
     const batchRequestBody = {
-      locationNames,
+      locationNames: location_names,
       pageSize: 50,
       ignoreRatingOnlyReviews: false
     };
