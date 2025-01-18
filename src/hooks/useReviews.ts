@@ -35,7 +35,7 @@ export const useReviews = () => {
         const { data: batchResponse, error } = await supabase.functions.invoke('reviews-batch', {
           body: {
             access_token: reviewsData.access_token,
-            locationNames: reviewsData.businesses.map(b => b.google_place_id),
+            location_names: reviewsData.businesses.map(b => b.google_place_id),
           }
         });
 
@@ -49,7 +49,7 @@ export const useReviews = () => {
         if (batchResponse?.locationReviews) {
           batchResponse.locationReviews.forEach((locationReview: any) => {
             const business = reviewsData.businesses.find(
-              b => b.google_place_id === locationReview.locationName
+              b => locationReview.locationName.includes(b.google_place_id)
             );
             
             if (business && locationReview.reviews) {

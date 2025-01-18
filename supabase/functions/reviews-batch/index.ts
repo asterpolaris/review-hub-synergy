@@ -70,13 +70,22 @@ serve(async (req) => {
     const accountId = accountsData.accounts[0].name;
     console.log('Using account ID:', accountId);
 
+    // Extract location IDs from the full paths
+    const locationIds = location_names.map(path => {
+      const parts = path.split('/');
+      return parts[parts.length - 1];
+    });
+
+    // Construct full location paths using account ID
+    const fullLocationPaths = locationIds.map(id => `${accountId}/locations/${id}`);
+    
     // Fetch reviews using batchGetReviews endpoint
-    const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
+    const batchReviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations:batchGetReviews`;
     console.log('Making batch reviews request to:', batchReviewsUrl);
-    console.log('With location names:', location_names);
+    console.log('With location paths:', fullLocationPaths);
 
     const batchRequestBody = {
-      locationNames: location_names,
+      locationNames: fullLocationPaths,
       pageSize: 50,
       ignoreRatingOnlyReviews: false
     };
