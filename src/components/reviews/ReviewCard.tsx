@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Star, MapPin, Reply } from "lucide-react";
+import { MapPin, Reply } from "lucide-react";
 import { Review } from "@/types/review";
 
 interface ReviewCardProps {
@@ -18,13 +18,9 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
               <span>{review.venueName}</span>
             </div>
             <div className="flex items-center gap-1 mt-2">
-              {Array.from({ length: review.rating }).map((_, i) => (
-                <Star 
-                  key={i} 
-                  className="text-yellow-500 fill-current" 
-                  size={16} 
-                />
-              ))}
+              <span className="text-sm font-medium text-yellow-500">
+                {review.rating}/5
+              </span>
             </div>
           </div>
           <span className="text-sm text-muted-foreground">
