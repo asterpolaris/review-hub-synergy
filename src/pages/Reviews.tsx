@@ -10,13 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
-  const { data, isLoading, error } = useReviews();
+  const { data, isLoading, error, refetch } = useReviews();
+
+  // Trigger refetch when filters change
+  useEffect(() => {
+    refetch();
+  }, [selectedLocations, selectedRatings, selectedReplyStatus, refetch]);
 
   if (isLoading) {
     return (
