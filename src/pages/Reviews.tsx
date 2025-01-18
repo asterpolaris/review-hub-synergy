@@ -50,8 +50,16 @@ const Reviews = () => {
   }
 
   const filteredReviews = data?.reviews?.filter((review) => {
-    const locationMatch = selectedLocations.length === 0 || selectedLocations.includes(review.placeId);
-    const ratingMatch = selectedRatings.length === 0 || selectedRatings.includes(review.rating.toString());
+    const locationMatch = 
+      selectedLocations.length === 0 || 
+      selectedLocations.includes('all_businesses') ||
+      selectedLocations.includes(review.placeId);
+    
+    const ratingMatch = 
+      selectedRatings.length === 0 || 
+      selectedRatings.includes('all_ratings') ||
+      selectedRatings.includes(review.rating.toString());
+    
     return locationMatch && ratingMatch;
   });
 
