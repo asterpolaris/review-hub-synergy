@@ -80,20 +80,19 @@ serve(async (req) => {
           Rating: ${review.rating}/5
           
           Guidelines:
-          - ${isNegative ? 'Show genuine empathy and provide specific solutions' : 'Express sincere gratitude and highlight mentioned positives'}
-          - Keep the tone ${isNegative ? 'understanding and solution-focused' : 'warm and appreciative'}
-          - Length: ${isNegative ? 'Be thorough but concise' : 'Keep it brief and warm'}
+          - ${isNegative ? 'Address concerns directly and provide solutions' : 'Be brief and appreciative'}
+          - Keep the tone ${isNegative ? 'professional and solution-focused' : 'warm but concise'}
+          - Length: ${isNegative ? 'Thorough but focused' : 'Brief and direct'}
           ${isNegative ? `
-          - Address their specific concerns
-          - Show understanding of their experience
-          - Explain how you'll address the issues
-          - Provide a way to follow up
+          - Address specific issues
+          - Provide clear solutions
+          - Include follow-up contact if needed
           - Maximum 2-3 paragraphs
           ` : `
-          - Thank them warmly
-          - Highlight one specific positive they mentioned
-          - Brief invitation to return
-          - Maximum 1-2 short paragraphs
+          - Thank them briefly
+          - Mention one specific positive point
+          - Quick invitation to return
+          - Maximum 1 short paragraph
           `}`
         }]
       })
