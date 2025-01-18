@@ -1,6 +1,14 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MapPin, Reply } from "lucide-react";
 import { Review } from "@/types/review";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
+import { useReviewReply } from "@/hooks/useReviewReply";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReviewCardProps {
   review: Review;
@@ -27,8 +35,38 @@ const getRatingColor = (rating: number): string => {
   return "text-red-500";
 };
 
+interface ReplyFormData {
+  comment: string;
+}
+
 export const ReviewCard = ({ review }: ReviewCardProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { mutate: submitReply, isLoading } = useReviewReply();
+  const form = useForm<ReplyFormData>();
+  const { toast } = useToast();
   const rating = convertRating(review.rating);
+
+  const onSubmit = (data: ReplyFormData) => {
+    if (!review.placeId) {
+      toast({
+        title: "Error",
+        description: "Place ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    submitReply({
+      reviewId: review.id,
+      comment: data.comment,
+      placeId: review.placeId
+    }, {
+      onSuccess: () => {
+        setIsOpen(false);
+        form.reset();
+      }
+    });
+  };
   
   return (
     <Card className="w-full">
@@ -79,6 +117,54 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
             </div>
             <p className="text-sm">{review.reply.comment}</p>
           </div>
+        )}
+
+        {!review.reply && (
+          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+              >
+                <Reply size={16} />
+                Reply to Review
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="comment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Write your reply..."
+                            className="min-h-[100px]"
+                            {...field}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? "Sending..." : "Send Reply"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </CardContent>
     </Card>
