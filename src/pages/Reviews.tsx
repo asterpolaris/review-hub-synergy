@@ -18,10 +18,21 @@ const Reviews = () => {
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const { data, isLoading, error, refetch } = useReviews();
 
-  // Trigger refetch when filters change
+  // Refetch when filters change
   useEffect(() => {
     refetch();
   }, [selectedLocations, selectedRatings, selectedReplyStatus, refetch]);
+
+  const convertGoogleRating = (rating: string): string => {
+    const ratingMap: { [key: string]: string } = {
+      'ONE': '1',
+      'TWO': '2',
+      'THREE': '3',
+      'FOUR': '4',
+      'FIVE': '5'
+    };
+    return ratingMap[rating] || '0';
+  };
 
   if (isLoading) {
     return (
@@ -55,17 +66,6 @@ const Reviews = () => {
     );
   }
 
-  const convertGoogleRating = (rating: string): string => {
-    const ratingMap: { [key: string]: string } = {
-      'ONE': '1',
-      'TWO': '2',
-      'THREE': '3',
-      'FOUR': '4',
-      'FIVE': '5'
-    };
-    return ratingMap[rating] || '0';
-  };
-
   const filteredReviews = data?.reviews?.filter((review) => {
     // Location filter
     const locationMatch = 
@@ -74,7 +74,7 @@ const Reviews = () => {
       selectedLocations.includes(review.placeId);
     
     // Rating filter - convert Google rating string to numeric string
-    const numericRating = convertGoogleRating(review.rating);
+    const numericRating = convertGoogleRating(review.rating.toString());
     const ratingMatch = 
       selectedRatings.length === 0 || 
       selectedRatings.includes('all_ratings') ||
@@ -87,17 +87,8 @@ const Reviews = () => {
       (selectedReplyStatus.includes('waiting') && !review.reply) ||
       (selectedReplyStatus.includes('replied') && review.reply);
     
-    // All filters must match for the review to be included
     return locationMatch && ratingMatch && replyStatusMatch;
   });
-
-  const uniqueLocations = [...new Set(data?.reviews?.map(review => review.placeId) || [])];
-  const ratingOptions = ["1", "2", "3", "4", "5"];
-  const replyStatusOptions = [
-    { value: "all_status", label: "All" },
-    { value: "waiting", label: "Waiting for Reply" },
-    { value: "replied", label: "Replied" }
-  ];
 
   const handleLocationChange = (value: string) => {
     setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
@@ -129,9 +120,9 @@ const Reviews = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all_businesses">All Businesses</SelectItem>
-                {uniqueLocations.map((location) => (
-                  <SelectItem key={location} value={location}>
-                    {data?.businesses?.find(b => b.google_place_id === location)?.name || location}
+                {data?.businesses?.map((business) => (
+                  <SelectItem key={business.google_place_id} value={business.google_place_id}>
+                    {business.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -148,7 +139,7 @@ const Reviews = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all_ratings">All Ratings</SelectItem>
-                {ratingOptions.map((rating) => (
+                {['1', '2', '3', '4', '5'].map((rating) => (
                   <SelectItem key={rating} value={rating}>
                     {rating} Stars
                   </SelectItem>
@@ -166,11 +157,9 @@ const Reviews = () => {
                 <SelectValue placeholder="Filter by reply status" />
               </SelectTrigger>
               <SelectContent>
-                {replyStatusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all_status">All</SelectItem>
+                <SelectItem value="waiting">Waiting for Reply</SelectItem>
+                <SelectItem value="replied">Replied</SelectItem>
               </SelectContent>
             </Select>
           </div>
