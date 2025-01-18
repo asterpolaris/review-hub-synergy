@@ -84,20 +84,13 @@ serve(async (req) => {
         'hasReply=false';
     }
 
-    // Format location names with account path
-    const formattedLocationNames = location_names.map(locationId => {
-      // Extract the numeric ID from the location string
-      const numericId = locationId.split('/').pop();
-      return `${accountId}/locations/${numericId}`;
-    });
-
     // Fetch reviews using batchGetReviews endpoint
     const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
     console.log('Making batch reviews request to:', batchReviewsUrl);
-    console.log('With formatted location names:', formattedLocationNames);
+    console.log('With location names:', location_names);
 
     const batchRequestBody = {
-      locationNames: formattedLocationNames,
+      locationNames: location_names,
       pageSize: pageSize,
       ignoreRatingOnlyReviews: false,
       ...(filterString && { filter: filterString })
