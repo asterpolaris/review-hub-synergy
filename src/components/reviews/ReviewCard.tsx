@@ -21,7 +21,15 @@ const convertRating = (rating: string | number): number => {
   return Number(rating);
 };
 
+const getRatingColor = (rating: number): string => {
+  if (rating >= 4) return "text-green-500";
+  if (rating === 3) return "text-yellow-500";
+  return "text-red-500";
+};
+
 export const ReviewCard = ({ review }: ReviewCardProps) => {
+  const rating = convertRating(review.rating);
+  
   return (
     <Card className="w-full">
       <CardHeader>
@@ -33,8 +41,8 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
               <span>{review.venueName}</span>
             </div>
             <div className="flex items-center gap-1 mt-2">
-              <span className="text-sm font-medium text-yellow-500">
-                {convertRating(review.rating).toFixed(1)}/5
+              <span className={`text-sm font-medium ${getRatingColor(rating)}`}>
+                {rating}/5
               </span>
             </div>
           </div>
