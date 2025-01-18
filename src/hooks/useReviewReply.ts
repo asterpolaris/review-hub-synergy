@@ -8,6 +8,15 @@ interface ReplyParams {
   placeId: string;
 }
 
+interface ReviewData {
+  id: string;
+  reply?: {
+    comment: string;
+    createTime: string;
+  };
+  [key: string]: any;
+}
+
 export const useReviewReply = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -29,9 +38,10 @@ export const useReviewReply = () => {
         .eq('google_review_id', reviewId)
         .single();
 
-      if (cachedReview) {
+      if (cachedReview && cachedReview.review_data) {
+        const reviewData = cachedReview.review_data as ReviewData;
         const updatedReviewData = {
-          ...cachedReview.review_data,
+          ...reviewData,
           reply: {
             comment,
             createTime: new Date().toISOString()

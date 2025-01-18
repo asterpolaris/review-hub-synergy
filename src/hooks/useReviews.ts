@@ -3,6 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
+interface Business {
+  name: string;
+  google_place_id: string;
+  id: string;
+}
+
+interface ReviewsData {
+  access_token: string;
+  businesses: Business[];
+}
+
 export const useReviews = () => {
   const { toast } = useToast();
 
@@ -12,7 +23,7 @@ export const useReviews = () => {
       console.log("Fetching reviews data...");
       
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
-        data: { access_token: string; businesses: Array<{ name: string; google_place_id: string }> } | null;
+        data: ReviewsData | null;
         error: Error | null;
       };
       
@@ -45,9 +56,10 @@ export const useReviews = () => {
             const business = reviewsData.businesses.find(
               b => b.id === cached.business_id
             );
-            if (business) {
+            if (business && cached.review_data) {
+              const reviewData = cached.review_data as Review;
               allReviews.push({
-                ...cached.review_data,
+                ...reviewData,
                 venueName: business.name,
                 placeId: business.google_place_id,
               });
