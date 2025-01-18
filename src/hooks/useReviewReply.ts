@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Review } from "@/types/review";
-import { Json } from "@/integrations/supabase/types";
 
 interface ReplyParams {
   reviewId: string;
@@ -24,37 +23,12 @@ export const useReviewReply = () => {
         throw response.error;
       }
 
-      // Update the cache with the new reply
-      const { data: cachedReview } = await supabase
-        .from('cached_reviews')
-        .select('review_data, business_id')
-        .eq('google_review_id', reviewId)
-        .maybeSingle();
-
-      if (cachedReview && cachedReview.review_data) {
-        const reviewData = cachedReview.review_data as unknown as Review;
-        const updatedReviewData: Review = {
-          ...reviewData,
-          reply: {
-            comment,
-            createTime: new Date().toISOString()
-          }
-        };
-
-        await supabase
-          .from('cached_reviews')
-          .update({ 
-            review_data: updatedReviewData as unknown as Json 
-          })
-          .eq('google_review_id', reviewId);
-      }
-
       return response.data;
     },
     onSuccess: () => {
       toast({
         title: "Reply posted successfully",
-        description: "Your reply has been posted and the cache has been updated.",
+        description: "Your reply has been posted.",
       });
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
     },
