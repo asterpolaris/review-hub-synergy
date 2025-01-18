@@ -22,7 +22,7 @@ export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
 
   return {
     totalReviews,
-    averageRating,
+    averageRating: isNaN(averageRating) ? 0 : averageRating,
     responseRate,
     badReviewResponseRate
   };
