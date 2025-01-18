@@ -41,7 +41,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
   const { toast } = useToast();
   const rating = convertRating(review.rating);
 
-  const generateReply = async () => {
+  const generateReply = async (form: { setValue: (field: string, value: string) => void }) => {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-review-reply', {

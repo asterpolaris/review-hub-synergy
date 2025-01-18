@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 interface ReviewReplyFormProps {
   onSubmit: (data: { comment: string }) => void;
   onCancel: () => void;
-  onGenerateReply: () => void;
+  onGenerateReply: (form: { setValue: (field: string, value: string) => void }) => void;
   isGenerating: boolean;
   isPending: boolean;
 }
@@ -21,6 +21,10 @@ export const ReviewReplyForm = ({
 }: ReviewReplyFormProps) => {
   const form = useForm<{ comment: string }>();
 
+  const handleGenerateReply = () => {
+    onGenerateReply(form);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -29,7 +33,7 @@ export const ReviewReplyForm = ({
             type="button"
             variant="outline"
             size="sm"
-            onClick={onGenerateReply}
+            onClick={handleGenerateReply}
             disabled={isGenerating}
             className="flex items-center gap-2"
           >
