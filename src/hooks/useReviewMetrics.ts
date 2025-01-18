@@ -13,6 +13,21 @@ interface ReviewMetrics {
   };
 }
 
+const convertGoogleRating = (rating: string | number): number => {
+  const ratingMap: { [key: string]: number } = {
+    'ONE': 1,
+    'TWO': 2,
+    'THREE': 3,
+    'FOUR': 4,
+    'FIVE': 5
+  };
+  
+  if (typeof rating === 'string' && rating in ratingMap) {
+    return ratingMap[rating];
+  }
+  return Number(rating);
+};
+
 const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => {
   const now = new Date();
   const startDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
@@ -32,7 +47,7 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
   // Calculate current period metrics
   const totalReviews = periodReviews.length;
   const averageRating = totalReviews > 0
-    ? periodReviews.reduce((acc, review) => acc + Number(review.rating), 0) / totalReviews
+    ? periodReviews.reduce((acc, review) => acc + convertGoogleRating(review.rating), 0) / totalReviews
     : 0;
   const responseRate = totalReviews > 0
     ? (periodReviews.filter(review => review.reply).length / totalReviews) * 100
@@ -41,7 +56,7 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
   // Calculate previous period metrics
   const prevTotalReviews = previousPeriodReviews.length;
   const prevAverageRating = prevTotalReviews > 0
-    ? previousPeriodReviews.reduce((acc, review) => acc + Number(review.rating), 0) / prevTotalReviews
+    ? previousPeriodReviews.reduce((acc, review) => acc + convertGoogleRating(review.rating), 0) / prevTotalReviews
     : 0;
   const prevResponseRate = prevTotalReviews > 0
     ? (previousPeriodReviews.filter(review => review.reply).length / prevTotalReviews) * 100
@@ -59,6 +74,13 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
   const responseRateChange = prevResponseRate > 0 
     ? ((responseRate - prevResponseRate) / prevResponseRate) * 100 
     : responseRate > 0 ? 100 : 0;
+
+  console.log("Current period metrics:", {
+    totalReviews,
+    averageRating,
+    responseRate,
+    reviews: periodReviews.map(r => ({ rating: r.rating, converted: convertGoogleRating(r.rating) }))
+  });
 
   return {
     totalReviews,
