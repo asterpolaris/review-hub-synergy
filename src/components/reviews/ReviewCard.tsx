@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Star, MapPin } from "lucide-react";
+import { Star, MapPin, Reply } from "lucide-react";
 import { Review } from "@/types/review";
 
 interface ReviewCardProps {
@@ -29,11 +29,11 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
         </div>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="space-y-4">
         <p className="text-sm">{review.comment}</p>
         
         {review.photoUrls && review.photoUrls.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 mt-4">
+          <div className="flex gap-2 overflow-x-auto pb-2">
             {review.photoUrls.map((url, index) => (
               <img
                 key={index}
@@ -42,6 +42,19 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
                 className="h-24 w-24 object-cover rounded-md"
               />
             ))}
+          </div>
+        )}
+
+        {review.reply && (
+          <div className="bg-muted p-4 rounded-md">
+            <div className="flex items-center gap-2 mb-2">
+              <Reply size={16} className="text-muted-foreground" />
+              <span className="text-sm font-medium">Business Response</span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(review.reply.createTime).toLocaleDateString()}
+              </span>
+            </div>
+            <p className="text-sm">{review.reply.comment}</p>
           </div>
         )}
       </CardContent>
