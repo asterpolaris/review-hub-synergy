@@ -47,33 +47,30 @@ export const useReviews = () => {
       const errors: string[] = [];
 
       try {
-        // First, try to get cached reviews
-        const businessIds = reviewsData.businesses.map(b => b.id).filter(Boolean);
-        
-        if (businessIds.length > 0) {
-          const { data: cachedReviews, error: cacheError } = await supabase
-            .from('cached_reviews')
-            .select('review_data, business_id')
-            .in('business_id', businessIds);
+        // Get all cached reviews in one query
+        const businessIds = reviewsData.businesses.map(b => b.id);
+        const { data: cachedReviews, error: cacheError } = await supabase
+          .from('cached_reviews')
+          .select('review_data, business_id')
+          .in('business_id', businessIds);
 
-          if (cacheError) {
-            console.error("Error fetching cached reviews:", cacheError);
-          } else if (cachedReviews) {
-            console.log("Found cached reviews:", cachedReviews);
-            cachedReviews.forEach(cached => {
-              const business = reviewsData.businesses.find(
-                b => b.id === cached.business_id
-              );
-              if (business && cached.review_data) {
-                const reviewData = cached.review_data as unknown as Review;
-                allReviews.push({
-                  ...reviewData,
-                  venueName: business.name,
-                  placeId: business.google_place_id,
-                });
-              }
-            });
-          }
+        if (cacheError) {
+          console.error("Error fetching cached reviews:", cacheError);
+        } else if (cachedReviews) {
+          console.log("Found cached reviews:", cachedReviews);
+          
+          // Process cached reviews
+          cachedReviews.forEach(cached => {
+            const business = reviewsData.businesses.find(b => b.id === cached.business_id);
+            if (business && cached.review_data) {
+              const reviewData = cached.review_data as unknown as Review;
+              allReviews.push({
+                ...reviewData,
+                venueName: business.name,
+                placeId: business.google_place_id,
+              });
+            }
+          });
         }
 
         // Fetch fresh reviews from Google API
@@ -89,17 +86,16 @@ export const useReviews = () => {
           throw error;
         }
 
-        console.log("Batch reviews response:", batchResponse);
-
         if (batchResponse?.locationReviews) {
-          // Update cache and reviews array
+          // Prepare bulk upsert data
+          const upsertData = [];
+          
           for (const locationReview of batchResponse.locationReviews) {
             const business = reviewsData.businesses.find(
               b => b.google_place_id === locationReview.locationName
             );
             
             if (business && locationReview.reviews) {
-              // Update cache for each review
               for (const review of locationReview.reviews) {
                 const reviewData: Review = {
                   id: review.reviewId,
@@ -116,33 +112,30 @@ export const useReviews = () => {
                   placeId: business.google_place_id,
                 };
 
-                // Clone the review data to avoid reference issues
-                const reviewDataForCache = { ...reviewData };
-
-                try {
-                  // Explicitly set the business_id when upserting to cache
-                  const { error: upsertError } = await supabase
-                    .from('cached_reviews')
-                    .upsert({
-                      business_id: business.id,
-                      google_review_id: review.reviewId,
-                      review_data: reviewDataForCache as unknown as Json,
-                    }, {
-                      onConflict: 'business_id,google_review_id'
-                    });
-
-                  if (upsertError) {
-                    console.error("Failed to cache review:", upsertError);
-                    throw upsertError;
-                  }
-                } catch (error) {
-                  console.error("Failed to cache review:", error);
-                  errors.push(`Cache update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                }
-
-                // Add to allReviews array
+                // Add to reviews array
                 allReviews.push(reviewData);
+
+                // Prepare upsert data
+                upsertData.push({
+                  business_id: business.id,
+                  google_review_id: review.reviewId,
+                  review_data: reviewData as unknown as Json,
+                });
               }
+            }
+          }
+
+          // Bulk upsert all reviews at once
+          if (upsertData.length > 0) {
+            const { error: upsertError } = await supabase
+              .from('cached_reviews')
+              .upsert(upsertData, {
+                onConflict: 'business_id,google_review_id'
+              });
+
+            if (upsertError) {
+              console.error("Failed to cache reviews:", upsertError);
+              errors.push(`Cache update failed: ${upsertError.message}`);
             }
           }
         }
@@ -160,15 +153,17 @@ export const useReviews = () => {
         });
       }
 
-      // Remove duplicates (in case a review was both in cache and fresh data)
-      const uniqueReviews = Array.from(new Map(allReviews.map(review => [review.id, review])).values());
+      // Remove duplicates and sort
+      const uniqueReviews = Array.from(
+        new Map(allReviews.map(review => [review.id, review])).values()
+      ).sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
 
       return {
-        reviews: uniqueReviews.sort((a, b) => 
-          new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
-        ),
+        reviews: uniqueReviews,
         businesses: reviewsData.businesses
       };
     },
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 30 * 60 * 1000, // Keep unused data in cache for 30 minutes
   });
 };
