@@ -116,21 +116,28 @@ export const useReviews = () => {
                   placeId: business.google_place_id,
                 };
 
+                // Clone the review data to avoid reference issues
+                const reviewDataForCache = { ...reviewData };
+
                 try {
-                  // Upsert to cache
+                  // Explicitly set the business_id when upserting to cache
                   const { error: upsertError } = await supabase
                     .from('cached_reviews')
                     .upsert({
                       business_id: business.id,
                       google_review_id: review.reviewId,
-                      review_data: reviewData as unknown as Json,
+                      review_data: reviewDataForCache as unknown as Json,
+                    }, {
+                      onConflict: 'business_id,google_review_id'
                     });
 
                   if (upsertError) {
                     console.error("Failed to cache review:", upsertError);
+                    throw upsertError;
                   }
                 } catch (error) {
                   console.error("Failed to cache review:", error);
+                  errors.push(`Cache update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 }
 
                 // Add to allReviews array
