@@ -23,6 +23,22 @@ Deno.serve(async (req) => {
       throw new Error('Invalid token')
     }
 
+    // Get user's Google token
+    const { data: googleToken, error: tokenError } = await supabase
+      .from('google_auth_tokens')
+      .select('access_token, expires_at')
+      .eq('user_id', user.id)
+      .single()
+
+    if (tokenError || !googleToken) {
+      throw new Error('No Google token found')
+    }
+
+    // Check if token is expired
+    if (new Date(googleToken.expires_at) <= new Date()) {
+      throw new Error('Google token expired')
+    }
+
     // Get user's businesses
     const { data: businesses, error: businessError } = await supabase
       .from('businesses')
@@ -33,59 +49,19 @@ Deno.serve(async (req) => {
       throw businessError
     }
 
-    // Get user's Google token
-    const { data: googleToken, error: tokenError } = await supabase
-      .from('google_auth_tokens')
-      .select('access_token')
-      .eq('user_id', user.id)
-      .single()
-
-    if (tokenError || !googleToken) {
-      throw new Error('No Google token found')
-    }
-
-    // Fetch reviews for each business
-    const allReviews = []
-    for (const business of businesses) {
-      const response = await fetch(
-        `https://mybusinessbusinessinformation.googleapis.com/v1/${business.google_place_id}/reviews`,
-        {
-          headers: {
-            Authorization: `Bearer ${googleToken.access_token}`,
-          },
-        }
-      )
-
-      if (!response.ok) {
-        console.error(`Failed to fetch reviews for ${business.name}:`, await response.text())
-        continue
-      }
-
-      const data = await response.json()
-      const reviews = data.reviews || []
-      allReviews.push(
-        ...reviews.map((review: any) => ({
-          ...review,
-          venueName: business.name,
-          placeId: business.google_place_id,
-        }))
-      )
-    }
-
-    // Sort by date and limit to 100
-    const sortedReviews = allReviews
-      .sort((a: any, b: any) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
-      .slice(0, 100)
-
-    return new Response(JSON.stringify(sortedReviews), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({
+        access_token: googleToken.access_token,
+        businesses: businesses
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     console.error('Error in reviews function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
-        status: 400,
+        status: error.message.includes('token') ? 401 : 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )

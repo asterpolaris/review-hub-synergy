@@ -29,7 +29,28 @@ serve(async (req) => {
       )
     }
 
-    // First get the account ID
+    // First validate the access token
+    try {
+      const tokenInfoResponse = await fetch(
+        `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${access_token}`
+      );
+      
+      if (!tokenInfoResponse.ok) {
+        console.error('Invalid access token:', await tokenInfoResponse.text());
+        return new Response(
+          JSON.stringify({ error: 'Invalid access token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (error) {
+      console.error('Error validating access token:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to validate access token' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get the account ID
     console.log('Fetching Google Business accounts...');
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
@@ -66,8 +87,8 @@ serve(async (req) => {
     const locationReviews = [];
     for (const locationName of location_names) {
       try {
-        // Use the correct API endpoint format
-        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/${locationName}/reviews?pageSize=10&orderBy=updateTime desc`;
+        // Use the correct API endpoint format with the account path
+        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
