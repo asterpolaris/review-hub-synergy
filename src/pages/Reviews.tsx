@@ -55,6 +55,17 @@ const Reviews = () => {
     );
   }
 
+  const convertGoogleRating = (rating: string): string => {
+    const ratingMap: { [key: string]: string } = {
+      'ONE': '1',
+      'TWO': '2',
+      'THREE': '3',
+      'FOUR': '4',
+      'FIVE': '5'
+    };
+    return ratingMap[rating] || '0';
+  };
+
   const filteredReviews = data?.reviews?.filter((review) => {
     // Location filter
     const locationMatch = 
@@ -62,11 +73,12 @@ const Reviews = () => {
       selectedLocations.includes('all_businesses') ||
       selectedLocations.includes(review.placeId);
     
-    // Rating filter - convert string rating to number for comparison
+    // Rating filter - convert Google rating string to numeric string
+    const numericRating = convertGoogleRating(review.rating);
     const ratingMatch = 
       selectedRatings.length === 0 || 
       selectedRatings.includes('all_ratings') ||
-      selectedRatings.includes(String(review.rating));
+      selectedRatings.includes(numericRating);
     
     // Reply status filter
     const replyStatusMatch = 
