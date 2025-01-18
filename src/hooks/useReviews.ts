@@ -49,6 +49,12 @@ export const useReviews = () => {
       try {
         // Get all cached reviews in one query
         const businessIds = reviewsData.businesses.map(b => b.id);
+        
+        if (!businessIds.length) {
+          console.log("No business IDs found, skipping cached reviews fetch");
+          return { reviews: [], businesses: reviewsData.businesses };
+        }
+
         const { data: cachedReviews, error: cacheError } = await supabase
           .from('cached_reviews')
           .select('review_data, business_id, google_review_id')
