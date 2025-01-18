@@ -7,6 +7,11 @@ interface MetricVarianceProps {
 }
 
 export const MetricVariance = ({ value, absoluteChange }: MetricVarianceProps) => {
+  // If value is NaN or undefined, we'll show no variance
+  if (isNaN(value) || value === undefined) {
+    return null;
+  }
+  
   const isPositive = value > 0;
   return (
     <div className={cn(
