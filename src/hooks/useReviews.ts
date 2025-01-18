@@ -34,10 +34,12 @@ export const useReviews = () => {
       }
 
       if (!reviewsData) {
-        throw new Error("No data returned from reviews function");
+        console.log("No reviews data returned");
+        return { reviews: [], businesses: [] };
       }
 
       if (!reviewsData.businesses || reviewsData.businesses.length === 0) {
+        console.log("No businesses found in reviews data");
         return { reviews: [], businesses: [] };
       }
 
@@ -47,14 +49,17 @@ export const useReviews = () => {
       const errors: string[] = [];
 
       try {
-        // Get all cached reviews in one query
-        const businessIds = reviewsData.businesses.map(b => b.id);
+        // Get business IDs and validate them
+        const businessIds = reviewsData.businesses
+          .filter(b => b.id) // Filter out any undefined or null IDs
+          .map(b => b.id);
         
         if (!businessIds.length) {
-          console.log("No business IDs found, skipping cached reviews fetch");
+          console.log("No valid business IDs found");
           return { reviews: [], businesses: reviewsData.businesses };
         }
 
+        // Get all cached reviews in one query
         const { data: cachedReviews, error: cacheError } = await supabase
           .from('cached_reviews')
           .select('review_data, business_id, google_review_id')
