@@ -4,21 +4,39 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReviewMetrics } from "@/hooks/useReviewMetrics";
-import { RefreshCwIcon, CalendarIcon } from "lucide-react";
+import { RefreshCwIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { VenueMetricsTable } from "@/components/dashboard/VenueMetricsTable";
+import { DatePeriod } from "@/types/metrics";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { session, isLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [date, setDate] = useState<Date>(new Date());
-  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(30);
+  const [period, setPeriod] = useState<DatePeriod>('last-30-days');
+  
+  const getDays = (period: DatePeriod): number => {
+    switch (period) {
+      case 'last-month':
+        const today = new Date();
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+        return Math.ceil((lastMonthEnd.getTime() - lastMonth.getTime()) / (1000 * 60 * 60 * 24));
+      case 'last-30-days':
+        return 30;
+      case 'last-year':
+        return 365;
+      case 'lifetime':
+        return 3650; // 10 years as maximum
+      default:
+        return 30;
+    }
+  };
+
+  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(getDays(period));
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["reviews"] });
@@ -39,22 +57,17 @@ const Dashboard = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
           <div className="flex gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <CalendarIcon className="h-4 w-4" />
-                  {format(date, "PPP")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(newDate) => newDate && setDate(newDate)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Select value={period} onValueChange={(value: DatePeriod) => setPeriod(value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="last-month">Last Month</SelectItem>
+                <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                <SelectItem value="last-year">Last Year</SelectItem>
+                <SelectItem value="lifetime">Lifetime</SelectItem>
+              </SelectContent>
+            </Select>
             <Button 
               onClick={handleRefresh}
               variant="outline"

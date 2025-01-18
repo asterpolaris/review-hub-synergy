@@ -43,11 +43,15 @@ export const calculateVenueMetrics = (reviews: Review[], daysAgo: number): Venue
   }, {} as { [key: string]: Review[] });
 
   return Object.entries(venueReviews).map(([venueName, reviews]) => {
-    const periodReviews = filterReviewsByDate(reviews, startDate);
-    const previousPeriodReviews = filterReviewsByDate(
-      reviews.filter(review => new Date(review.createTime) < startDate.getTime()),
-      previousStartDate
-    );
+    const periodReviews = reviews.filter(review => {
+      const reviewDate = new Date(review.createTime);
+      return reviewDate >= startDate && reviewDate <= now;
+    });
+
+    const previousPeriodReviews = reviews.filter(review => {
+      const reviewDate = new Date(review.createTime);
+      return reviewDate >= previousStartDate && reviewDate < startDate;
+    });
 
     const currentMetrics = calculatePeriodMetrics(periodReviews);
     const previousMetrics = calculatePeriodMetrics(previousPeriodReviews);

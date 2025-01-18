@@ -31,3 +31,5 @@ export interface ReviewMetrics {
   previousPeriodMetrics?: PeriodMetrics;
   venueMetrics: VenueMetrics[];
 }
+
+export type DatePeriod = 'last-month' | 'last-30-days' | 'last-year' | 'lifetime';
