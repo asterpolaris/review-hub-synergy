@@ -74,8 +74,9 @@ serve(async (req) => {
     const locationReviews = [];
     for (const locationName of location_names) {
       try {
-        // The locationName should already be in the correct format (e.g., "locations/123456")
-        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews`;
+        // Construct the full path including the account
+        const fullPath = `${accountId}/${locationName}`;
+        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${fullPath}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
