@@ -66,6 +66,9 @@ export const processReviewData = async (reviewsData: ReviewsData) => {
       body: {
         access_token: reviewsData.access_token,
         location_names: reviewsData.businesses.map(b => b.google_place_id),
+      },
+      headers: {
+        Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
       }
     });
 
