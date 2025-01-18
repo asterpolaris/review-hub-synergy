@@ -67,14 +67,11 @@ serve(async (req) => {
       throw new Error('No Google Business accounts found');
     }
 
-    const accountId = accountsData.accounts[0].name;
-    console.log('Using account ID:', accountId);
-
     // Fetch reviews for each location
     const locationReviews = [];
     for (const locationName of location_names) {
       try {
-        // The locationName already contains the full path (e.g., "locations/123456")
+        // The locationName should be the full path from the API
         const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
