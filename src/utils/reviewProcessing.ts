@@ -1,5 +1,5 @@
-import { Review } from "@/types/review";
 import { supabase } from "@/integrations/supabase/client";
+import { Review } from "@/types/review";
 
 interface ReviewsData {
   access_token: string;
@@ -15,11 +15,20 @@ export const processReviewData = async (reviewsData: ReviewsData): Promise<{ rev
   const reviews: Review[] = [];
 
   try {
+    // Get the current session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('No active session found');
+    }
+
     // Fetch reviews directly from Google API via Edge Function
     const { data: reviewsResponse, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
       body: {
         access_token: reviewsData.access_token,
         location_names: reviewsData.businesses.map(b => b.google_place_id)
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
       }
     });
 
