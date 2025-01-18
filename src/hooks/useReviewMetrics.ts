@@ -2,15 +2,26 @@ import { useQuery } from "@tanstack/react-query";
 import { useReviews } from "./useReviews";
 import { Review } from "@/types/review";
 
+interface MetricVariance {
+  totalReviews: number;
+  averageRating: number;
+  responseRate: number;
+}
+
+interface VenueMetrics {
+  name: string;
+  totalReviews: number;
+  averageRating: number;
+  responseRate: number;
+  monthOverMonth: MetricVariance;
+}
+
 interface ReviewMetrics {
   totalReviews: number;
   averageRating: number;
   responseRate: number;
-  monthOverMonth: {
-    totalReviews: number;
-    averageRating: number;
-    responseRate: number;
-  };
+  monthOverMonth: MetricVariance;
+  venueMetrics: VenueMetrics[];
 }
 
 const convertGoogleRating = (rating: string | number): number => {
@@ -26,6 +37,77 @@ const convertGoogleRating = (rating: string | number): number => {
     return ratingMap[rating];
   }
   return Number(rating);
+};
+
+const calculateVenueMetrics = (reviews: Review[], daysAgo: number): VenueMetrics[] => {
+  const now = new Date();
+  const startDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+  const previousStartDate = new Date(startDate.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+
+  // Group reviews by venue
+  const venueReviews = reviews.reduce((acc, review) => {
+    if (!acc[review.venueName]) {
+      acc[review.venueName] = [];
+    }
+    acc[review.venueName].push(review);
+    return acc;
+  }, {} as { [key: string]: Review[] });
+
+  return Object.entries(venueReviews).map(([venueName, venueReviews]) => {
+    // Current period reviews for this venue
+    const periodReviews = venueReviews.filter(review => 
+      new Date(review.createTime).getTime() >= startDate.getTime()
+    );
+
+    // Previous period reviews for this venue
+    const previousPeriodReviews = venueReviews.filter(review => 
+      new Date(review.createTime).getTime() >= previousStartDate.getTime() &&
+      new Date(review.createTime).getTime() < startDate.getTime()
+    );
+
+    // Calculate current period metrics
+    const totalReviews = periodReviews.length;
+    const averageRating = totalReviews > 0
+      ? periodReviews.reduce((acc, review) => acc + convertGoogleRating(review.rating), 0) / totalReviews
+      : 0;
+    const responseRate = totalReviews > 0
+      ? (periodReviews.filter(review => review.reply).length / totalReviews) * 100
+      : 0;
+
+    // Calculate previous period metrics
+    const prevTotalReviews = previousPeriodReviews.length;
+    const prevAverageRating = prevTotalReviews > 0
+      ? previousPeriodReviews.reduce((acc, review) => acc + convertGoogleRating(review.rating), 0) / prevTotalReviews
+      : 0;
+    const prevResponseRate = prevTotalReviews > 0
+      ? (previousPeriodReviews.filter(review => review.reply).length / prevTotalReviews) * 100
+      : 0;
+
+    // Calculate month-over-month changes
+    const totalReviewsChange = prevTotalReviews > 0 
+      ? ((totalReviews - prevTotalReviews) / prevTotalReviews) * 100 
+      : totalReviews > 0 ? 100 : 0;
+
+    const averageRatingChange = prevAverageRating > 0 
+      ? ((averageRating - prevAverageRating) / prevAverageRating) * 100 
+      : averageRating > 0 ? 100 : 0;
+
+    const responseRateChange = prevResponseRate > 0 
+      ? ((responseRate - prevResponseRate) / prevResponseRate) * 100 
+      : responseRate > 0 ? 100 : 0;
+
+    return {
+      name: venueName,
+      totalReviews,
+      averageRating,
+      responseRate,
+      monthOverMonth: {
+        totalReviews: totalReviewsChange,
+        averageRating: averageRatingChange,
+        responseRate: responseRateChange
+      }
+    };
+  });
 };
 
 const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => {
@@ -82,6 +164,8 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
     reviews: periodReviews.map(r => ({ rating: r.rating, converted: convertGoogleRating(r.rating) }))
   });
 
+  const venueMetrics = calculateVenueMetrics(reviews, daysAgo);
+
   return {
     totalReviews,
     averageRating,
@@ -90,7 +174,8 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
       totalReviews: totalReviewsChange,
       averageRating: averageRatingChange,
       responseRate: responseRateChange
-    }
+    },
+    venueMetrics
   };
 };
 
