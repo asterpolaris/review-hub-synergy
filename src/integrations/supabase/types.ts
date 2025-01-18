@@ -63,6 +63,30 @@ export type Database = {
         }
         Relationships: []
       }
+      cached_metrics: {
+        Row: {
+          cached_at: string
+          id: string
+          metrics: Json
+          period: string
+          user_id: string
+        }
+        Insert: {
+          cached_at?: string
+          id?: string
+          metrics: Json
+          period: string
+          user_id: string
+        }
+        Update: {
+          cached_at?: string
+          id?: string
+          metrics?: Json
+          period?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cached_reviews: {
         Row: {
           business_id: string
