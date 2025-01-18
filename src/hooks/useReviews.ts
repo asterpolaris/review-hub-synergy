@@ -59,6 +59,8 @@ export const useReviews = () => {
           return { reviews: [], businesses: reviewsData.businesses };
         }
 
+        console.log("Fetching cached reviews for business IDs:", businessIds);
+
         // Get all cached reviews in one query
         const { data: cachedReviews, error: cacheError } = await supabase
           .from('cached_reviews')
@@ -78,7 +80,7 @@ export const useReviews = () => {
           ]) || []
         );
 
-        if (cachedReviews) {
+        if (cachedReviews && cachedReviews.length > 0) {
           console.log("Found cached reviews:", cachedReviews);
           
           // Process cached reviews
@@ -107,6 +109,8 @@ export const useReviews = () => {
           console.error("Failed to fetch reviews batch:", batchError);
           throw batchError;
         }
+
+        console.log("Batch response:", batchResponse);
 
         if (batchResponse?.locationReviews) {
           for (const locationReview of batchResponse.locationReviews) {
@@ -137,8 +141,29 @@ export const useReviews = () => {
                 const existingReview = existingReviews.get(reviewKey);
 
                 try {
-                  if (existingReview) {
-                    // Update existing review
+                  if (!existingReview) {
+                    // Insert new review
+                    console.log("Inserting new cached review:", {
+                      business_id: business.id,
+                      google_review_id: review.reviewId,
+                      review_data: reviewData
+                    });
+
+                    const { error: insertError } = await supabase
+                      .from('cached_reviews')
+                      .insert({
+                        business_id: business.id,
+                        google_review_id: review.reviewId,
+                        review_data: reviewData as unknown as Json,
+                      });
+
+                    if (insertError) {
+                      console.error("Failed to insert cached review:", insertError);
+                      errors.push(`Failed to insert review ${review.reviewId}: ${insertError.message}`);
+                    }
+                  } else {
+                    // Update existing review if needed
+                    console.log("Updating existing cached review:", reviewKey);
                     const { error: updateError } = await supabase
                       .from('cached_reviews')
                       .update({
@@ -152,20 +177,6 @@ export const useReviews = () => {
                     if (updateError) {
                       console.error("Failed to update cached review:", updateError);
                       errors.push(`Failed to update review ${review.reviewId}: ${updateError.message}`);
-                    }
-                  } else {
-                    // Insert new review
-                    const { error: insertError } = await supabase
-                      .from('cached_reviews')
-                      .insert({
-                        business_id: business.id,
-                        google_review_id: review.reviewId,
-                        review_data: reviewData as unknown as Json,
-                      });
-
-                    if (insertError) {
-                      console.error("Failed to insert cached review:", insertError);
-                      errors.push(`Failed to insert review ${review.reviewId}: ${insertError.message}`);
                     }
                   }
                 } catch (error) {
@@ -195,6 +206,7 @@ export const useReviews = () => {
         new Map(allReviews.map(review => [review.id, review])).values()
       ).sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
 
+      console.log("Final reviews count:", uniqueReviews.length);
       return {
         reviews: uniqueReviews,
         businesses: reviewsData.businesses
