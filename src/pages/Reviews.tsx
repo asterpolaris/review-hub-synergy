@@ -10,21 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
-  const [pageSize, setPageSize] = useState(10);
+  const { data, isLoading, error, refetch } = useReviews();
 
-  const { data, isLoading, error, refetch } = useReviews({
-    locationId: selectedLocations.includes('all_businesses') ? undefined : selectedLocations[0],
-    rating: selectedRatings.includes('all_ratings') ? undefined : selectedRatings[0],
-    replyStatus: selectedReplyStatus.includes('all_status') ? undefined : selectedReplyStatus[0],
-    pageSize
-  });
+  // Refetch when filters change
+  useEffect(() => {
+    refetch();
+  }, [selectedLocations, selectedRatings, selectedReplyStatus, refetch]);
 
   const convertGoogleRating = (rating: string): string => {
     const ratingMap: { [key: string]: string } = {
@@ -69,23 +66,40 @@ const Reviews = () => {
     );
   }
 
+  const filteredReviews = data?.reviews?.filter((review) => {
+    // Location filter
+    const locationMatch = 
+      selectedLocations.length === 0 || 
+      selectedLocations.includes('all_businesses') ||
+      selectedLocations.includes(review.placeId);
+    
+    // Rating filter - convert Google rating string to numeric string
+    const numericRating = convertGoogleRating(review.rating.toString());
+    const ratingMatch = 
+      selectedRatings.length === 0 || 
+      selectedRatings.includes('all_ratings') ||
+      selectedRatings.includes(numericRating);
+    
+    // Reply status filter
+    const replyStatusMatch = 
+      selectedReplyStatus.length === 0 || 
+      selectedReplyStatus.includes('all_status') ||
+      (selectedReplyStatus.includes('waiting') && !review.reply) ||
+      (selectedReplyStatus.includes('replied') && review.reply);
+    
+    return locationMatch && ratingMatch && replyStatusMatch;
+  });
+
   const handleLocationChange = (value: string) => {
     setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
-    setPageSize(10); // Reset page size when changing filters
   };
 
   const handleRatingChange = (value: string) => {
     setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
-    setPageSize(10); // Reset page size when changing filters
   };
 
   const handleReplyStatusChange = (value: string) => {
     setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
-    setPageSize(10); // Reset page size when changing filters
-  };
-
-  const handleLoadMore = () => {
-    setPageSize(prev => prev + 10);
   };
 
   return (
@@ -152,20 +166,12 @@ const Reviews = () => {
         </div>
 
         <div className="grid gap-6">
-          {data?.reviews?.map((review) => (
+          {filteredReviews?.map((review) => (
             <ReviewCard key={review.id} review={review} />
           ))}
         </div>
 
-        {data?.reviews && data.reviews.length > 0 && (
-          <div className="flex justify-center mt-6">
-            <Button onClick={handleLoadMore} variant="outline">
-              Load More Reviews
-            </Button>
-          </div>
-        )}
-
-        {(!data?.reviews || data.reviews.length === 0) && (
+        {(!filteredReviews || filteredReviews.length === 0) && (
           <div className="text-center text-muted-foreground py-8">
             No reviews found.
           </div>

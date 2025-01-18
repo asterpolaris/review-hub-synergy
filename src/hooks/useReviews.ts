@@ -3,20 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 
-interface ReviewsParams {
-  locationId?: string;
-  rating?: string;
-  replyStatus?: string;
-  pageSize?: number;
-}
-
-export const useReviews = (params?: ReviewsParams) => {
+export const useReviews = () => {
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ["reviews", params],
+    queryKey: ["reviews"],
     queryFn: async () => {
-      console.log("Fetching reviews data with params:", params);
+      console.log("Fetching reviews data...");
       
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
         data: { access_token: string; businesses: Array<{ name: string; google_place_id: string }> } | null;
@@ -41,14 +34,7 @@ export const useReviews = (params?: ReviewsParams) => {
         const { data: batchResponse, error } = await supabase.functions.invoke('reviews-batch', {
           body: {
             access_token: reviewsData.access_token,
-            location_names: params?.locationId ? 
-              [params.locationId] : 
-              reviewsData.businesses.map(b => b.google_place_id),
-            filters: {
-              rating: params?.rating,
-              replyStatus: params?.replyStatus
-            },
-            pageSize: params?.pageSize || 10
+            location_names: reviewsData.businesses.map(b => b.google_place_id),
           }
         });
 
