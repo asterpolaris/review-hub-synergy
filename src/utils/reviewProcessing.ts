@@ -43,30 +43,45 @@ export const processReviewData = async (reviewsData: ReviewsData): Promise<{ rev
       return { reviews, errors };
     }
 
-    // Process the reviews from the response
-    const processedReviews = reviewsResponse.reviews.map((review: any) => ({
-      id: review.reviewId,
-      authorName: review.reviewer.displayName,
-      rating: review.starRating,
-      comment: review.comment,
-      createTime: review.createTime,
-      photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
-      reply: review.reviewReply ? {
-        comment: review.reviewReply.comment,
-        createTime: review.reviewReply.createTime
-      } : undefined,
-      venueName: reviewsData.businesses.find(b => 
-        b.google_place_id === review.placeId
-      )?.name || 'Unknown Venue',
-      placeId: review.placeId
-    }));
+    // Add debug logging
+    console.log("Reviews response from Edge Function:", reviewsResponse);
 
-    reviews.push(...processedReviews);
+    // Check if reviewsResponse has the expected structure
+    if (!reviewsResponse.locationReviews) {
+      console.error("Unexpected response structure:", reviewsResponse);
+      errors.push("Unexpected response structure from API");
+      return { reviews, errors };
+    }
+
+    // Process the reviews from the response
+    reviewsResponse.locationReviews.forEach((locationReview: any) => {
+      if (locationReview.reviews) {
+        const processedReviews = locationReview.reviews.map((review: any) => ({
+          id: review.reviewId,
+          authorName: review.reviewer.displayName,
+          rating: review.starRating,
+          comment: review.comment,
+          createTime: review.createTime,
+          photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
+          reply: review.reviewReply ? {
+            comment: review.reviewReply.comment,
+            createTime: review.reviewReply.createTime
+          } : undefined,
+          venueName: reviewsData.businesses.find(b => 
+            b.google_place_id === locationReview.locationName
+          )?.name || 'Unknown Venue',
+          placeId: locationReview.locationName
+        }));
+
+        reviews.push(...processedReviews);
+      }
+    });
 
   } catch (error) {
     console.error("Error processing reviews:", error);
     errors.push(`Failed to process reviews: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
+  console.log("Final reviews count:", reviews.length);
   return { reviews, errors };
 };
