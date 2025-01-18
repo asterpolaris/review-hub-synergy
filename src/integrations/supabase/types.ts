@@ -87,38 +87,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cached_reviews: {
-        Row: {
-          business_id: string
-          cached_at: string
-          google_review_id: string
-          id: string
-          review_data: Json
-        }
-        Insert: {
-          business_id: string
-          cached_at?: string
-          google_review_id: string
-          id?: string
-          review_data: Json
-        }
-        Update: {
-          business_id?: string
-          cached_at?: string
-          google_review_id?: string
-          id?: string
-          review_data?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cached_reviews_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       google_auth_tokens: {
         Row: {
           access_token: string
