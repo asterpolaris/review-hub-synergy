@@ -1,5 +1,6 @@
 import { Review } from "@/types/review";
 import { PeriodMetrics, VenueMetrics } from "@/types/metrics";
+import { convertGoogleRating } from "./reviewUtils";
 
 export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
   console.log("Calculating period metrics for reviews:", reviews);
@@ -16,8 +17,9 @@ export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
 
   const totalReviews = reviews.length;
   const totalRating = reviews.reduce((acc, review) => {
-    console.log(`Adding rating: ${review.rating} to accumulator: ${acc}`);
-    return acc + review.rating;
+    const numericRating = convertGoogleRating(review.rating);
+    console.log(`Adding rating: ${review.rating} (${numericRating}) to accumulator: ${acc}`);
+    return acc + numericRating;
   }, 0);
   
   const averageRating = totalRating / totalReviews;
@@ -25,7 +27,7 @@ export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
 
   const responseRate = (reviews.filter(review => review.reply).length / totalReviews) * 100;
   
-  const badReviews = reviews.filter(review => review.rating <= 3);
+  const badReviews = reviews.filter(review => convertGoogleRating(review.rating) <= 3);
   const badReviewResponseRate = badReviews.length > 0 
     ? (badReviews.filter(review => review.reply).length / badReviews.length) * 100
     : 0;
