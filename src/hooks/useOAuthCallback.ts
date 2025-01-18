@@ -61,6 +61,9 @@ export const useOAuthCallback = () => {
         throw new Error("No provider token received");
       }
 
+      // Calculate expiration time (1 hour from now, as Google tokens typically last 1 hour)
+      const expiresAt = new Date(Date.now() + 3600 * 1000);
+
       // Update tokens in the database using upsert
       const { error: upsertError } = await supabase
         .from("google_auth_tokens")
@@ -69,7 +72,7 @@ export const useOAuthCallback = () => {
             user_id: session.user.id,
             access_token: session.provider_token,
             refresh_token: session.provider_refresh_token || '',
-            expires_at: new Date(Date.now() + 3600 * 1000).toISOString(), // 1 hour from now
+            expires_at: expiresAt.toISOString(),
           },
           {
             onConflict: 'user_id',

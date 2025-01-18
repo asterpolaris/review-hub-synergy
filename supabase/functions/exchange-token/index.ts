@@ -47,6 +47,8 @@ serve(async (req) => {
       client_secret: clientSecret,
       redirect_uri: redirectUri,
       grant_type: 'authorization_code',
+      access_type: 'offline', // Request offline access for refresh token
+      prompt: 'consent'  // Force consent to ensure refresh token is always provided
     });
 
     console.log('Making token exchange request to Google...');
@@ -66,8 +68,17 @@ serve(async (req) => {
       throw new Error(data.error_description || data.error || 'Failed to exchange token');
     }
 
+    // Calculate expiration time (default token lifetime is 1 hour)
+    const expiresIn = data.expires_in || 3600;
+    const expiresAt = new Date(Date.now() + (expiresIn * 1000));
+
     return new Response(
-      JSON.stringify({ data }),
+      JSON.stringify({ 
+        data: {
+          ...data,
+          expires_at: expiresAt.toISOString()
+        }
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
