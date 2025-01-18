@@ -18,25 +18,7 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<DatePeriod>('last-30-days');
   
-  const getDays = (period: DatePeriod): number => {
-    switch (period) {
-      case 'last-month':
-        const today = new Date();
-        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-        return Math.ceil((lastMonthEnd.getTime() - lastMonth.getTime()) / (1000 * 60 * 60 * 24));
-      case 'last-30-days':
-        return 30;
-      case 'last-year':
-        return 365;
-      case 'lifetime':
-        return 3650; // 10 years as maximum
-      default:
-        return 30;
-    }
-  };
-
-  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(getDays(period));
+  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(period);
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["reviews"] });
