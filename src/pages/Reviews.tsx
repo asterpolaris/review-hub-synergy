@@ -3,6 +3,8 @@ import { ReviewCard } from "@/components/reviews/ReviewCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReviews } from "@/hooks/useReviews";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -10,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -18,10 +20,21 @@ const Reviews = () => {
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const { data, isLoading, error, refetch } = useReviews();
 
-  // Refetch when filters change
-  useEffect(() => {
+  const handleLocationChange = (value: string) => {
+    setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
+  };
+
+  const handleRatingChange = (value: string) => {
+    setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
+  };
+
+  const handleReplyStatusChange = (value: string) => {
+    setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
+  };
+
+  const handleApplyFilters = () => {
     refetch();
-  }, [selectedLocations, selectedRatings, selectedReplyStatus, refetch]);
+  };
 
   const convertGoogleRating = (rating: string): string => {
     const ratingMap: { [key: string]: string } = {
@@ -90,18 +103,6 @@ const Reviews = () => {
     return locationMatch && ratingMatch && replyStatusMatch;
   });
 
-  const handleLocationChange = (value: string) => {
-    setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
-  };
-
-  const handleRatingChange = (value: string) => {
-    setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
-  };
-
-  const handleReplyStatusChange = (value: string) => {
-    setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
-  };
-
   return (
     <AppLayout>
       <div className="space-y-6 animate-fadeIn">
@@ -109,7 +110,7 @@ const Reviews = () => {
           <h1 className="text-4xl font-semibold tracking-tight">Reviews</h1>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6 items-end">
           <div className="w-64">
             <Select
               value={selectedLocations.join(",")}
@@ -163,6 +164,14 @@ const Reviews = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <Button 
+            onClick={handleApplyFilters}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Apply Filters
+          </Button>
         </div>
 
         <div className="grid gap-6">
