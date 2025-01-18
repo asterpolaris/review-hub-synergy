@@ -70,56 +70,42 @@ serve(async (req) => {
     const accountId = accountsData.accounts[0].name;
     console.log('Using account ID:', accountId);
 
-    // Extract location IDs from the full paths
+    // Extract location IDs from the full paths and remove the "locations/" prefix
     const locationIds = location_names.map(path => {
       const parts = path.split('/');
       return parts[parts.length - 1];
     });
 
-    // Construct full location paths using account ID
-    const fullLocationPaths = locationIds.map(id => `${accountId}/locations/${id}`);
-    
-    // Fetch reviews using batchGetReviews endpoint
-    const batchReviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations:batchGetReviews`;
-    console.log('Making batch reviews request to:', batchReviewsUrl);
-    console.log('With location paths:', fullLocationPaths);
+    // Fetch reviews for each location
+    const locationReviews = [];
+    for (const locationId of locationIds) {
+      const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/locations/${locationId}/reviews`;
+      console.log('Fetching reviews from:', reviewsUrl);
 
-    const batchRequestBody = {
-      locationNames: fullLocationPaths,
-      pageSize: 50,
-      ignoreRatingOnlyReviews: false
-    };
-    console.log('Batch reviews request body:', batchRequestBody);
-
-    const response = await fetch(
-      batchReviewsUrl,
-      {
-        method: 'POST',
+      const reviewsResponse = await fetch(reviewsUrl, {
         headers: {
           'Authorization': `Bearer ${access_token}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        },
-        body: JSON.stringify(batchRequestBody)
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error response from batch reviews endpoint:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText
+        }
       });
-      throw new Error(`Failed to fetch reviews: ${response.status} ${errorText}`);
+
+      if (!reviewsResponse.ok) {
+        console.error(`Failed to fetch reviews for location ${locationId}:`, {
+          status: reviewsResponse.status,
+          statusText: reviewsResponse.statusText
+        });
+        continue; // Skip this location and continue with others
+      }
+
+      const reviewsData = await reviewsResponse.json();
+      locationReviews.push({
+        locationName: `locations/${locationId}`,
+        reviews: reviewsData.reviews || []
+      });
     }
 
-    const data = await response.json();
-    console.log('Raw response from batch reviews endpoint:', data);
-
-    // Transform the response to match the expected format
-    const locationReviews = data.locationReviews || [];
-    console.log('Transformed location reviews:', locationReviews);
+    console.log('Successfully fetched reviews for locations:', locationReviews.length);
 
     return new Response(
       JSON.stringify({ locationReviews }),
