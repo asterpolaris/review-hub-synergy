@@ -67,11 +67,11 @@ serve(async (req) => {
       throw new Error('No Google Business accounts found');
     }
 
-    // Fetch reviews for each location
     const locationReviews = [];
     for (const locationName of location_names) {
       try {
-        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews?pageSize=10`;
+        // Using the correct API endpoint as per documentation
+        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${locationName}/reviews?pageSize=10&orderBy=updateTime desc`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
