@@ -18,11 +18,20 @@ serve(async (req) => {
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
-    const { access_token, location_names } = JSON.parse(requestBody);
-    console.log('Processing request for locations:', location_names);
+    const { access_token, location_names, filters, pageSize = 10 } = JSON.parse(requestBody);
+    console.log('Parsed request parameters:', {
+      hasAccessToken: !!access_token,
+      locationNames: location_names,
+      filters,
+      pageSize,
+      accessTokenPreview: access_token ? `${access_token.substring(0, 10)}...` : 'none'
+    });
 
     if (!access_token || !location_names) {
-      console.error('Missing required parameters');
+      console.error('Missing required parameters:', { 
+        hasAccessToken: !!access_token, 
+        hasLocationNames: !!location_names 
+      });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -63,46 +72,60 @@ serve(async (req) => {
     const accountId = accountsData.accounts[0].name;
     console.log('Using account ID:', accountId);
 
-    const locationReviews = [];
-    for (const locationName of location_names) {
-      try {
-        // Use the correct API endpoint format
-        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/${locationName}/reviews?pageSize=10&orderBy=updateTime desc`;
-        console.log('Fetching reviews from:', reviewsUrl);
-
-        const reviewsResponse = await fetch(reviewsUrl, {
-          headers: {
-            'Authorization': `Bearer ${access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-
-        if (!reviewsResponse.ok) {
-          const errorText = await reviewsResponse.text();
-          console.error(`Failed to fetch reviews for location ${locationName}:`, {
-            status: reviewsResponse.status,
-            statusText: reviewsResponse.statusText,
-            response: errorText
-          });
-          continue; // Skip this location and continue with others
-        }
-
-        const reviewsData = await reviewsResponse.json();
-        console.log(`Reviews data for location ${locationName}:`, reviewsData);
-        
-        locationReviews.push({
-          locationName,
-          reviews: reviewsData.reviews || []
-        });
-      } catch (error) {
-        console.error(`Error processing location ${locationName}:`, error);
-        // Continue with other locations even if one fails
-        continue;
-      }
+    // Build the filter string based on the provided filters
+    let filterString = '';
+    if (filters?.rating) {
+      filterString += `starRating=${filters.rating.toUpperCase()}`;
+    }
+    if (filters?.replyStatus) {
+      if (filterString) filterString += ' AND ';
+      filterString += filters.replyStatus === 'replied' ? 
+        'hasReply=true' : 
+        'hasReply=false';
     }
 
-    console.log('Successfully fetched reviews for locations:', locationReviews.length);
+    // Fetch reviews using batchGetReviews endpoint
+    const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
+    console.log('Making batch reviews request to:', batchReviewsUrl);
+    console.log('With location names:', location_names);
+
+    const batchRequestBody = {
+      locationNames: location_names,
+      pageSize: pageSize,
+      ignoreRatingOnlyReviews: false,
+      ...(filterString && { filter: filterString })
+    };
+    console.log('Batch reviews request body:', batchRequestBody);
+
+    const response = await fetch(
+      batchReviewsUrl,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(batchRequestBody)
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response from batch reviews endpoint:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`Failed to fetch reviews: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Raw response from batch reviews endpoint:', data);
+
+    // Transform the response to match the expected format
+    const locationReviews = data.locationReviews || [];
+    console.log('Transformed location reviews:', locationReviews);
 
     return new Response(
       JSON.stringify({ locationReviews }),
