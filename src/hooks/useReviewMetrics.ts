@@ -6,12 +6,14 @@ interface MetricVariance {
   totalReviews: number;
   averageRating: number;
   responseRate: number;
+  badReviewResponseRate: number;
 }
 
 interface PeriodMetrics {
   totalReviews: number;
   averageRating: number;
   responseRate: number;
+  badReviewResponseRate: number;
 }
 
 interface VenueMetrics {
@@ -19,6 +21,7 @@ interface VenueMetrics {
   totalReviews: number;
   averageRating: number;
   responseRate: number;
+  badReviewResponseRate: number;
   monthOverMonth: MetricVariance;
   previousPeriodMetrics?: PeriodMetrics;
 }
@@ -27,6 +30,7 @@ interface ReviewMetrics {
   totalReviews: number;
   averageRating: number;
   responseRate: number;
+  badReviewResponseRate: number;
   monthOverMonth: MetricVariance;
   previousPeriodMetrics?: PeriodMetrics;
   venueMetrics: VenueMetrics[];
@@ -82,6 +86,12 @@ const calculateVenueMetrics = (reviews: Review[], daysAgo: number): VenueMetrics
       ? (periodReviews.filter(review => review.reply).length / totalReviews) * 100
       : 0;
 
+    // Calculate bad review response rate
+    const badReviews = periodReviews.filter(review => convertGoogleRating(review.rating) <= 3);
+    const badReviewResponseRate = badReviews.length > 0
+      ? (badReviews.filter(review => review.reply).length / badReviews.length) * 100
+      : 0;
+
     // Calculate previous period metrics
     const prevTotalReviews = previousPeriodReviews.length;
     const prevAverageRating = prevTotalReviews > 0
@@ -89,6 +99,12 @@ const calculateVenueMetrics = (reviews: Review[], daysAgo: number): VenueMetrics
       : 0;
     const prevResponseRate = prevTotalReviews > 0
       ? (previousPeriodReviews.filter(review => review.reply).length / prevTotalReviews) * 100
+      : 0;
+
+    // Calculate previous bad review response rate
+    const prevBadReviews = previousPeriodReviews.filter(review => convertGoogleRating(review.rating) <= 3);
+    const prevBadReviewResponseRate = prevBadReviews.length > 0
+      ? (prevBadReviews.filter(review => review.reply).length / prevBadReviews.length) * 100
       : 0;
 
     // Calculate month-over-month changes
@@ -104,20 +120,27 @@ const calculateVenueMetrics = (reviews: Review[], daysAgo: number): VenueMetrics
       ? ((responseRate - prevResponseRate) / prevResponseRate) * 100 
       : responseRate > 0 ? 100 : 0;
 
+    const badReviewResponseRateChange = prevBadReviewResponseRate > 0
+      ? ((badReviewResponseRate - prevBadReviewResponseRate) / prevBadReviewResponseRate) * 100
+      : badReviewResponseRate > 0 ? 100 : 0;
+
     return {
       name: venueName,
       totalReviews,
       averageRating,
       responseRate,
+      badReviewResponseRate,
       monthOverMonth: {
         totalReviews: totalReviewsChange,
         averageRating: averageRatingChange,
-        responseRate: responseRateChange
+        responseRate: responseRateChange,
+        badReviewResponseRate: badReviewResponseRateChange
       },
       previousPeriodMetrics: {
         totalReviews: prevTotalReviews,
         averageRating: prevAverageRating,
-        responseRate: prevResponseRate
+        responseRate: prevResponseRate,
+        badReviewResponseRate: prevBadReviewResponseRate
       }
     };
   });
@@ -148,6 +171,12 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
     ? (periodReviews.filter(review => review.reply).length / totalReviews) * 100
     : 0;
 
+  // Calculate bad review response rate
+  const badReviews = periodReviews.filter(review => convertGoogleRating(review.rating) <= 3);
+  const badReviewResponseRate = badReviews.length > 0
+    ? (badReviews.filter(review => review.reply).length / badReviews.length) * 100
+    : 0;
+
   // Calculate previous period metrics
   const prevTotalReviews = previousPeriodReviews.length;
   const prevAverageRating = prevTotalReviews > 0
@@ -155,6 +184,12 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
     : 0;
   const prevResponseRate = prevTotalReviews > 0
     ? (previousPeriodReviews.filter(review => review.reply).length / prevTotalReviews) * 100
+    : 0;
+
+  // Calculate previous bad review response rate
+  const prevBadReviews = previousPeriodReviews.filter(review => convertGoogleRating(review.rating) <= 3);
+  const prevBadReviewResponseRate = prevBadReviews.length > 0
+    ? (prevBadReviews.filter(review => review.reply).length / prevBadReviews.length) * 100
     : 0;
 
   // Calculate month-over-month changes
@@ -170,12 +205,9 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
     ? ((responseRate - prevResponseRate) / prevResponseRate) * 100 
     : responseRate > 0 ? 100 : 0;
 
-  console.log("Current period metrics:", {
-    totalReviews,
-    averageRating,
-    responseRate,
-    reviews: periodReviews.map(r => ({ rating: r.rating, converted: convertGoogleRating(r.rating) }))
-  });
+  const badReviewResponseRateChange = prevBadReviewResponseRate > 0
+    ? ((badReviewResponseRate - prevBadReviewResponseRate) / prevBadReviewResponseRate) * 100
+    : badReviewResponseRate > 0 ? 100 : 0;
 
   const venueMetrics = calculateVenueMetrics(reviews, daysAgo);
 
@@ -183,15 +215,18 @@ const calculateMetrics = (reviews: Review[], daysAgo: number): ReviewMetrics => 
     totalReviews,
     averageRating,
     responseRate,
+    badReviewResponseRate,
     monthOverMonth: {
       totalReviews: totalReviewsChange,
       averageRating: averageRatingChange,
-      responseRate: responseRateChange
+      responseRate: responseRateChange,
+      badReviewResponseRate: badReviewResponseRateChange
     },
     previousPeriodMetrics: {
       totalReviews: prevTotalReviews,
       averageRating: prevAverageRating,
-      responseRate: prevResponseRate
+      responseRate: prevResponseRate,
+      badReviewResponseRate: prevBadReviewResponseRate
     },
     venueMetrics
   };
@@ -206,7 +241,6 @@ export const useReviewMetrics = (days: number = 30) => {
       if (!reviewsData?.reviews) {
         return null;
       }
-      console.log("Calculating metrics for", reviewsData.reviews.length, "reviews");
       return calculateMetrics(reviewsData.reviews, days);
     },
     enabled: !!reviewsData?.reviews,

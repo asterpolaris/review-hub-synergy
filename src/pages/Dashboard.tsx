@@ -87,7 +87,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card className="glass-panel">
             <CardHeader>
               <CardTitle>Total Reviews</CardTitle>
@@ -134,6 +134,22 @@ const Dashboard = () => {
               )}
             </CardContent>
           </Card>
+          <Card className="glass-panel">
+            <CardHeader>
+              <CardTitle>Bad Review Response Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">
+                {metrics?.badReviewResponseRate ? `${Math.round(metrics.badReviewResponseRate)}%` : "0%"}
+              </p>
+              {metrics?.monthOverMonth.badReviewResponseRate !== 0 && (
+                <MetricVariance 
+                  value={metrics?.monthOverMonth.badReviewResponseRate || 0}
+                  absoluteChange={Math.round(metrics?.badReviewResponseRate - (metrics?.previousPeriodMetrics?.badReviewResponseRate || 0)) || 0}
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <Card>
@@ -148,6 +164,7 @@ const Dashboard = () => {
                   <TableHead className="text-right">Reviews</TableHead>
                   <TableHead className="text-right">Avg. Rating</TableHead>
                   <TableHead className="text-right">Response Rate</TableHead>
+                  <TableHead className="text-right">Bad Review Response Rate</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -178,6 +195,15 @@ const Dashboard = () => {
                         <MetricVariance 
                           value={venue.monthOverMonth.responseRate}
                           absoluteChange={Math.round(venue.responseRate - (venue.previousPeriodMetrics?.responseRate || 0))}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {Math.round(venue.badReviewResponseRate)}%
+                      {venue.monthOverMonth.badReviewResponseRate !== 0 && (
+                        <MetricVariance 
+                          value={venue.monthOverMonth.badReviewResponseRate}
+                          absoluteChange={Math.round(venue.badReviewResponseRate - (venue.previousPeriodMetrics?.badReviewResponseRate || 0))}
                         />
                       )}
                     </TableCell>
