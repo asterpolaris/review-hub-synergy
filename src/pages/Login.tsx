@@ -15,27 +15,46 @@ const Login = () => {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isSubscribed = true;
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isSubscribed) return;
+
       if (event === 'SIGNED_IN') {
         navigate("/dashboard");
       } else if (event === 'USER_UPDATED') {
-        const { error } = await supabase.auth.getSession();
-        if (error) {
-          setAuthError(error.message);
-          toast({
-            title: "Authentication Error",
-            description: error.message,
-            variant: "destructive",
-          });
+        try {
+          const { error } = await supabase.auth.getSession();
+          if (error && isSubscribed) {
+            setAuthError(error.message);
+            toast({
+              title: "Authentication Error",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+        } catch (error: any) {
+          if (isSubscribed) {
+            const errorMessage = error?.message || "An error occurred during authentication";
+            setAuthError(errorMessage);
+            toast({
+              title: "Authentication Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
+          }
         }
       } else if (event === 'SIGNED_OUT') {
         setAuthError(null);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isSubscribed = false;
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
 
   return (
