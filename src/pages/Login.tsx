@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
@@ -12,25 +12,26 @@ const REDIRECT_URL = `${window.location.origin}/auth/callback`;
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
         navigate("/dashboard");
       } else if (event === 'USER_UPDATED') {
-        const handleError = async () => {
-          const { error } = await supabase.auth.getSession();
-          if (error) {
-            toast({
-              title: "Authentication Error",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-        };
-        handleError();
+        const { error } = await supabase.auth.getSession();
+        if (error) {
+          setAuthError(error.message);
+          toast({
+            title: "Authentication Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setAuthError(null);
       }
     });
 
@@ -42,6 +43,7 @@ const Login = () => {
       <Card className="max-w-md w-full glass-panel">
         <CardContent className="pt-6">
           <h1 className="text-2xl font-bold text-center mb-6">Welcome Back</h1>
+          {authError && <AuthError error={authError} />}
           <Auth
             supabaseClient={supabase}
             appearance={{
