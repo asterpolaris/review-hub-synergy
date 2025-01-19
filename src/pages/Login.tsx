@@ -4,23 +4,38 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { AuthError } from "@/components/auth/AuthError";
+import { useToast } from "@/hooks/use-toast";
 
 const REDIRECT_URL = `${window.location.origin}/auth/callback`;
 
 const Login = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (event === 'SIGNED_IN') {
         navigate("/dashboard");
+      } else if (event === 'USER_UPDATED') {
+        const handleError = async () => {
+          const { error } = await supabase.auth.getSession();
+          if (error) {
+            toast({
+              title: "Authentication Error",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+        };
+        handleError();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-secondary/20 p-4">
