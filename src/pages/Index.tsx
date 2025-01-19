@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, MessageCircle, Star, Sparkles, ArrowRight } from "lucide-react";
+import { Navigation } from "@/components/layout/Navigation";
 
 const REDIRECT_URL = `${window.location.origin}/auth/callback`;
 
@@ -73,6 +74,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <Navigation />
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 pointer-events-none" />
