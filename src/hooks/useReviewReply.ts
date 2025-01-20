@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ReplyParams {
   reviewId: string;
@@ -11,11 +12,19 @@ interface ReplyParams {
 export const useReviewReply = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { googleAuthToken } = useAuth();
 
   return useMutation({
     mutationFn: async ({ reviewId, comment, placeId }: ReplyParams) => {
+      if (!googleAuthToken?.access_token) {
+        throw new Error('No Google access token available');
+      }
+
       const response = await supabase.functions.invoke('reply-to-review', {
-        body: { reviewId, comment, placeId }
+        body: { reviewId, comment, placeId },
+        headers: {
+          Authorization: `Bearer ${googleAuthToken.access_token}`
+        }
       });
 
       if (response.error) {
