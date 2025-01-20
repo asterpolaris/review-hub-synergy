@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-google-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
@@ -12,58 +12,32 @@ serve(async (req) => {
   }
 
   try {
-    const { reviewId, comment, placeId, delete: isDelete } = await req.json()
+    const { accountId, placeId, reviewId, comment, isDelete } = await req.json()
     
-    if (!reviewId || !placeId) {
+    // Validate required parameters
+    if (!accountId || !placeId || !reviewId) {
       throw new Error('Missing required parameters')
     }
 
-    console.log('Processing review:', {
-      reviewId,
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
+
+    // Extract the access token
+    const accessToken = authHeader.replace('Bearer ', '')
+    if (!accessToken) {
+      throw new Error('No access token provided')
+    }
+
+    console.log('Received request with parameters:', {
+      accountId,
       placeId,
+      reviewId,
       isDelete,
-      commentPreview: comment ? comment.substring(0, 50) + '...' : undefined
-    });
-
-    // Get the Google access token from the custom header
-    const googleToken = req.headers.get('x-google-token')
-    if (!googleToken) {
-      throw new Error('No Google token provided')
-    }
-    console.log('Using Google token:', googleToken.substring(0, 10) + '...')
-
-    // First get the account ID
-    const accountsResponse = await fetch(
-      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-      {
-        headers: {
-          'Authorization': `Bearer ${googleToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    )
-
-    if (!accountsResponse.ok) {
-      const errorText = await accountsResponse.text()
-      console.error('Error response from accounts endpoint:', {
-        status: accountsResponse.status,
-        statusText: accountsResponse.statusText,
-        body: errorText
-      })
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`)
-    }
-
-    const accountsData = await accountsResponse.json()
-    console.log("Google accounts response:", accountsData)
-
-    if (!accountsData.accounts || accountsData.accounts.length === 0) {
-      console.error('No Google Business accounts found')
-      throw new Error('No Google Business accounts found')
-    }
-
-    const accountId = accountsData.accounts[0].name.split('/')[1]
-    console.log('Using account ID:', accountId)
+      hasComment: !!comment
+    })
 
     // Clean up the placeId by removing the "locations/" prefix if present
     const locationId = placeId.replace('locations/', '')
@@ -72,9 +46,9 @@ serve(async (req) => {
     console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
-      method: isDelete ? 'DELETE' : 'PUT',
+      method: isDelete ? 'DELETE' : 'POST',
       headers: {
-        'Authorization': `Bearer ${googleToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -84,31 +58,45 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
       console.error('Error response from reply endpoint:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText
+        body: await response.text()
       })
-      throw new Error(`Failed to ${isDelete ? 'delete' : 'post'} reply: ${response.status} ${errorText}`)
+      throw new Error(`Failed to post reply: ${response.status} ${await response.text()}`)
     }
 
-    const data = isDelete ? { success: true } : await response.json()
-    console.log(`Reply ${isDelete ? 'deleted' : 'posted'} successfully:`, data)
+    // For POST requests, get the response data which includes the timestamp
+    let responseData = null
+    if (!isDelete) {
+      responseData = await response.json()
+      console.log('Reply posted successfully:', responseData)
+    } else {
+      console.log('Reply deleted successfully')
+    }
 
     return new Response(
-      JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        success: true,
+        data: responseData // This will include the createTime from Google's API
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
     )
 
   } catch (error) {
     console.error('Error in reply-to-review function:', error)
     return new Response(
-      JSON.stringify({ error: error.message, stack: error.stack }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      },
     )
   }
 })
