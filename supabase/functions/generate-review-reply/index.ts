@@ -61,29 +61,40 @@ const venueDescriptions = {
 };
 
 serve(async (req) => {
+  // Add CORS headers
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // Log the start of the function
+    console.log('Starting generate-review-reply function');
+
+    // Validate Anthropic API key
+    if (!anthropicApiKey) {
+      console.error('Missing ANTHROPIC_API_KEY');
+      throw new Error('ANTHROPIC_API_KEY is not configured');
+    }
+
     const { review } = await req.json()
+    
+    // Log the review data
+    console.log('Processing review:', {
+      venueName: review.venueName,
+      rating: review.rating,
+      authorName: review.authorName
+    });
     
     // Get venue info
     const venueInfo = venueDescriptions[review.venueName as keyof typeof venueDescriptions];
     if (!venueInfo) {
+      console.error(`Venue ${review.venueName} not found in templates`);
       throw new Error(`Venue ${review.venueName} not found in templates`);
     }
 
     // Determine if it's a negative review
     const isNegative = review.rating <= 3;
     
-    console.log('Generating response for review:', {
-      venueName: review.venueName,
-      rating: review.rating,
-      isNegative,
-      reviewerName: review.authorName
-    });
-
     // Construct the prompt for Claude
     const prompt = `You are a professional customer service representative for ${review.venueName}. 
 
@@ -112,6 +123,8 @@ ${isNegative ? `
 
 Keep the response concise but genuine. Do not copy the example verbatim - create a unique response that addresses the specific points in their review while maintaining the venue's voice and style.`;
 
+    console.log('Sending request to Claude API');
+
     // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -132,24 +145,34 @@ Keep the response concise but genuine. Do not copy the example verbatim - create
     });
 
     if (!response.ok) {
-      console.error('Claude API error:', await response.text());
-      throw new Error('Failed to generate response');
+      const errorText = await response.text();
+      console.error('Claude API error:', errorText);
+      throw new Error(`Claude API error: ${response.status} ${errorText}`);
     }
 
     const claudeResponse = await response.json();
     const generatedReply = claudeResponse.content[0].text;
 
-    console.log('Generated response:', generatedReply);
+    console.log('Successfully generated response');
 
     return new Response(
       JSON.stringify({ reply: generatedReply }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in generate-review-reply:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }),
+      { 
+        status: 500, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   }
 })
