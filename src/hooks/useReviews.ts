@@ -25,8 +25,19 @@ export const useReviews = () => {
       const { data: reviewsData, error } = await supabase.rpc("reviews");
       if (error) throw error;
 
-      // First cast to unknown, then to ReviewsResponse to satisfy TypeScript
-      return (reviewsData as unknown) as ReviewsResponse;
+      // Log the response to help with debugging
+      console.log("Reviews data from backend:", reviewsData);
+
+      // Ensure we have the correct data structure
+      if (!reviewsData || typeof reviewsData !== 'object') {
+        throw new Error('Invalid response format from reviews function');
+      }
+
+      // Return the properly structured data
+      return {
+        reviews: Array.isArray(reviewsData.reviews) ? reviewsData.reviews : [],
+        businesses: Array.isArray(reviewsData.businesses) ? reviewsData.businesses : []
+      } as ReviewsResponse;
     },
   });
 };
