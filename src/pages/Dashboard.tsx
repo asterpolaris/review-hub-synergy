@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReviewMetrics } from "@/hooks/useReviewMetrics";
-import { RefreshCwIcon } from "lucide-react";
+import { RefreshCwIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +14,7 @@ import { DatePeriod } from "@/types/metrics";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, googleAuthToken } = useAuth();
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<DatePeriod>('last-30-days');
   
@@ -25,8 +25,30 @@ const Dashboard = () => {
     await refetch();
   };
 
+  if (!googleAuthToken) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+          <h2 className="text-2xl font-semibold">Connect Google Business Profile</h2>
+          <p className="text-muted-foreground text-center max-w-md">
+            To view your business metrics, you need to connect your Google Business Profile account.
+          </p>
+          <Button onClick={() => navigate("/businesses")}>
+            Connect Google Account
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (isLoading || isMetricsLoading) {
-    return <div>Loading...</div>;
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
   }
 
   if (!session) {
