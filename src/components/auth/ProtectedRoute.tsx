@@ -1,25 +1,14 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDemo } from "@/contexts/DemoContext";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const { session } = useAuth();
+  const { isDemo } = useDemo();
 
-  useEffect(() => {
-    if (!isLoading && !session) {
-      console.log("No session found, redirecting to home");
-      navigate("/");
-    }
-  }, [session, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
-      </div>
-    );
+  if (!session && !isDemo) {
+    return <Navigate to="/login" />;
   }
 
-  return session ? <>{children}</> : null;
+  return <>{children}</>;
 };
