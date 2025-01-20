@@ -103,9 +103,10 @@ export const BusinessList = () => {
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
-          // Update the URL to include the fields we want, including rating
+          
+          // First, get the location list
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress,rating`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress`,
             { headers }
           );
 
@@ -116,57 +117,69 @@ export const BusinessList = () => {
             continue;
           }
 
+          // Then, fetch detailed information for each location including the rating
           for (const location of locationsData.locations) {
-            console.log("Processing location:", location);
+            try {
+              console.log(`Fetching details for location ${location.name}...`);
+              const locationDetails = await fetchWithRetry(
+                `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=rating`,
+                { headers }
+              );
 
-            if (!location.title) {
-              console.log(`Skipping location with no name: ${location.name}`);
-              continue;
-            }
+              console.log("Location details with rating:", locationDetails);
 
-            let formattedAddress = "";
-            if (location.storefrontAddress) {
-              const address = location.storefrontAddress;
-              const addressParts = [];
-
-              if (address.addressLines?.length > 0) {
-                addressParts.push(...address.addressLines);
-              }
-              if (address.locality) {
-                addressParts.push(address.locality);
-              }
-              if (address.administrativeArea) {
-                addressParts.push(address.administrativeArea);
-              }
-              if (address.postalCode) {
-                addressParts.push(address.postalCode);
-              }
-              if (address.regionCode) {
-                addressParts.push(address.regionCode);
+              if (!location.title) {
+                console.log(`Skipping location with no name: ${location.name}`);
+                continue;
               }
 
-              formattedAddress = addressParts.join(", ");
-            }
+              let formattedAddress = "";
+              if (location.storefrontAddress) {
+                const address = location.storefrontAddress;
+                const addressParts = [];
 
-            if (!formattedAddress) {
-              formattedAddress = "Address not provided";
-            }
+                if (address.addressLines?.length > 0) {
+                  addressParts.push(...address.addressLines);
+                }
+                if (address.locality) {
+                  addressParts.push(address.locality);
+                }
+                if (address.administrativeArea) {
+                  addressParts.push(address.administrativeArea);
+                }
+                if (address.postalCode) {
+                  addressParts.push(address.postalCode);
+                }
+                if (address.regionCode) {
+                  addressParts.push(address.regionCode);
+                }
 
-            const { error } = await supabase.from("businesses").insert({
-              name: location.title,
-              location: formattedAddress,
-              google_place_id: location.name,
-              google_business_account_id: account.name,
-              user_id: session?.user.id,
-              current_rating: location.rating || null, // Store the current rating from the API
-            });
+                formattedAddress = addressParts.join(", ");
+              }
 
-            if (error) {
-              console.error("Error storing location:", error);
+              if (!formattedAddress) {
+                formattedAddress = "Address not provided";
+              }
+
+              const { error } = await supabase.from("businesses").insert({
+                name: location.title,
+                location: formattedAddress,
+                google_place_id: location.name,
+                google_business_account_id: account.name,
+                user_id: session?.user.id,
+                current_rating: locationDetails.rating || null,
+              });
+
+              if (error) {
+                console.error("Error storing location:", error);
+                errorCount++;
+              } else {
+                console.log(`Successfully saved business: ${location.title} with rating: ${locationDetails.rating}`);
+                addedCount++;
+              }
+            } catch (error) {
+              console.error(`Error fetching details for location ${location.name}:`, error);
               errorCount++;
-            } else {
-              console.log(`Successfully saved business: ${location.title}`);
-              addedCount++;
             }
           }
         } catch (error) {
