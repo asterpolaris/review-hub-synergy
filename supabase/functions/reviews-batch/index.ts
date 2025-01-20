@@ -73,36 +73,7 @@ serve(async (req) => {
       );
     }
 
-    // First validate the access token
-    try {
-      const tokenInfoResponse = await fetch(
-        `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${access_token}`
-      );
-      
-      if (!tokenInfoResponse.ok) {
-        console.error('Invalid Google access token:', await tokenInfoResponse.text());
-        return new Response(
-          JSON.stringify({ error: 'Invalid Google access token' }),
-          { 
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-
-      console.log('Google access token validated');
-    } catch (error) {
-      console.error('Error validating Google access token:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to validate Google access token', details: error.message }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Get the account ID
+    // First get the account ID
     console.log('Fetching Google Business accounts...');
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
@@ -121,13 +92,7 @@ serve(async (req) => {
         statusText: accountsResponse.statusText,
         body: errorText
       });
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch Google accounts', details: errorText }),
-        { 
-          status: accountsResponse.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error(`Failed to fetch accounts: ${errorText}`);
     }
 
     const accountsData = await accountsResponse.json();
@@ -136,21 +101,19 @@ serve(async (req) => {
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
       console.error('No Google Business accounts found');
       return new Response(
-        JSON.stringify({ error: 'No Google Business accounts found' }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ locationReviews: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const accountId = accountsData.accounts[0].name;
-    console.log('Using account ID:', accountId);
+    const accountName = accountsData.accounts[0].name;
+    console.log('Using account:', accountName);
 
     const locationReviews = [];
-    for (const locationName of location_names) {
+    for (const locationId of location_names) {
       try {
-        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${locationName}/reviews`;
+        // Use the correct API endpoint for fetching reviews
+        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations/${locationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
@@ -162,24 +125,23 @@ serve(async (req) => {
 
         if (!reviewsResponse.ok) {
           const errorText = await reviewsResponse.text();
-          console.error(`Failed to fetch reviews for location ${locationName}:`, {
+          console.error(`Failed to fetch reviews for location ${locationId}:`, {
             status: reviewsResponse.status,
             statusText: reviewsResponse.statusText,
             response: errorText
           });
-          continue; // Skip this location and continue with others
+          continue;
         }
 
         const reviewsData = await reviewsResponse.json();
-        console.log(`Reviews data for location ${locationName}:`, reviewsData);
+        console.log(`Reviews data for location ${locationId}:`, reviewsData);
         
         locationReviews.push({
-          locationName,
+          locationName: locationId,
           reviews: reviewsData.reviews || []
         });
       } catch (error) {
-        console.error(`Error processing location ${locationName}:`, error);
-        // Continue with other locations even if one fails
+        console.error(`Error processing location ${locationId}:`, error);
         continue;
       }
     }
