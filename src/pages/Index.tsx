@@ -1,14 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, MessageCircle, Star, Sparkles, ArrowRight } from "lucide-react";
 import { Navigation } from "@/components/layout/Navigation";
-
-const REDIRECT_URL = `${window.location.origin}/auth/callback`;
 
 const Index = () => {
   const navigate = useNavigate();
@@ -159,41 +154,6 @@ const Index = () => {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Auth Section */}
-      <div className="container mx-auto px-4 py-24">
-        <Card className="max-w-md mx-auto glass-panel">
-          <CardContent className="pt-6">
-            <Auth
-              supabaseClient={supabase}
-              appearance={{
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: {
-                      brand: 'rgb(var(--primary))',
-                      brandAccent: 'rgb(var(--primary))',
-                    },
-                  },
-                },
-              }}
-              theme="light"
-              providers={[]}
-              redirectTo={REDIRECT_URL}
-              onlyThirdPartyProviders={false}
-            />
-            <div className="mt-4 text-center text-sm text-muted-foreground">
-              <a href="/privacy-policy" className="hover:underline">
-                Privacy Policy
-              </a>
-              {" • "}
-              <a href="/terms" className="hover:underline">
-                Terms of Service
-              </a>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
