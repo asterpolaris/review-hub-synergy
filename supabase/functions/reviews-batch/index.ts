@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -8,7 +7,7 @@ const corsHeaders = {
 
 console.log('Reviews batch function loaded');
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   console.log('Reviews batch function called');
   console.log('Request method:', req.method);
   console.log('Request headers:', Object.fromEntries(req.headers.entries()));
@@ -23,11 +22,10 @@ serve(async (req) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('No authorization header found');
       throw new Error('No authorization header');
     }
 
-    // Initialize Supabase client with service role key
+    // Initialize Supabase client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -59,7 +57,7 @@ serve(async (req) => {
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
-    let { access_token, location_names } = JSON.parse(requestBody);
+    const { access_token, location_names } = JSON.parse(requestBody);
     console.log('Processing request for locations:', location_names);
 
     if (!access_token || !location_names) {
@@ -112,8 +110,11 @@ serve(async (req) => {
     const locationReviews = [];
     for (const locationId of location_names) {
       try {
+        // Clean up the location ID by removing any duplicate "locations/" prefix
+        const cleanLocationId = locationId.replace(/^locations\//, '');
+        
         // Use the correct API endpoint for fetching reviews
-        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations/${locationId}/reviews`;
+        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations/${cleanLocationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
@@ -125,7 +126,7 @@ serve(async (req) => {
 
         if (!reviewsResponse.ok) {
           const errorText = await reviewsResponse.text();
-          console.error(`Failed to fetch reviews for location ${locationId}:`, {
+          console.error(`Failed to fetch reviews for location ${cleanLocationId}:`, {
             status: reviewsResponse.status,
             statusText: reviewsResponse.statusText,
             response: errorText
@@ -134,7 +135,7 @@ serve(async (req) => {
         }
 
         const reviewsData = await reviewsResponse.json();
-        console.log(`Reviews data for location ${locationId}:`, reviewsData);
+        console.log(`Reviews data for location ${cleanLocationId}:`, reviewsData);
         
         locationReviews.push({
           locationName: locationId,
@@ -155,15 +156,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in reviews-batch function:', error);
+    console.error('Error stack:', error.stack);
     return new Response(
       JSON.stringify({ 
         error: error.message,
         stack: error.stack 
       }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-})
+});
