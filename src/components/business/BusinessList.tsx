@@ -106,7 +106,7 @@ export const BusinessList = () => {
           
           // First, get the location list
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`,
             { headers }
           );
 
@@ -122,20 +122,20 @@ export const BusinessList = () => {
             try {
               console.log(`Fetching details for location ${location.name}...`);
               const locationDetails = await fetchWithRetry(
-                `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=rating`,
+                `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=rating,title,storefrontAddress`,
                 { headers }
               );
 
               console.log("Location details with rating:", locationDetails);
 
-              if (!location.title) {
+              if (!locationDetails.title) {
                 console.log(`Skipping location with no name: ${location.name}`);
                 continue;
               }
 
               let formattedAddress = "";
-              if (location.storefrontAddress) {
-                const address = location.storefrontAddress;
+              if (locationDetails.storefrontAddress) {
+                const address = locationDetails.storefrontAddress;
                 const addressParts = [];
 
                 if (address.addressLines?.length > 0) {
@@ -162,7 +162,7 @@ export const BusinessList = () => {
               }
 
               const { error } = await supabase.from("businesses").insert({
-                name: location.title,
+                name: locationDetails.title,
                 location: formattedAddress,
                 google_place_id: location.name,
                 google_business_account_id: account.name,
@@ -174,7 +174,7 @@ export const BusinessList = () => {
                 console.error("Error storing location:", error);
                 errorCount++;
               } else {
-                console.log(`Successfully saved business: ${location.title} with rating: ${locationDetails.rating}`);
+                console.log(`Successfully saved business: ${locationDetails.title} with rating: ${locationDetails.rating}`);
                 addedCount++;
               }
             } catch (error) {
