@@ -5,8 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-console.log('Reviews batch function loaded');
-
 Deno.serve(async (req) => {
   console.log('Reviews batch function called');
   console.log('Request method:', req.method);
@@ -22,6 +20,7 @@ Deno.serve(async (req) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header provided');
       throw new Error('No authorization header');
     }
 
@@ -51,6 +50,7 @@ Deno.serve(async (req) => {
 
     console.log('Token verified for user:', user.id);
 
+    // Parse request body
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
@@ -68,40 +68,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // First get the account ID using the Business Profile API
-    console.log('Fetching Google Business accounts...');
-    const accountsResponse = await fetch(
-      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-      {
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    );
-
-    if (!accountsResponse.ok) {
-      const errorText = await accountsResponse.text();
-      console.error('Error response from accounts endpoint:', {
-        status: accountsResponse.status,
-        statusText: accountsResponse.statusText,
-        body: errorText
-      });
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`);
-    }
-
-    const accountsData = await accountsResponse.json();
-    console.log("Google accounts response:", accountsData);
-
-    if (!accountsData.accounts || accountsData.accounts.length === 0) {
-      console.error('No Google Business accounts found');
-      throw new Error('No Google Business accounts found');
-    }
-
-    const accountId = accountsData.accounts[0].name.split('/')[1];
-    console.log('Using account ID:', accountId);
-
     const locationReviews = [];
     for (const locationId of location_names) {
       try {
@@ -109,7 +75,7 @@ Deno.serve(async (req) => {
         const cleanLocationId = locationId.replace(/^locations\//, '').split('/').pop();
         
         // Use the correct Business Profile API endpoint for reviews
-        const reviewsUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${cleanLocationId}/reviews`;
+        const reviewsUrl = `https://mybusiness.googleapis.com/v4/accounts/${cleanLocationId}/locations/${cleanLocationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
