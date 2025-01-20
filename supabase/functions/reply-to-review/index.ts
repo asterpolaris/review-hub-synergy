@@ -33,12 +33,12 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // Clean up the placeId by removing the "locations/" prefix if present
-    const locationId = placeId.replace('locations/', '')
+    // Clean up the placeId and ensure it has the correct format
+    const locationId = placeId.startsWith('locations/') ? placeId : `locations/${placeId}`
 
-    // First, get the account ID using the location
+    // First, get the account using the correct API endpoint
     const accountResponse = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/locations/${locationId}`,
+      `https://mybusinessaccountmanagement.googleapis.com/v1/${locationId}`,
       {
         headers: {
           'Authorization': `Bearer ${googleToken}`,
@@ -57,11 +57,15 @@ serve(async (req) => {
     }
 
     const accountData = await accountResponse.json()
-    const accountName = accountData.name.split('/')[1]
-    console.log('Retrieved account name:', accountName)
+    console.log('Account data received:', accountData)
+
+    // Extract the account ID from the location path
+    // The path format is "accounts/{accountId}/locations/{locationId}"
+    const accountId = accountData.name.split('/')[1]
+    console.log('Retrieved account ID:', accountId)
 
     // Now construct the review URL with the account ID
-    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountName}/locations/${locationId}/reviews/${reviewId}/reply`
+    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId.replace('locations/', '')}/reviews/${reviewId}/reply`
     console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
