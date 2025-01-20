@@ -1,4 +1,4 @@
-import { Building2, Home, Star } from "lucide-react";
+import { Building2, Home, Link, Star } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -9,7 +9,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 
 const menuItems = [
   {
@@ -26,6 +26,12 @@ const menuItems = [
     icon: Star,
     label: "Reviews",
     to: "/reviews",
+  },
+  {
+    icon: Link,
+    label: "Sevenrooms",
+    to: "https://www.sevenrooms.com",
+    external: true,
   },
 ];
 
@@ -47,12 +53,24 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
                     asChild
-                    active={location.pathname === item.to}
+                    data-active={location.pathname === item.to}
                   >
-                    <Link to={item.to} className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
+                    {item.external ? (
+                      <a 
+                        href={item.to} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </a>
+                    ) : (
+                      <RouterLink to={item.to} className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </RouterLink>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
