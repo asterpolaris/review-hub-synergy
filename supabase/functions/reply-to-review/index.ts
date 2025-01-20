@@ -66,7 +66,7 @@ serve(async (req) => {
     console.log('Using account ID:', accountId)
 
     // Extract the location ID from the placeId
-    const locationId = placeId.split('/').pop()
+    const locationId = placeId
     console.log('Using location ID:', locationId)
 
     // Format the current time in RFC3339 format with UTC timezone
@@ -74,12 +74,8 @@ serve(async (req) => {
     const utcTimestamp = now.toISOString()
     console.log('Using timestamp:', utcTimestamp)
 
-    // Construct the full review name
-    const reviewName = `accounts/${accountId}/locations/${locationId}/reviews/${reviewId}`
-    console.log('Review name:', reviewName)
-
     // Post the reply using the Google Business Profile API
-    const replyUrl = `https://mybusiness.googleapis.com/v1/${reviewName}/reply`
+    const replyUrl = `https://mybusiness.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
     console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
