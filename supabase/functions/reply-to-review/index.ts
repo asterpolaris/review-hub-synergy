@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-google-token',
 }
 
 serve(async (req) => {
@@ -24,15 +24,12 @@ serve(async (req) => {
       commentPreview: comment.substring(0, 50) + '...'
     });
 
-    // Get the access token from the request headers
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    // Get the Google access token from the custom header
+    const googleToken = req.headers.get('x-google-token')
+    if (!googleToken) {
+      throw new Error('No Google token provided')
     }
-
-    // Extract the token (remove 'Bearer ' if present)
-    const accessToken = authHeader.replace('Bearer ', '')
-    console.log('Using access token:', accessToken.substring(0, 10) + '...')
+    console.log('Using Google token:', googleToken.substring(0, 10) + '...')
 
     // Extract the location ID from the placeId
     const locationId = placeId.split('/').pop()
@@ -43,7 +40,7 @@ serve(async (req) => {
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${googleToken}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
@@ -78,7 +75,7 @@ serve(async (req) => {
     const response = await fetch(replyUrl, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${googleToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },

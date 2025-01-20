@@ -12,7 +12,7 @@ interface ReplyParams {
 export const useReviewReply = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { googleAuthToken } = useAuth();
+  const { googleAuthToken, session } = useAuth();
 
   return useMutation({
     mutationFn: async ({ reviewId, comment, placeId }: ReplyParams) => {
@@ -20,10 +20,15 @@ export const useReviewReply = () => {
         throw new Error('No Google access token available');
       }
 
+      if (!session) {
+        throw new Error('No session available');
+      }
+
       const response = await supabase.functions.invoke('reply-to-review', {
         body: { reviewId, comment, placeId },
         headers: {
-          Authorization: `Bearer ${googleAuthToken.access_token}`
+          Authorization: `Bearer ${session.access_token}`,
+          'x-google-token': googleAuthToken.access_token
         }
       });
 
@@ -41,6 +46,7 @@ export const useReviewReply = () => {
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
     },
     onError: (error) => {
+      console.error('Error in useReviewReply:', error);
       toast({
         title: "Failed to post reply",
         description: error instanceof Error ? error.message : "An unknown error occurred",
