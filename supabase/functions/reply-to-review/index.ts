@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,80 +14,57 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Get the request body
-    const { reviewId, comment, placeId } = await req.json()
-
-    // Validate required parameters
-    if (!reviewId || !comment || !placeId) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing required parameters' 
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Get the JWT from the Authorization header
+    // Get the authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { 
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+      throw new Error('No authorization header')
     }
 
-    // Verify the JWT token
+    // Initialize Supabase client
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false
+        }
+    })
+
+    // Verify the JWT
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    const { data: { user }, error: verificationError } = await supabaseAdmin.auth.getUser(token)
     
-    if (authError || !user) {
-      console.error('Auth error:', authError)
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { 
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+    if (verificationError || !user) {
+      throw new Error('Invalid token')
     }
 
-    // Get the user's Google token
-    const { data: tokens, error: tokenError } = await supabaseClient
+    // Parse request body
+    const { reviewId, comment, placeId } = await req.json()
+    
+    if (!reviewId || !comment || !placeId) {
+      throw new Error('Missing required parameters')
+    }
+
+    // Get user's Google token
+    const { data: googleToken, error: tokenError } = await supabaseAdmin
       .from('google_auth_tokens')
       .select('access_token')
       .eq('user_id', user.id)
       .single()
 
-    if (tokenError || !tokens) {
-      console.error('Token error:', tokenError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to get Google token' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+    if (tokenError || !googleToken?.access_token) {
+      throw new Error('No Google token found')
     }
 
-    // Call Google Business Profile API to reply to the review
+    // Post reply to Google Business Profile API
     const response = await fetch(
-      `https://businessprofileperformance.googleapis.com/v1/${placeId}/reviews/${reviewId}/reply`,
+      `https://mybusiness.googleapis.com/v4/${placeId}/reviews/${reviewId}/reply`,
       {
-        method: 'POST',
+        method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${tokens.access_token}`,
+          'Authorization': `Bearer ${googleToken.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -97,18 +74,8 @@ serve(async (req) => {
     )
 
     if (!response.ok) {
-      const errorData = await response.text()
-      console.error('Google API error:', errorData)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to post reply to Google',
-          details: errorData
-        }),
-        { 
-          status: response.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+      const errorText = await response.text()
+      throw new Error(`Failed to post reply: ${errorText}`)
     }
 
     const data = await response.json()
@@ -116,17 +83,17 @@ serve(async (req) => {
     return new Response(
       JSON.stringify(data),
       { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
       }
     )
 
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('Error in reply-to-review function:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'An unexpected error occurred',
-        details: error.message
+        error: error.message,
+        stack: error.stack 
       }),
       { 
         status: 500,
