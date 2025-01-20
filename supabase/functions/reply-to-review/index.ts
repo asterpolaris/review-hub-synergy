@@ -33,12 +33,9 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // Clean up the placeId and ensure it has the correct format
-    const locationId = placeId.startsWith('locations/') ? placeId : `locations/${placeId}`
-
-    // First, get the account using the correct API endpoint
+    // First, get the account information using the Business Profile API
     const accountResponse = await fetch(
-      `https://mybusinessaccountmanagement.googleapis.com/v1/${locationId}`,
+      'https://mybusinessbusinessinformation.googleapis.com/v1/accounts',
       {
         headers: {
           'Authorization': `Bearer ${googleToken}`,
@@ -48,28 +45,34 @@ serve(async (req) => {
     )
 
     if (!accountResponse.ok) {
-      console.error('Error fetching account:', {
+      console.error('Error fetching accounts:', {
         status: accountResponse.status,
         statusText: accountResponse.statusText,
         body: await accountResponse.text()
       })
-      throw new Error(`Failed to fetch account: ${accountResponse.status}`)
+      throw new Error(`Failed to fetch accounts: ${accountResponse.status}`)
     }
 
-    const accountData = await accountResponse.json()
-    console.log('Account data received:', accountData)
+    const accountsData = await accountResponse.json()
+    console.log('Accounts data received:', accountsData)
 
-    // Extract the account ID from the location path
-    // The path format is "accounts/{accountId}/locations/{locationId}"
-    const accountId = accountData.name.split('/')[1]
-    console.log('Retrieved account ID:', accountId)
+    if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      throw new Error('No accounts found for this user')
+    }
 
-    // Now construct the review URL with the account ID
-    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId.replace('locations/', '')}/reviews/${reviewId}/reply`
+    const accountId = accountsData.accounts[0].name.split('/')[1]
+    console.log('Using account ID:', accountId)
+
+    // Clean up the placeId to ensure correct format
+    const locationId = placeId.replace('locations/', '')
+    console.log('Using location ID:', locationId)
+
+    // Construct the review URL with the account ID
+    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${locationId}/reviews/${reviewId}/reply`
     console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
-      method: isDelete ? 'DELETE' : 'POST',
+      method: isDelete ? 'DELETE' : 'PUT',
       headers: {
         'Authorization': `Bearer ${googleToken}`,
         'Content-Type': 'application/json',
@@ -89,7 +92,7 @@ serve(async (req) => {
       throw new Error(`Failed to ${isDelete ? 'delete' : 'post'} reply: ${response.status} ${await response.text()}`)
     }
 
-    // For POST requests, get the response data which includes the timestamp
+    // For PUT requests, get the response data which includes the timestamp
     let responseData = null
     if (!isDelete) {
       responseData = await response.json()
