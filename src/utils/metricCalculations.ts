@@ -89,7 +89,7 @@ export const calculateVenueMetrics = (reviews: Review[], period: string): VenueM
   }, {} as { [key: string]: Review[] });
 
   return Object.entries(venueReviews).map(([venueName, venueReviews]) => {
-    // Calculate current rating using all reviews
+    // Calculate current rating using all reviews for this venue
     const allReviewsRating = venueReviews.reduce((acc, review) => acc + convertGoogleRating(review.rating), 0) / venueReviews.length;
 
     const periodReviews = venueReviews.filter(review => {

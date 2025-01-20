@@ -64,8 +64,15 @@ export const useReviewMetrics = (period: string = 'last-30-days') => {
 
       console.log("Venue metrics:", venueMetrics);
 
+      // Calculate the overall current rating using all reviews
+      const allReviews = reviewsData.reviews;
+      const currentRating = allReviews.length > 0 
+        ? allReviews.reduce((acc, review) => acc + Number(review.rating), 0) / allReviews.length
+        : 0;
+
       const metrics: ReviewMetrics = {
         ...currentMetrics,
+        currentRating,
         monthOverMonth,
         previousPeriodMetrics: previousMetrics,
         venueMetrics
