@@ -1,4 +1,4 @@
-import { Building2, Home, LogOut, Star, UserCircle2, ExternalLink } from "lucide-react";
+import { Building2, Home, Star, Settings, LogOut, UserCircle2, ExternalLink } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +10,13 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,9 +48,37 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-semibold tracking-tight">
-            JEGantic Hospitality Desk
-          </SidebarGroupLabel>
+          <div className="flex items-center justify-between px-4 py-2">
+            <SidebarGroupLabel className="text-lg font-semibold tracking-tight">
+              JEGantic Hospitality Desk
+            </SidebarGroupLabel>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center">
+                    <UserCircle2 className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="flex items-center text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -76,26 +111,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4 flex flex-col gap-1">
-        <Button
-          variant="ghost"
-          className="w-full justify-start"
-          asChild
-        >
-          <Link to="/profile" className="flex items-center gap-3">
-            <UserCircle2 className="h-4 w-4" />
-            <span>Profile</span>
-          </Link>
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={handleSignOut}
-          className="w-full justify-start gap-3"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Sign out</span>
-        </Button>
-      </SidebarFooter>
     </Sidebar>
   );
 }
