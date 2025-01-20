@@ -61,16 +61,13 @@ const venueDescriptions = {
 };
 
 serve(async (req) => {
-  // Add CORS headers
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Log the start of the function
     console.log('Starting generate-review-reply function');
 
-    // Validate Anthropic API key
     if (!anthropicApiKey) {
       console.error('Missing ANTHROPIC_API_KEY');
       throw new Error('ANTHROPIC_API_KEY is not configured');
@@ -78,24 +75,20 @@ serve(async (req) => {
 
     const { review } = await req.json()
     
-    // Log the review data
     console.log('Processing review:', {
       venueName: review.venueName,
       rating: review.rating,
       authorName: review.authorName
     });
     
-    // Get venue info
     const venueInfo = venueDescriptions[review.venueName as keyof typeof venueDescriptions];
     if (!venueInfo) {
       console.error(`Venue ${review.venueName} not found in templates`);
       throw new Error(`Venue ${review.venueName} not found in templates`);
     }
 
-    // Determine if it's a negative review
     const isNegative = review.rating <= 3;
     
-    // Construct the prompt for Claude
     const prompt = `You are a professional customer service representative for ${review.venueName}. 
 
 Venue description: ${venueInfo.long}
@@ -125,7 +118,7 @@ Keep the response concise but genuine. Do not copy the example verbatim - create
 
     console.log('Sending request to Claude API');
 
-    // Call Claude API
+    // Updated API request format according to Claude's documentation
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -151,8 +144,14 @@ Keep the response concise but genuine. Do not copy the example verbatim - create
     }
 
     const claudeResponse = await response.json();
-    const generatedReply = claudeResponse.content[0].text;
+    console.log('Claude API response:', claudeResponse);
 
+    if (!claudeResponse.content || !claudeResponse.content[0] || !claudeResponse.content[0].text) {
+      console.error('Unexpected Claude API response format:', claudeResponse);
+      throw new Error('Invalid response format from Claude API');
+    }
+
+    const generatedReply = claudeResponse.content[0].text;
     console.log('Successfully generated response');
 
     return new Response(
