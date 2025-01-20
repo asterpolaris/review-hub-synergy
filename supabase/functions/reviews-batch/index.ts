@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
         headers: {
           'Authorization': `Bearer ${access_token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       }
     );
@@ -98,23 +99,24 @@ Deno.serve(async (req) => {
       throw new Error('No Google Business accounts found');
     }
 
-    const accountName = accountsData.accounts[0].name;
-    console.log('Using account:', accountName);
+    const accountId = accountsData.accounts[0].name.split('/')[1];
+    console.log('Using account ID:', accountId);
 
     const locationReviews = [];
     for (const locationId of location_names) {
       try {
-        // Clean up the location ID by removing any duplicate "locations/" prefix
-        const cleanLocationId = locationId.replace(/^locations\//, '');
+        // Clean up the location ID by removing any duplicate "locations/" prefix and extracting just the ID
+        const cleanLocationId = locationId.replace(/^locations\//, '').split('/').pop();
         
         // Use the correct Business Profile API endpoint for reviews
-        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountName}/locations/${cleanLocationId}/reviews`;
+        const reviewsUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${cleanLocationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
           headers: {
             'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         });
 
