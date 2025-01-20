@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.generate-review-reply]
 verify_jwt = true
+
+[functions.reply-to-review]
+verify_jwt = true
