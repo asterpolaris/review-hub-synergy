@@ -32,10 +32,6 @@ serve(async (req) => {
     }
     console.log('Using Google token:', googleToken.substring(0, 10) + '...')
 
-    // Extract the location ID from the placeId
-    const locationId = placeId.split('/').pop()
-    console.log('Using location ID:', locationId)
-    
     // First get the account ID
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
@@ -69,13 +65,21 @@ serve(async (req) => {
     const accountId = accountsData.accounts[0].name.split('/')[1]
     console.log('Using account ID:', accountId)
 
+    // Extract the location ID from the placeId
+    const locationId = placeId.split('/').pop()
+    console.log('Using location ID:', locationId)
+
     // Format the current time in RFC3339 format with UTC timezone
     const now = new Date()
-    const utcTimestamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z')
+    const utcTimestamp = now.toISOString()
     console.log('Using timestamp:', utcTimestamp)
 
+    // Construct the full review name
+    const reviewName = `accounts/${accountId}/locations/${locationId}/reviews/${reviewId}`
+    console.log('Review name:', reviewName)
+
     // Post the reply using the Google Business Profile API
-    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
+    const replyUrl = `https://mybusiness.googleapis.com/v1/${reviewName}/reply`
     console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
