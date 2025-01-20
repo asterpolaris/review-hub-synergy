@@ -81,15 +81,22 @@ serve(async (req) => {
       authorName: review.authorName
     });
     
-    const venueInfo = venueDescriptions[review.venueName as keyof typeof venueDescriptions];
-    if (!venueInfo) {
-      console.error(`Venue ${review.venueName} not found in templates`);
-      throw new Error(`Venue ${review.venueName} not found in templates`);
+    // Normalize venue name and find matching template
+    const normalizedVenueName = review.venueName.toUpperCase();
+    const venueKey = Object.keys(venueDescriptions).find(key => 
+      key.toUpperCase() === normalizedVenueName
+    );
+    
+    if (!venueKey) {
+      console.error(`Venue ${review.venueName} (normalized: ${normalizedVenueName}) not found in templates`);
+      console.log('Available venues:', Object.keys(venueDescriptions));
+      throw new Error(`Venue ${review.venueName} not found in templates. Available venues: ${Object.keys(venueDescriptions).join(', ')}`);
     }
 
+    const venueInfo = venueDescriptions[venueKey as keyof typeof venueDescriptions];
     const isNegative = review.rating <= 3;
     
-    const prompt = `You are a professional customer service representative for ${review.venueName}. 
+    const prompt = `You are a professional customer service representative for ${venueKey}. 
 
 Venue description: ${venueInfo.long}
 
@@ -118,7 +125,6 @@ Keep the response concise but genuine. Do not copy the example verbatim - create
 
     console.log('Sending request to Claude API');
 
-    // Updated API request format according to Claude's documentation
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
