@@ -68,12 +68,6 @@ serve(async (req) => {
     // Clean up the placeId by removing the "locations/" prefix if present
     const locationId = placeId.replace('locations/', '')
 
-    // Format the current time in RFC3339 format with UTC timezone
-    const now = new Date()
-    const utcTimestamp = now.toISOString()
-    console.log('Using timestamp:', utcTimestamp)
-
-    // Post the reply using the Google Business Profile API
     const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
     console.log('Making request to:', replyUrl)
 
@@ -85,8 +79,7 @@ serve(async (req) => {
         'Accept': 'application/json'
       },
       body: isDelete ? undefined : JSON.stringify({
-        comment: comment,
-        updateTime: utcTimestamp
+        comment: comment
       })
     })
 
