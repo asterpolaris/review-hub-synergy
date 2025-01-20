@@ -74,7 +74,7 @@ serve(async (req) => {
     console.log('Using timestamp:', utcTimestamp)
 
     // Post the reply using the Google Business Profile API
-    const replyUrl = `https://mybusiness.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
+    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
     console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
@@ -111,10 +111,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in reply-to-review function:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        stack: error.stack 
-      }),
+      JSON.stringify({ error: error.message, stack: error.stack }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
