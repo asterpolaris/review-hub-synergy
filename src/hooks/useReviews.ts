@@ -4,6 +4,7 @@ import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
 import { Json } from "@/integrations/supabase/types";
 import { processReviewData } from "@/utils/reviewProcessing";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Business {
   id: string;
@@ -18,12 +19,17 @@ interface ReviewsData {
 
 export const useReviews = () => {
   const { toast } = useToast();
+  const { session } = useAuth();
 
   return useQuery({
     queryKey: ["reviews"],
     queryFn: async () => {
       console.log("Fetching reviews data...");
       
+      if (!session?.access_token) {
+        throw new Error("No access token available");
+      }
+
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
         data: ReviewsData | null;
         error: Error | null;
