@@ -33,41 +33,12 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // First, get the account information using the Business Profile API
-    const accountResponse = await fetch(
-      'https://mybusinessbusinessinformation.googleapis.com/v1/accounts',
-      {
-        headers: {
-          'Authorization': `Bearer ${googleToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-    if (!accountResponse.ok) {
-      console.error('Error fetching accounts:', {
-        status: accountResponse.status,
-        statusText: accountResponse.statusText,
-        body: await accountResponse.text()
-      })
-      throw new Error(`Failed to fetch accounts: ${accountResponse.status}`)
-    }
-
-    const accountsData = await accountResponse.json()
-    console.log('Accounts data received:', accountsData)
-
-    if (!accountsData.accounts || accountsData.accounts.length === 0) {
-      throw new Error('No accounts found for this user')
-    }
-
-    const accountId = accountsData.accounts[0].name.split('/')[1]
-    console.log('Using account ID:', accountId)
-
     // Clean up the placeId to ensure correct format
     const locationId = placeId.replace('locations/', '')
     console.log('Using location ID:', locationId)
 
-    // Construct the review URL with the account ID
+    // Construct the review URL directly with the location ID
+    // According to the latest API docs, we don't need the account ID for review replies
     const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${locationId}/reviews/${reviewId}/reply`
     console.log('Making request to:', replyUrl)
 
@@ -84,12 +55,14 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
+      const errorText = await response.text()
       console.error('Error response from reply endpoint:', {
         status: response.status,
         statusText: response.statusText,
-        body: await response.text()
+        body: errorText,
+        url: replyUrl
       })
-      throw new Error(`Failed to ${isDelete ? 'delete' : 'post'} reply: ${response.status} ${await response.text()}`)
+      throw new Error(`Failed to ${isDelete ? 'delete' : 'update'} reply: ${response.status} ${errorText}`)
     }
 
     // For PUT requests, get the response data which includes the timestamp
