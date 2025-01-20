@@ -1,4 +1,4 @@
-import { Building2, Home, LogOut, Star, UserCircle2 } from "lucide-react";
+import { Building2, Home, LogOut, Star, UserCircle2, ExternalLink } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,12 @@ const menuItems = [
   { title: "Dashboard", icon: Home, path: "/dashboard" },
   { title: "Businesses", icon: Building2, path: "/businesses" },
   { title: "Reviews", icon: Star, path: "/reviews" },
+  { 
+    title: "SevenRooms", 
+    icon: ExternalLink, 
+    path: "https://www.sevenrooms.com/login",
+    external: true 
+  },
 ];
 
 export function AppSidebar() {
@@ -44,13 +50,25 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    className={location.pathname === item.path ? "bg-accent" : ""}
+                    className={!item.external && location.pathname === item.path ? "bg-accent" : ""}
                     tooltip={item.title}
                   >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
+                    {item.external ? (
+                      <a 
+                        href={item.path} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </a>
+                    ) : (
+                      <Link to={item.path} className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
