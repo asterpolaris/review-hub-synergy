@@ -24,10 +24,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('No authorization header found');
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('No authorization header');
     }
 
     // Initialize Supabase client with service role key
@@ -47,10 +44,7 @@ serve(async (req) => {
     
     if (verificationError || !user) {
       console.error('Token verification failed:', verificationError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid token', details: verificationError }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Invalid token');
     }
 
     const requestBody = await req.text();
@@ -64,7 +58,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      )
     }
 
     // First validate the access token
@@ -74,16 +68,16 @@ serve(async (req) => {
       );
       
       if (!tokenInfoResponse.ok) {
-        console.error('Invalid Google access token:', await tokenInfoResponse.text());
+        console.error('Invalid access token:', await tokenInfoResponse.text());
         return new Response(
-          JSON.stringify({ error: 'Invalid Google access token' }),
+          JSON.stringify({ error: 'Invalid access token' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     } catch (error) {
-      console.error('Error validating Google access token:', error);
+      console.error('Error validating access token:', error);
       return new Response(
-        JSON.stringify({ error: 'Failed to validate Google access token' }),
+        JSON.stringify({ error: 'Failed to validate access token' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -108,10 +102,7 @@ serve(async (req) => {
         statusText: accountsResponse.statusText,
         body: errorText
       });
-      return new Response(
-        JSON.stringify({ error: `Failed to fetch accounts: ${errorText}` }),
-        { status: accountsResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`);
     }
 
     const accountsData = await accountsResponse.json();
@@ -119,10 +110,7 @@ serve(async (req) => {
 
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
       console.error('No Google Business accounts found');
-      return new Response(
-        JSON.stringify({ error: 'No Google Business accounts found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('No Google Business accounts found');
     }
 
     const accountId = accountsData.accounts[0].name;
@@ -173,7 +161,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ locationReviews }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   } catch (error) {
     console.error('Error in batch reviews function:', error);
     console.error('Error stack:', error.stack);
@@ -183,6 +171,6 @@ serve(async (req) => {
         stack: error.stack 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
 })

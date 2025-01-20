@@ -42,10 +42,14 @@ export const calculatePeriodMetrics = (reviews: Review[]): PeriodMetrics => {
 
 export const calculateMetricVariance = (current: PeriodMetrics, previous: PeriodMetrics) => {
   const calculateVariance = (current: number, previous: number) => {
+    // Handle edge cases
     if (previous === 0) {
+      // If previous is 0 and current is also 0, there's no change
       if (current === 0) return 0;
+      // If previous is 0 but current isn't, it's a 100% increase
       return 100;
     }
+    // Calculate normal percentage change
     return ((current - previous) / Math.abs(previous)) * 100;
   };
 
@@ -89,9 +93,6 @@ export const calculateVenueMetrics = (reviews: Review[], period: string): VenueM
   }, {} as { [key: string]: Review[] });
 
   return Object.entries(venueReviews).map(([venueName, venueReviews]) => {
-    // Calculate current rating using all reviews for this venue
-    const allReviewsRating = venueReviews.reduce((acc, review) => acc + convertGoogleRating(review.rating), 0) / venueReviews.length;
-
     const periodReviews = venueReviews.filter(review => {
       const reviewDate = new Date(review.createTime);
       return reviewDate >= startDate && reviewDate <= now;
@@ -109,7 +110,6 @@ export const calculateVenueMetrics = (reviews: Review[], period: string): VenueM
     return {
       name: venueName,
       ...currentMetrics,
-      currentRating: allReviewsRating,
       monthOverMonth,
       previousPeriodMetrics: previousMetrics
     };

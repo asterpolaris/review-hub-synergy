@@ -16,7 +16,6 @@ export interface VenueMetrics {
   name: string;
   totalReviews: number;
   averageRating: number;
-  currentRating: number;
   responseRate: number;
   badReviewResponseRate: number;
   monthOverMonth: MetricVariance;
@@ -26,7 +25,6 @@ export interface VenueMetrics {
 export interface ReviewMetrics {
   totalReviews: number;
   averageRating: number;
-  currentRating: number;
   responseRate: number;
   badReviewResponseRate: number;
   monthOverMonth: MetricVariance;

@@ -33,7 +33,6 @@ export type Database = {
       businesses: {
         Row: {
           created_at: string
-          current_rating: number | null
           google_business_account_id: string | null
           google_place_id: string | null
           id: string
@@ -44,7 +43,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          current_rating?: number | null
           google_business_account_id?: string | null
           google_place_id?: string | null
           id?: string
@@ -55,7 +53,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          current_rating?: number | null
           google_business_account_id?: string | null
           google_place_id?: string | null
           id?: string

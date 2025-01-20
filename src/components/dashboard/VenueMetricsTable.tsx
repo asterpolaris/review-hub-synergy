@@ -13,7 +13,7 @@ export const VenueMetricsTable = ({ venues }: VenueMetricsTableProps) => {
         <TableRow>
           <TableHead>Venue</TableHead>
           <TableHead className="text-right">Reviews</TableHead>
-          <TableHead className="text-right">Current Rating</TableHead>
+          <TableHead className="text-right">Avg. Rating</TableHead>
           <TableHead className="text-right">Response Rate</TableHead>
           <TableHead className="text-right">Bad Review Response Rate</TableHead>
         </TableRow>
@@ -35,11 +35,11 @@ export const VenueMetricsTable = ({ venues }: VenueMetricsTableProps) => {
             </TableCell>
             <TableCell>
               <div className="text-right space-y-1">
-                <div>{venue.currentRating > 0 ? venue.currentRating.toFixed(2) : '-'}</div>
+                <div>{venue.totalReviews > 0 ? venue.averageRating.toFixed(1) : '0.0'}</div>
                 {venue.monthOverMonth.averageRating !== 0 && (
                   <MetricVariance 
                     value={venue.monthOverMonth.averageRating}
-                    absoluteChange={Number((venue.currentRating - (venue.previousPeriodMetrics?.averageRating || 0)).toFixed(2))}
+                    absoluteChange={Number((venue.averageRating - (venue.previousPeriodMetrics?.averageRating || 0)).toFixed(1))}
                   />
                 )}
               </div>

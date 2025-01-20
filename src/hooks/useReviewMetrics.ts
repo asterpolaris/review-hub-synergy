@@ -66,20 +66,13 @@ export const useReviewMetrics = (period: string = 'last-30-days') => {
 
       const metrics: ReviewMetrics = {
         ...currentMetrics,
-        currentRating: reviewsData.businesses[0]?.current_rating || 0,
         monthOverMonth,
         previousPeriodMetrics: previousMetrics,
-        venueMetrics: venueMetrics.map(venue => ({
-          ...venue,
-          currentRating: reviewsData.businesses.find(b => b.name === venue.name)?.current_rating || 0
-        }))
+        venueMetrics
       };
 
       return metrics;
     },
     enabled: !!reviewsData?.reviews,
-    // Disable caching
-    staleTime: 0,
-    gcTime: 0,
   });
 };
