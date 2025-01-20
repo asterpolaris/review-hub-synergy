@@ -18,10 +18,34 @@ export const useReviewMetrics = (period: DatePeriod) => {
         .from("cached_metrics")
         .select("metrics")
         .eq("period", period)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data?.metrics as ReviewMetrics;
+
+      // If no metrics found, return default metrics structure
+      if (!data) {
+        return {
+          totalReviews: 0,
+          averageRating: 0,
+          responseRate: 0,
+          badReviewResponseRate: 0,
+          monthOverMonth: {
+            totalReviews: 0,
+            averageRating: 0,
+            responseRate: 0,
+            badReviewResponseRate: 0
+          },
+          previousPeriodMetrics: {
+            totalReviews: 0,
+            averageRating: 0,
+            responseRate: 0,
+            badReviewResponseRate: 0
+          },
+          venueMetrics: []
+        } as ReviewMetrics;
+      }
+
+      return data.metrics as unknown as ReviewMetrics;
     },
   });
 };
