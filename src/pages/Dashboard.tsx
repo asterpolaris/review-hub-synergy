@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { VenueMetricsTable } from "@/components/dashboard/VenueMetricsTable";
 import { DatePeriod } from "@/types/metrics";
+import { ReviewMetrics } from "@/types/metrics";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -18,7 +19,11 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   const [period, setPeriod] = useState<DatePeriod>('last-30-days');
   
-  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(period);
+  const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(period) as { 
+    data: ReviewMetrics, 
+    isLoading: boolean,
+    refetch: () => Promise<any>
+  };
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["reviews"] });

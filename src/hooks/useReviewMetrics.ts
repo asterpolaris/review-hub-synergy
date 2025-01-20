@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DatePeriod } from "@/types/metrics";
+import { DatePeriod, ReviewMetrics } from "@/types/metrics";
 import { useDemo } from "@/contexts/DemoContext";
 import { demoMetrics } from "@/utils/demoData";
 
@@ -21,7 +21,7 @@ export const useReviewMetrics = (period: DatePeriod) => {
         .single();
 
       if (error) throw error;
-      return data.metrics;
+      return data.metrics as ReviewMetrics;
     },
   });
 };
