@@ -12,16 +12,17 @@ serve(async (req) => {
   }
 
   try {
-    const { reviewId, comment, placeId } = await req.json()
+    const { reviewId, comment, placeId, delete: isDelete } = await req.json()
     
-    if (!reviewId || !comment || !placeId) {
+    if (!reviewId || !placeId) {
       throw new Error('Missing required parameters')
     }
 
-    console.log('Replying to review:', {
+    console.log('Processing review:', {
       reviewId,
       placeId,
-      commentPreview: comment.substring(0, 50) + '...'
+      isDelete,
+      commentPreview: comment ? comment.substring(0, 50) + '...' : undefined
     });
 
     // Get the Google access token from the custom header
@@ -75,16 +76,16 @@ serve(async (req) => {
 
     // Post the reply using the Google Business Profile API
     const replyUrl = `https://mybusinessreviews.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
-    console.log('Posting reply to:', replyUrl)
+    console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
-      method: 'PUT',
+      method: isDelete ? 'DELETE' : 'PUT',
       headers: {
         'Authorization': `Bearer ${googleToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
+      body: isDelete ? undefined : JSON.stringify({
         comment: comment,
         updateTime: utcTimestamp
       })
@@ -97,11 +98,11 @@ serve(async (req) => {
         statusText: response.statusText,
         body: errorText
       })
-      throw new Error(`Failed to post reply: ${response.status} ${errorText}`)
+      throw new Error(`Failed to ${isDelete ? 'delete' : 'post'} reply: ${response.status} ${errorText}`)
     }
 
-    const data = await response.json()
-    console.log('Reply posted successfully:', data)
+    const data = isDelete ? { success: true } : await response.json()
+    console.log(`Reply ${isDelete ? 'deleted' : 'posted'} successfully:`, data)
 
     return new Response(
       JSON.stringify(data),
