@@ -33,40 +33,10 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // First, get the account information using the Business Profile API
-    const accountResponse = await fetch(
-      'https://mybusinessbusinessinformation.googleapis.com/v1/accounts?readMask=name,accountName,type',
-      {
-        headers: {
-          'Authorization': `Bearer ${googleToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-    if (!accountResponse.ok) {
-      const errorText = await accountResponse.text()
-      console.error('Error fetching accounts:', {
-        status: accountResponse.status,
-        statusText: accountResponse.statusText,
-        body: errorText
-      })
-      throw new Error(`Failed to fetch account: ${accountResponse.status}`)
-    }
-
-    const accountsData = await accountResponse.json()
-    console.log('Accounts data received:', accountsData)
-
-    if (!accountsData.accounts || accountsData.accounts.length === 0) {
-      throw new Error('No accounts found for this user')
-    }
-
-    // Clean up the placeId to ensure correct format
+    // Clean up the placeId to ensure correct format and construct the review URL
     const locationId = placeId.replace('locations/', '')
-    console.log('Using location ID:', locationId)
-
-    // Construct the review URL directly with the location ID
     const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${locationId}/reviews/${reviewId}/reply`
+    
     console.log('Making request to:', replyUrl)
 
     const response = await fetch(replyUrl, {
