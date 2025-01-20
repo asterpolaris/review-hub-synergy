@@ -68,6 +68,11 @@ serve(async (req) => {
     const accountId = accountsData.accounts[0].name.split('/')[1]
     console.log('Using account ID:', accountId)
 
+    // Format the current time in RFC3339 UTC format
+    const now = new Date()
+    const utcTimestamp = now.toISOString()
+    console.log('Using timestamp:', utcTimestamp)
+
     // Post the reply using the Google Business Profile API
     const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
     console.log('Posting reply to:', replyUrl)
@@ -81,7 +86,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         comment: comment,
-        updateTime: new Date().toISOString() // Add proper ISO timestamp
+        updateTime: utcTimestamp
       })
     })
 
