@@ -3,6 +3,7 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 
 interface ReviewReplyFormProps {
   onSubmit: (data: { comment: string }) => void;
@@ -10,6 +11,7 @@ interface ReviewReplyFormProps {
   onGenerateReply: (form: { setValue: (field: string, value: string) => void }) => void;
   isGenerating: boolean;
   isPending: boolean;
+  initialValue?: string;
 }
 
 export const ReviewReplyForm = ({
@@ -18,8 +20,19 @@ export const ReviewReplyForm = ({
   onGenerateReply,
   isGenerating,
   isPending,
+  initialValue = "",
 }: ReviewReplyFormProps) => {
-  const form = useForm<{ comment: string }>();
+  const form = useForm<{ comment: string }>({
+    defaultValues: {
+      comment: initialValue,
+    },
+  });
+
+  useEffect(() => {
+    if (initialValue) {
+      form.setValue("comment", initialValue);
+    }
+  }, [initialValue, form]);
 
   const handleGenerateReply = () => {
     onGenerateReply(form);

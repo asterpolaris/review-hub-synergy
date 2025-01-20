@@ -1,13 +1,23 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MapPin, Reply } from "lucide-react";
+import { MapPin, Reply, Pencil, Trash2 } from "lucide-react";
 import { Review } from "@/types/review";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
-import { useReviewReply } from "@/hooks/useReviewReply";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ReviewReplyForm } from "./ReviewReplyForm";
+import { useReviewActions } from "@/hooks/useReviewActions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ReviewCardProps {
   review: Review;
@@ -36,8 +46,10 @@ const getRatingColor = (rating: number): string => {
 
 export const ReviewCard = ({ review }: ReviewCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const { mutate: submitReply, isPending } = useReviewReply();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { submitReply, deleteReply } = useReviewActions();
   const { toast } = useToast();
   const rating = convertRating(review.rating);
 
@@ -66,7 +78,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
     }
   };
 
-  const onSubmit = (data: { comment: string }) => {
+  const handleSubmit = (data: { comment: string }) => {
     if (!review.placeId) {
       toast({
         title: "Error",
@@ -76,15 +88,33 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
       return;
     }
     
-    submitReply({
+    submitReply.mutate({
       reviewId: review.id,
       comment: data.comment,
       placeId: review.placeId
     }, {
       onSuccess: () => {
         setIsOpen(false);
+        setIsEditing(false);
       }
     });
+  };
+
+  const handleDelete = () => {
+    if (!review.placeId) {
+      toast({
+        title: "Error",
+        description: "Place ID is missing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    deleteReply.mutate({
+      reviewId: review.id,
+      placeId: review.placeId
+    });
+    setShowDeleteDialog(false);
   };
   
   return (
@@ -125,42 +155,83 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
           </div>
         )}
 
-        {review.reply && (
+        {review.reply && !isEditing && (
           <div className="bg-muted p-4 rounded-md">
-            <div className="flex items-center gap-2 mb-2">
-              <Reply size={16} className="text-muted-foreground" />
-              <span className="text-sm font-medium">Business Response</span>
-              <span className="text-xs text-muted-foreground">
-                {new Date(review.reply.createTime).toLocaleDateString()}
-              </span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Reply size={16} className="text-muted-foreground" />
+                <span className="text-sm font-medium">Business Response</span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(review.reply.createTime).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                  className="h-8 px-2"
+                >
+                  <Pencil size={16} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="h-8 px-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
             </div>
             <p className="text-sm">{review.reply.comment}</p>
           </div>
         )}
 
-        {!review.reply && (
-          <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        {(!review.reply || isEditing) && (
+          <Collapsible open={isOpen || isEditing} onOpenChange={setIsOpen}>
             <CollapsibleTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-2"
-              >
-                <Reply size={16} />
-                Reply to Review
-              </Button>
+              {!isEditing && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-2"
+                >
+                  <Reply size={16} />
+                  Reply to Review
+                </Button>
+              )}
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
               <ReviewReplyForm
-                onSubmit={onSubmit}
-                onCancel={() => setIsOpen(false)}
+                onSubmit={handleSubmit}
+                onCancel={() => {
+                  setIsOpen(false);
+                  setIsEditing(false);
+                }}
                 onGenerateReply={generateReply}
                 isGenerating={isGenerating}
-                isPending={isPending}
+                isPending={submitReply.isPending}
+                initialValue={isEditing ? review.reply?.comment : ""}
               />
             </CollapsibleContent>
           </Collapsible>
         )}
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Reply</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this reply? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
