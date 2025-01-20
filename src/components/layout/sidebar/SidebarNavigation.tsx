@@ -20,7 +20,7 @@ const menuItems = [
     label: "Businesses"
   },
   {
-    to: "https://sevenrooms.com",
+    to: "https://www.sevenrooms.com/login",
     icon: Building2,
     label: "Sevenrooms",
     external: true
