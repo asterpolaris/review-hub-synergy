@@ -33,11 +33,18 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // Ensure placeId is in the correct format (remove 'locations/' if present)
-    const locationId = placeId.replace(/^locations\//, '')
-    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${locationId}/reviews/${reviewId}/reply`
+    // Clean up the locationId - remove any 'locations/' prefix and ensure no leading/trailing slashes
+    const locationId = placeId.replace(/^locations\//, '').replace(/^\/+|\/+$/g, '')
     
-    console.log('Making request to:', replyUrl)
+    // Construct the full URL for the Google Business Profile API
+    const baseUrl = 'https://mybusinessreviews.googleapis.com/v1'
+    const replyUrl = `${baseUrl}/locations/${locationId}/reviews/${reviewId}/reply`
+    
+    console.log('Making request to Google API:', {
+      url: replyUrl,
+      method: isDelete ? 'DELETE' : 'PUT',
+      hasBody: !isDelete
+    })
 
     const response = await fetch(replyUrl, {
       method: isDelete ? 'DELETE' : 'PUT',
@@ -53,7 +60,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Error response from reply endpoint:', {
+      console.error('Error response from Google API:', {
         status: response.status,
         statusText: response.statusText,
         body: errorText
