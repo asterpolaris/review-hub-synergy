@@ -39,12 +39,12 @@ export function AppSidebar() {
   const location = useLocation();
 
   return (
-    <Sidebar>
+    <Sidebar variant="sidebar" collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
           <div className="px-4 py-2">
             <SidebarGroupLabel className="text-lg font-semibold tracking-tight">
-              JEGantic Hospitality Desk
+              Hospitality Desk
             </SidebarGroupLabel>
           </div>
           <SidebarGroupContent>
@@ -54,6 +54,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     data-active={location.pathname === item.to}
+                    tooltip={item.label}
                   >
                     {item.external ? (
                       <a 
@@ -63,12 +64,12 @@ export function AppSidebar() {
                         className="flex items-center gap-2"
                       >
                         <item.icon className="h-4 w-4" />
-                        {item.label}
+                        <span>{item.label}</span>
                       </a>
                     ) : (
                       <RouterLink to={item.to} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
-                        {item.label}
+                        <span>{item.label}</span>
                       </RouterLink>
                     )}
                   </SidebarMenuButton>
