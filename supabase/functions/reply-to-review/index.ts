@@ -41,7 +41,6 @@ serve(async (req) => {
         headers: {
           'Authorization': `Bearer ${googleToken}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         }
       }
     )
@@ -84,7 +83,6 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${googleToken}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
       },
       body: isDelete ? undefined : JSON.stringify({
         comment: comment
@@ -96,7 +94,8 @@ serve(async (req) => {
       console.error('Error response from Google API:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText
+        body: errorText,
+        url: replyUrl
       })
 
       // Handle rate limiting specifically
