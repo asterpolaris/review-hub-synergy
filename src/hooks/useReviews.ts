@@ -60,6 +60,6 @@ export const useReviews = () => {
     },
     // Disable caching
     staleTime: 0,
-    cacheTime: 0,
+    gcTime: 0,
   });
 };
