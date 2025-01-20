@@ -7,8 +7,8 @@ interface MetricVarianceProps {
 }
 
 export const MetricVariance = ({ value, absoluteChange }: MetricVarianceProps) => {
-  // If value is NaN or undefined, we'll show no variance
-  if (isNaN(value) || value === undefined) {
+  // If value is 0, NaN, or undefined, we'll show no variance
+  if (!value || isNaN(value)) {
     return null;
   }
   
@@ -19,7 +19,7 @@ export const MetricVariance = ({ value, absoluteChange }: MetricVarianceProps) =
       isPositive ? "text-green-600" : "text-red-600"
     )}>
       {isPositive ? <ArrowUpIcon className="h-3 w-3" /> : <ArrowDownIcon className="h-3 w-3" />}
-      <span>{Math.abs(value).toFixed(1)}% ({absoluteChange > 0 ? '+' : ''}{absoluteChange})</span>
+      <span>{Math.abs(value).toFixed(1)}% ({absoluteChange > 0 ? '+' : ''}{absoluteChange.toFixed(1)})</span>
     </div>
   );
 };

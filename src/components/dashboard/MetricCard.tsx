@@ -9,13 +9,18 @@ interface MetricCardProps {
 }
 
 export const MetricCard = ({ title, value, variance, absoluteChange }: MetricCardProps) => {
+  // Format the value if it's a number and represents a rating
+  const formattedValue = typeof value === 'number' && title.toLowerCase().includes('rating')
+    ? value > 0 ? value.toFixed(1) : '-'
+    : value;
+
   return (
     <Card className="glass-panel">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-bold">{value}</p>
+        <p className="text-3xl font-bold">{formattedValue}</p>
         {variance !== 0 && (
           <MetricVariance value={variance} absoluteChange={absoluteChange} />
         )}
