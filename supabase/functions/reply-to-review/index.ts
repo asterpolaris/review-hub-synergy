@@ -80,7 +80,8 @@ serve(async (req) => {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        comment: comment
+        comment: comment,
+        updateTime: new Date().toISOString() // Add proper ISO timestamp
       })
     })
 
