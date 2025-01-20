@@ -103,8 +103,9 @@ export const BusinessList = () => {
       for (const account of accountsData.accounts) {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
+          // Update the URL to include the fields we want, including rating
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress,rating`,
             { headers }
           );
 
@@ -118,13 +119,11 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Processing location:", location);
 
-            // Skip if location title is missing
             if (!location.title) {
               console.log(`Skipping location with no name: ${location.name}`);
               continue;
             }
 
-            // Extract and format address
             let formattedAddress = "";
             if (location.storefrontAddress) {
               const address = location.storefrontAddress;
@@ -149,7 +148,6 @@ export const BusinessList = () => {
               formattedAddress = addressParts.join(", ");
             }
 
-            // If no address is available, use a default message
             if (!formattedAddress) {
               formattedAddress = "Address not provided";
             }
@@ -160,6 +158,7 @@ export const BusinessList = () => {
               google_place_id: location.name,
               google_business_account_id: account.name,
               user_id: session?.user.id,
+              current_rating: location.rating || null, // Store the current rating from the API
             });
 
             if (error) {
