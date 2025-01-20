@@ -68,13 +68,13 @@ serve(async (req) => {
     const accountId = accountsData.accounts[0].name.split('/')[1]
     console.log('Using account ID:', accountId)
 
-    // Format the current time in RFC3339 UTC format
+    // Format the current time in RFC3339 format with UTC timezone
     const now = new Date()
-    const utcTimestamp = now.toISOString()
+    const utcTimestamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z')
     console.log('Using timestamp:', utcTimestamp)
 
     // Post the reply using the Google Business Profile API
-    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
+    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
     console.log('Posting reply to:', replyUrl)
 
     const response = await fetch(replyUrl, {
