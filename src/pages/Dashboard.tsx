@@ -70,10 +70,10 @@ const Dashboard = () => {
             absoluteChange={metrics?.totalReviews - (metrics?.previousPeriodMetrics?.totalReviews || 0) || 0}
           />
           <MetricCard
-            title="Average Rating"
-            value={metrics?.averageRating ? metrics.averageRating.toFixed(1) : "-"}
+            title="Current Rating"
+            value={metrics?.currentRating ? metrics.currentRating.toFixed(1) : "-"}
             variance={metrics?.monthOverMonth.averageRating || 0}
-            absoluteChange={Number((metrics?.averageRating - (metrics?.previousPeriodMetrics?.averageRating || 0)).toFixed(1)) || 0}
+            absoluteChange={Number((metrics?.currentRating - (metrics?.previousPeriodMetrics?.averageRating || 0)).toFixed(1)) || 0}
           />
           <MetricCard
             title="Response Rate"
