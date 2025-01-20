@@ -64,22 +64,24 @@ export const useReviewMetrics = (period: string = 'last-30-days') => {
 
       console.log("Venue metrics:", venueMetrics);
 
-      // Calculate the overall current rating using all reviews
-      const allReviews = reviewsData.reviews;
-      const currentRating = allReviews.length > 0 
-        ? allReviews.reduce((acc, review) => acc + Number(review.rating), 0) / allReviews.length
-        : 0;
-
+      // Use the current_rating from the businesses data instead of calculating it
       const metrics: ReviewMetrics = {
         ...currentMetrics,
-        currentRating,
+        currentRating: reviewsData.businesses[0]?.current_rating || 0,
         monthOverMonth,
         previousPeriodMetrics: previousMetrics,
-        venueMetrics
+        venueMetrics: venueMetrics.map(venue => ({
+          ...venue,
+          // Override the currentRating with the one from the database
+          currentRating: reviewsData.businesses.find(b => b.name === venue.name)?.current_rating || 0
+        }))
       };
 
       return metrics;
     },
     enabled: !!reviewsData?.reviews,
+    // Disable caching
+    staleTime: 0,
+    cacheTime: 0,
   });
 };

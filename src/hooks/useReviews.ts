@@ -9,6 +9,7 @@ interface Business {
   id: string;
   name: string;
   google_place_id: string;
+  current_rating: number;
 }
 
 interface ReviewsData {
@@ -57,7 +58,8 @@ export const useReviews = () => {
         businesses: reviewsData.businesses
       };
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    // Disable caching
+    staleTime: 0,
+    cacheTime: 0,
   });
 };
