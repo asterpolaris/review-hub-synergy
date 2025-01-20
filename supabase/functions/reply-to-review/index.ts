@@ -56,43 +56,49 @@ serve(async (req) => {
       console.error('Error response from reply endpoint:', {
         status: response.status,
         statusText: response.statusText,
-        body: errorText,
-        url: replyUrl
+        body: errorText
       })
+
+      // Handle rate limiting specifically
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({
+            error: 'Rate limit exceeded. Please wait a moment before trying again.',
+            details: 'The Google Business Profile API rate limit has been reached.'
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+              'Retry-After': response.headers.get('Retry-After') || '60'
+            }
+          }
+        )
+      }
+
       throw new Error(`Failed to ${isDelete ? 'delete' : 'update'} reply: ${response.status} ${errorText}`)
     }
 
-    // For PUT requests, get the response data which includes the timestamp
-    let responseData = null
-    if (!isDelete) {
-      responseData = await response.json()
-      console.log('Reply posted successfully:', responseData)
-    } else {
-      console.log('Reply deleted successfully')
-    }
+    const data = isDelete ? { success: true } : await response.json()
+    console.log(`Reply ${isDelete ? 'deleted' : 'posted'} successfully:`, data)
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        data: responseData
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
+      JSON.stringify(data),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
     console.error('Error in reply-to-review function:', error)
     return new Response(
       JSON.stringify({
-        success: false,
-        error: error.message
+        error: error.message,
+        details: 'An error occurred while processing your request.'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      },
+        status: error.status || 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
   }
 })
