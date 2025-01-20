@@ -45,10 +45,7 @@ Deno.serve(async (req) => {
       console.error('Token verification failed:', verificationError);
       return new Response(
         JSON.stringify({ error: 'Invalid token', details: verificationError }),
-        { 
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -61,17 +58,17 @@ Deno.serve(async (req) => {
     console.log('Processing request for locations:', location_names);
 
     if (!access_token || !location_names) {
-      console.error('Missing required parameters');
+      console.error('Missing required parameters:', { 
+        hasAccessToken: !!access_token, 
+        hasLocationNames: !!location_names 
+      });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // First get the account ID
+    // First get the account ID using the Business Profile API
     console.log('Fetching Google Business accounts...');
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
@@ -90,7 +87,7 @@ Deno.serve(async (req) => {
         statusText: accountsResponse.statusText,
         body: errorText
       });
-      throw new Error(`Failed to fetch accounts: ${errorText}`);
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`);
     }
 
     const accountsData = await accountsResponse.json();
@@ -98,10 +95,7 @@ Deno.serve(async (req) => {
 
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
       console.error('No Google Business accounts found');
-      return new Response(
-        JSON.stringify({ locationReviews: [] }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('No Google Business accounts found');
     }
 
     const accountName = accountsData.accounts[0].name;
@@ -113,8 +107,8 @@ Deno.serve(async (req) => {
         // Clean up the location ID by removing any duplicate "locations/" prefix
         const cleanLocationId = locationId.replace(/^locations\//, '');
         
-        // Use the correct API endpoint for fetching reviews
-        const reviewsUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations/${cleanLocationId}/reviews`;
+        // Use the correct Business Profile API endpoint for reviews
+        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountName}/locations/${cleanLocationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
         const reviewsResponse = await fetch(reviewsUrl, {
