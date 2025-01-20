@@ -33,8 +33,9 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // Construct the review URL using the mybusinessreviews.googleapis.com domain
-    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${placeId}/reviews/${reviewId}/reply`
+    // Ensure placeId is in the correct format (remove 'locations/' if present)
+    const locationId = placeId.replace(/^locations\//, '')
+    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${locationId}/reviews/${reviewId}/reply`
     
     console.log('Making request to:', replyUrl)
 
@@ -95,7 +96,7 @@ serve(async (req) => {
         details: 'An error occurred while processing your request.'
       }),
       {
-        status: error.status || 400,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
