@@ -35,7 +35,7 @@ export const VenueMetricsTable = ({ venues }: VenueMetricsTableProps) => {
             </TableCell>
             <TableCell>
               <div className="text-right space-y-1">
-                <div>{venue.currentRating === 0 ? '-' : venue.currentRating.toFixed(2)}</div>
+                <div>{venue.currentRating > 0 ? venue.currentRating.toFixed(2) : '-'}</div>
                 {venue.monthOverMonth.averageRating !== 0 && (
                   <MetricVariance 
                     value={venue.monthOverMonth.averageRating}
