@@ -63,7 +63,7 @@ export const useReviewActions = () => {
       }
 
       const response = await supabase.functions.invoke('reply-to-review', {
-        body: { reviewId, placeId, delete: true },
+        body: { reviewId, placeId, isDelete: true },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
           'x-google-token': googleAuthToken.access_token
