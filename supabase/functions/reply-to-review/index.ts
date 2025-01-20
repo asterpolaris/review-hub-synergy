@@ -33,9 +33,8 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // Clean up the placeId to ensure correct format and construct the review URL
-    const locationId = placeId.replace('locations/', '')
-    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${locationId}/reviews/${reviewId}/reply`
+    // Construct the review URL using the mybusinessreviews.googleapis.com domain
+    const replyUrl = `https://mybusinessreviews.googleapis.com/v1/locations/${placeId}/reviews/${reviewId}/reply`
     
     console.log('Making request to:', replyUrl)
 
