@@ -1,11 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+import { corsHeaders } from "../_shared/cors.ts"
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,82 +8,90 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
-
-    // Initialize Supabase client
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-          detectSessionInUrl: false
-        }
-    })
-
-    // Verify the JWT
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: verificationError } = await supabaseAdmin.auth.getUser(token)
-    
-    if (verificationError || !user) {
-      throw new Error('Invalid token')
-    }
-
-    // Parse request body
     const { reviewId, comment, placeId } = await req.json()
     
     if (!reviewId || !comment || !placeId) {
       throw new Error('Missing required parameters')
     }
 
-    // Get user's Google token
-    const { data: googleToken, error: tokenError } = await supabaseAdmin
-      .from('google_auth_tokens')
-      .select('access_token')
-      .eq('user_id', user.id)
-      .single()
+    console.log('Replying to review:', {
+      reviewId,
+      placeId,
+      commentPreview: comment.substring(0, 50) + '...'
+    });
 
-    if (tokenError || !googleToken?.access_token) {
-      throw new Error('No Google token found')
+    // Extract the account and location IDs from the placeId
+    const locationId = placeId.split('/').pop();
+    
+    // First get the account ID
+    const accountsResponse = await fetch(
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+      {
+        headers: {
+          'Authorization': req.headers.get('Authorization') || '',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!accountsResponse.ok) {
+      const errorText = await accountsResponse.text();
+      console.error('Error response from accounts endpoint:', {
+        status: accountsResponse.status,
+        statusText: accountsResponse.statusText,
+        body: errorText
+      });
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`);
     }
 
-    // Post reply to Google Business Profile API
-    const response = await fetch(
-      `https://mybusiness.googleapis.com/v4/${placeId}/reviews/${reviewId}/reply`,
-      {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${googleToken.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          comment: comment
-        })
-      }
-    )
+    const accountsData = await accountsResponse.json();
+    console.log("Google accounts response:", accountsData);
+
+    if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      console.error('No Google Business accounts found');
+      throw new Error('No Google Business accounts found');
+    }
+
+    const accountId = accountsData.accounts[0].name.split('/')[1];
+    console.log('Using account ID:', accountId);
+
+    // Post the reply using the Google Business Profile API
+    const replyUrl = `https://mybusiness.googleapis.com/v4/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`;
+    console.log('Posting reply to:', replyUrl);
+
+    const response = await fetch(replyUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': req.headers.get('Authorization') || '',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        comment: comment
+      })
+    });
 
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Failed to post reply: ${errorText}`)
+      const errorText = await response.text();
+      console.error('Error response from reply endpoint:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`Failed to post reply: ${response.status} ${errorText}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
+    console.log('Reply posted successfully:', data);
 
     return new Response(
       JSON.stringify(data),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('Error in reply-to-review function:', error)
+    console.error('Error in reply-to-review function:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
