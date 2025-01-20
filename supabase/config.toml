@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.reply-to-review]
 verify_jwt = true
+
+[functions.refresh-google-token]
+verify_jwt = true
