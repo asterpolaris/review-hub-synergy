@@ -68,8 +68,8 @@ serve(async (req) => {
     // Clean up the locationId - remove any 'locations/' prefix
     const locationId = placeId.replace(/^locations\//, '')
     
-    // Construct the full URL with account ID using the correct API endpoint
-    const baseUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1'
+    // Construct the full URL with account ID using the correct Reviews API endpoint
+    const baseUrl = 'https://mybusinessreviews.googleapis.com/v1'
     const replyUrl = `${baseUrl}/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
     
     console.log('Making request to Google API:', {
