@@ -1,31 +1,63 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useDemo } from "@/contexts/DemoContext";
-import { demoReviews, demoBusinesses } from "@/utils/demoData";
 import { Review } from "@/types/review";
+import { useToast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
+import { processReviewData } from "@/utils/reviewProcessing";
 
-interface ReviewsResponse {
-  reviews: Review[];
-  businesses: any[];
+interface Business {
+  id: string;
+  name: string;
+  google_place_id: string;
+}
+
+interface ReviewsData {
+  access_token: string;
+  businesses: Business[];
 }
 
 export const useReviews = () => {
-  const { isDemo } = useDemo();
+  const { toast } = useToast();
 
   return useQuery({
     queryKey: ["reviews"],
     queryFn: async () => {
-      if (isDemo) {
-        return {
-          reviews: demoReviews,
-          businesses: demoBusinesses,
-        } as ReviewsResponse;
+      console.log("Fetching reviews data...");
+      
+      const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
+        data: ReviewsData | null;
+        error: Error | null;
+      };
+      
+      if (reviewsError) {
+        console.error("Error fetching reviews data:", reviewsError);
+        throw reviewsError;
       }
 
-      const { data: reviewsData, error } = await supabase.rpc("reviews");
-      if (error) throw error;
+      if (!reviewsData?.businesses || reviewsData.businesses.length === 0) {
+        console.log("No businesses found in reviews data");
+        return { reviews: [], businesses: [] };
+      }
 
-      return reviewsData as ReviewsResponse;
+      console.log("Reviews data received:", reviewsData);
+
+      const { reviews, errors } = await processReviewData(reviewsData);
+
+      if (errors.length > 0) {
+        toast({
+          title: "Some reviews failed to load",
+          description: errors.join('\n'),
+          variant: "destructive",
+        });
+      }
+
+      console.log("Final reviews count:", reviews.length);
+      return {
+        reviews,
+        businesses: reviewsData.businesses
+      };
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 };

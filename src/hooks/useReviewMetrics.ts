@@ -1,51 +1,78 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { DatePeriod, ReviewMetrics } from "@/types/metrics";
-import { useDemo } from "@/contexts/DemoContext";
-import { demoMetrics } from "@/utils/demoData";
+import { useReviews } from "./useReviews";
+import { ReviewMetrics } from "@/types/metrics";
+import { calculatePeriodMetrics, calculateMetricVariance, calculateVenueMetrics } from "@/utils/metricCalculations";
 
-export const useReviewMetrics = (period: DatePeriod) => {
-  const { isDemo } = useDemo();
+export const useReviewMetrics = (period: string = 'last-30-days') => {
+  const { data: reviewsData, isLoading: isReviewsLoading, error: reviewsError } = useReviews();
 
   return useQuery({
-    queryKey: ["metrics", period],
-    queryFn: async () => {
-      if (isDemo) {
-        return demoMetrics;
+    queryKey: ["reviewMetrics", period],
+    queryFn: () => {
+      if (!reviewsData?.reviews) {
+        console.log("No reviews data available");
+        return null;
       }
 
-      const { data, error } = await supabase
-        .from("cached_metrics")
-        .select("metrics")
-        .eq("period", period)
-        .maybeSingle();
+      console.log("Raw reviews data:", reviewsData.reviews);
 
-      if (error) throw error;
+      const now = new Date();
+      let startDate: Date;
+      let previousStartDate: Date;
 
-      // If no metrics found, return default metrics structure
-      if (!data) {
-        return {
-          totalReviews: 0,
-          averageRating: 0,
-          responseRate: 0,
-          badReviewResponseRate: 0,
-          monthOverMonth: {
-            totalReviews: 0,
-            averageRating: 0,
-            responseRate: 0,
-            badReviewResponseRate: 0
-          },
-          previousPeriodMetrics: {
-            totalReviews: 0,
-            averageRating: 0,
-            responseRate: 0,
-            badReviewResponseRate: 0
-          },
-          venueMetrics: []
-        } as ReviewMetrics;
+      switch (period) {
+        case 'last-month':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+          previousStartDate = new Date(startDate.getFullYear(), startDate.getMonth() - 1, 1);
+          break;
+        case 'last-year':
+          startDate = new Date(now.getFullYear() - 1, 0, 1);
+          previousStartDate = new Date(now.getFullYear() - 2, 0, 1);
+          break;
+        case 'lifetime':
+          startDate = new Date(now.getFullYear() - 2, 0, 1);
+          previousStartDate = new Date(now.getFullYear() - 3, 0, 1);
+          break;
+        default: // 'last-30-days'
+          startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+          previousStartDate = new Date(startDate.getTime() - (30 * 24 * 60 * 60 * 1000));
       }
 
-      return data.metrics as unknown as ReviewMetrics;
+      const periodReviews = reviewsData.reviews.filter(review => {
+        const reviewDate = new Date(review.createTime);
+        return reviewDate >= startDate && reviewDate <= now;
+      });
+
+      console.log("Filtered period reviews:", periodReviews);
+
+      const previousPeriodReviews = reviewsData.reviews.filter(review => {
+        const reviewDate = new Date(review.createTime);
+        return reviewDate >= previousStartDate && reviewDate < startDate;
+      });
+
+      console.log("Previous period reviews:", previousPeriodReviews);
+
+      const currentMetrics = calculatePeriodMetrics(periodReviews);
+      console.log("Current period metrics:", currentMetrics);
+
+      const previousMetrics = calculatePeriodMetrics(previousPeriodReviews);
+      console.log("Previous period metrics:", previousMetrics);
+
+      const monthOverMonth = calculateMetricVariance(currentMetrics, previousMetrics);
+      const venueMetrics = calculateVenueMetrics(reviewsData.reviews, period);
+
+      console.log("Venue metrics:", venueMetrics);
+
+      const metrics: ReviewMetrics = {
+        ...currentMetrics,
+        monthOverMonth,
+        previousPeriodMetrics: previousMetrics,
+        venueMetrics
+      };
+
+      return metrics;
     },
+    enabled: !!reviewsData?.reviews,
   });
 };

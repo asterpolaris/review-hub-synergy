@@ -1,10 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { useDemo } from "@/contexts/DemoContext";
 
 export const HeroSection = () => {
-  const { enableDemo } = useDemo();
-
   return (
     <div className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 pointer-events-none" />
@@ -30,7 +27,6 @@ export const HeroSection = () => {
               size="lg" 
               variant="outline"
               className="transition-all duration-300 hover:scale-105"
-              onClick={enableDemo}
             >
               View Demo
             </Button>
