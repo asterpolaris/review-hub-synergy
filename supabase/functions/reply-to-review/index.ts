@@ -56,21 +56,21 @@ serve(async (req) => {
     }
 
     const accountsData = await accountsResponse.json()
-    console.log('Accounts response:', accountsData)
+    console.log('Google accounts response:', accountsData)
 
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
       throw new Error('No Google Business accounts found')
     }
 
-    const accountId = accountsData.accounts[0].name.split('/').pop()
-    console.log('Using account ID:', accountId)
+    const accountName = accountsData.accounts[0].name
+    console.log('Using account name:', accountName)
 
-    // Clean up the locationId - remove any 'locations/' prefix and get just the ID
+    // Clean up the locationId - remove any 'locations/' prefix
     const locationId = placeId.replace(/^locations\//, '')
     
-    // Construct the full URL with account ID using the correct Reviews API endpoint
+    // Construct the full URL with account name
     const baseUrl = 'https://mybusinessreviews.googleapis.com/v1'
-    const replyUrl = `${baseUrl}/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
+    const replyUrl = `${baseUrl}/${accountName}/locations/${locationId}/reviews/${reviewId}/reply`
     
     console.log('Making request to Google API:', {
       url: replyUrl,
