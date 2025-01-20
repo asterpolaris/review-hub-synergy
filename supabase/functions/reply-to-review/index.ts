@@ -33,12 +33,45 @@ serve(async (req) => {
       hasGoogleToken: !!googleToken
     })
 
-    // Clean up the locationId - remove any 'locations/' prefix and ensure no leading/trailing slashes
-    const locationId = placeId.replace(/^locations\//, '').replace(/^\/+|\/+$/g, '')
+    // First get the account ID
+    console.log('Fetching Google Business accounts...')
+    const accountsResponse = await fetch(
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+      {
+        headers: {
+          'Authorization': `Bearer ${googleToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    )
+
+    if (!accountsResponse.ok) {
+      const errorText = await accountsResponse.text()
+      console.error('Error fetching accounts:', {
+        status: accountsResponse.status,
+        statusText: accountsResponse.statusText,
+        body: errorText
+      })
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`)
+    }
+
+    const accountsData = await accountsResponse.json()
+    console.log('Accounts response:', accountsData)
+
+    if (!accountsData.accounts || accountsData.accounts.length === 0) {
+      throw new Error('No Google Business accounts found')
+    }
+
+    const accountId = accountsData.accounts[0].name
+    console.log('Using account ID:', accountId)
+
+    // Clean up the locationId - remove any 'locations/' prefix
+    const locationId = placeId.replace(/^locations\//, '')
     
-    // Construct the full URL for the Google Business Profile API
+    // Construct the full URL with account ID
     const baseUrl = 'https://mybusinessreviews.googleapis.com/v1'
-    const replyUrl = `${baseUrl}/locations/${locationId}/reviews/${reviewId}/reply`
+    const replyUrl = `${baseUrl}/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
     
     console.log('Making request to Google API:', {
       url: replyUrl,
