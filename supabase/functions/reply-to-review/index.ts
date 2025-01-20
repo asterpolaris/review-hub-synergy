@@ -62,7 +62,6 @@ serve(async (req) => {
       throw new Error('No Google Business accounts found')
     }
 
-    // Make sure we keep the full account name with the "accounts/" prefix
     const accountName = accountsData.accounts[0].name
     console.log('Using account name:', accountName)
 
@@ -70,8 +69,7 @@ serve(async (req) => {
     const locationId = placeId.replace(/^locations\//, '')
     
     // Construct the full URL with account name
-    const baseUrl = 'https://mybusinessreviews.googleapis.com/v1'
-    // Ensure the path follows the exact format from the documentation
+    const baseUrl = 'https://mybusinessbusinessinformation.googleapis.com/v1'
     const replyUrl = `${baseUrl}/${accountName}/locations/${locationId}/reviews/${reviewId}/reply`
     
     console.log('Making request to Google API:', {
