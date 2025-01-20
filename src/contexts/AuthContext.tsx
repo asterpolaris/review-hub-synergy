@@ -10,12 +10,14 @@ interface AuthContextType {
     access_token: string;
     expires_at: string;
   } | null;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   isLoading: true,
   googleAuthToken: null,
+  signOut: async () => {},
 });
 
 export const useAuth = () => {
@@ -189,8 +191,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+      });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ session, isLoading, googleAuthToken }}>
+    <AuthContext.Provider value={{ session, isLoading, googleAuthToken, signOut }}>
       {children}
     </AuthContext.Provider>
   );

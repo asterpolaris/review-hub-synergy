@@ -7,6 +7,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
 
@@ -43,13 +44,16 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
-                <SidebarMenuItem
-                  key={item.to}
-                  icon={item.icon}
-                  active={location.pathname === item.to}
-                  asChild
-                >
-                  <Link to={item.to}>{item.label}</Link>
+                <SidebarMenuItem key={item.to}>
+                  <SidebarMenuButton
+                    asChild
+                    active={location.pathname === item.to}
+                  >
+                    <Link to={item.to} className="flex items-center gap-2">
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
