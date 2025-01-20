@@ -122,8 +122,11 @@ export const BusinessList = () => {
             try {
               console.log(`Fetching details for location ${location.name}...`);
               const locationDetails = await fetchWithRetry(
-                `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}?readMask=rating,title,storefrontAddress`,
-                { headers }
+                `https://mybusinessbusinessinformation.googleapis.com/v1/${location.name}`,
+                { 
+                  headers,
+                  method: 'GET'
+                }
               );
 
               console.log("Location details with rating:", locationDetails);
