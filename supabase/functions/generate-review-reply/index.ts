@@ -116,12 +116,14 @@ ${isNegative ? `
 - Offers a way to make things right
 - Maintains professionalism while showing empathy` 
 : `
-- Shows genuine appreciation for their positive feedback
-- References specific aspects they enjoyed
-- Maintains the venue's unique voice while being professional
-- Invites them to return`}
+- Shows genuine appreciation in a concise way
+- Keep the response to maximum 2 sentences
+- Be warm but brief
+- Maintain the venue's unique voice`}
 
-Keep the response concise but genuine. Do not copy the example verbatim - create a unique response that addresses the specific points in their review while maintaining the venue's voice and style.`;
+${isNegative ? 
+  'Keep the response professional and thorough to address their concerns.' : 
+  'Keep the response very concise but genuine. Do not write more than 2 sentences.'}`;
 
     console.log('Sending request to Claude API');
 
