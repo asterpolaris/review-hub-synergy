@@ -21,7 +21,9 @@ export const useReviewMetrics = (period: DatePeriod) => {
         .single();
 
       if (error) throw error;
-      return data.metrics as ReviewMetrics;
+      
+      // First cast to unknown, then to ReviewMetrics to satisfy TypeScript
+      return (data?.metrics as unknown) as ReviewMetrics;
     },
   });
 };

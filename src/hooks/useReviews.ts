@@ -25,7 +25,8 @@ export const useReviews = () => {
       const { data: reviewsData, error } = await supabase.rpc("reviews");
       if (error) throw error;
 
-      return reviewsData as ReviewsResponse;
+      // First cast to unknown, then to ReviewsResponse to satisfy TypeScript
+      return (reviewsData as unknown) as ReviewsResponse;
     },
   });
 };
