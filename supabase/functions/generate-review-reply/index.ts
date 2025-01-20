@@ -63,6 +63,8 @@ serve(async (req) => {
     const template = isNegative ? venueInfo.negativeTemplate : venueInfo.positiveTemplate;
     
     // Replace the name placeholder with the actual author name
+    // Note: In a future update, we'll integrate Claude here to generate more natural, contextual responses
+    // while maintaining the tone and style of these templates
     const reply = template.replace('{name}', review.authorName);
 
     return new Response(
