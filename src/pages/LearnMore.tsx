@@ -64,7 +64,7 @@ const LearnMore = () => {
                 "Response rate tracking",
                 "Comparative venue analytics"
               ]}
-              icon="LineChart"
+              icon="BarChart"
               imageUrl="/placeholder.svg"
               delay={400}
             />
@@ -90,7 +90,7 @@ const LearnMore = () => {
                 "Business information management",
                 "Google rating monitoring"
               ]}
-              icon="Globe2"
+              icon="Globe"
               imageUrl="/placeholder.svg"
               delay={800}
             />
