@@ -86,7 +86,7 @@ const LearnMore = () => {
                 "Response rate tracking",
                 "Comparative venue analytics"
               ]}
-              icon="BarChart2"
+              icon="LineChart"
               imageUrl="/placeholder.svg"
               delay={400}
               imagePosition="right"
