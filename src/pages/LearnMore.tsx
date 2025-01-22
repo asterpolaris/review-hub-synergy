@@ -29,7 +29,7 @@ const LearnMore = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navigation />
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 pt-32 pb-12">
         <div className="text-center space-y-6 mb-16 animate-fadeIn">
           <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
             Discover Hospitality Desk Features
@@ -86,7 +86,7 @@ const LearnMore = () => {
                 "Response rate tracking",
                 "Comparative venue analytics"
               ]}
-              icon="BarChart"
+              icon="BarChart2"
               imageUrl="/placeholder.svg"
               delay={400}
               imagePosition="right"
