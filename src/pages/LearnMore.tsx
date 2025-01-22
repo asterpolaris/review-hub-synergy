@@ -38,7 +38,7 @@ const LearnMore = () => {
                 "Batch review management",
                 "Real-time review notifications"
               ]}
-              icon="MessageCircle"
+              icon="MessageSquare"
               imageUrl="/placeholder.svg"
               delay={0}
             />
@@ -64,7 +64,7 @@ const LearnMore = () => {
                 "Response rate tracking",
                 "Comparative venue analytics"
               ]}
-              icon="BarChart"
+              icon="LineChart"
               imageUrl="/placeholder.svg"
               delay={400}
             />
@@ -90,7 +90,7 @@ const LearnMore = () => {
                 "Business information management",
                 "Google rating monitoring"
               ]}
-              icon="Globe"
+              icon="Globe2"
               imageUrl="/placeholder.svg"
               delay={800}
             />
