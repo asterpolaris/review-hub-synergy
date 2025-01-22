@@ -1,12 +1,16 @@
 import { Check } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { icons } from "lucide-react";
+
+// Create a type from the keys of the icons object
+type IconName = keyof typeof icons;
 
 interface LearnMoreSectionProps {
   title: string;
   description: string;
   features: string[];
-  icon: string;
+  icon: IconName;
   imageUrl: string;
   delay?: number;
 }
