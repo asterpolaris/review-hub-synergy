@@ -123,14 +123,14 @@ const LearnMore = () => {
             <div className="text-center space-y-6 pt-8 animate-fadeIn">
               <h2 className="text-3xl font-bold">Ready to Transform Your Review Management?</h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Join thousands of restaurants already using Hospitality Desk
+                Join leading restaurants already using Hospitality Desk
               </p>
               <Button 
                 onClick={handleGetStarted}
                 size="lg"
                 className="group"
               >
-                Start Your Free Trial
+                Contact Sales
                 <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
