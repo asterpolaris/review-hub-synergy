@@ -23,7 +23,7 @@ export const LearnMoreSection = ({
     <div
       className={cn(
         "grid md:grid-cols-2 gap-12 items-center opacity-0",
-        "animate-fade-in"
+        "animate-fadeIn"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >

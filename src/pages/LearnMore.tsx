@@ -24,7 +24,7 @@ const LearnMore = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navigation />
       <div className="container mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold text-center mb-16 animate-fade-in">
+        <h1 className="text-4xl font-bold text-center mb-16 animate-fadeIn">
           Discover Hospitality Desk Features
         </h1>
         <ScrollArea className="h-full">
@@ -100,7 +100,7 @@ const LearnMore = () => {
         {showScrollTop && (
           <Button
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 rounded-full p-4 animate-fade-in"
+            className="fixed bottom-8 right-8 rounded-full p-4 animate-fadeIn"
             size="icon"
           >
             <ArrowUp className="h-6 w-6" />
