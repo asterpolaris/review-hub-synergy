@@ -77,6 +77,7 @@ const LearnMore = () => {
               delay={200}
               imagePosition="left"
             />
+
             <LearnMoreSection
               title="Business Analytics"
               description="Track and analyze your review performance metrics"
@@ -86,11 +87,12 @@ const LearnMore = () => {
                 "Response rate tracking",
                 "Comparative venue analytics"
               ]}
-              icon="LineChart"
+              icon="BarChartBig"
               imageUrl="/placeholder.svg"
               delay={400}
               imagePosition="right"
             />
+
             <LearnMoreSection
               title="Multi-Location Management"
               description="Seamlessly manage multiple venues from a single dashboard"
@@ -105,6 +107,7 @@ const LearnMore = () => {
               delay={600}
               imagePosition="left"
             />
+
             <LearnMoreSection
               title="Google Business Integration"
               description="Direct integration with Google Business Profile"
@@ -118,6 +121,21 @@ const LearnMore = () => {
               imageUrl="/placeholder.svg"
               delay={800}
               imagePosition="right"
+            />
+
+            <LearnMoreSection
+              title="Coming Soon"
+              description="Exciting new integrations on the horizon"
+              features={[
+                "Meta Business Suite Integration",
+                "Point of Sale (POS) Systems Integration",
+                "Reservation System Integration",
+                "Unified Dashboard for All Platforms"
+              ]}
+              icon="Rocket"
+              imageUrl="/placeholder.svg"
+              delay={1000}
+              imagePosition="left"
             />
 
             <div className="text-center space-y-6 pt-8 animate-fadeIn">
