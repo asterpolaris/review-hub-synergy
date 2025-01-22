@@ -2,11 +2,13 @@ import { Navigation } from "@/components/layout/Navigation";
 import { LearnMoreSection } from "@/components/learn-more/LearnMoreSection";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const LearnMore = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,15 +22,33 @@ const LearnMore = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleGetStarted = () => {
+    navigate("/get-started");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <Navigation />
       <div className="container mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold text-center mb-16 animate-fadeIn">
-          Discover Hospitality Desk Features
-        </h1>
+        <div className="text-center space-y-6 mb-16 animate-fadeIn">
+          <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+            Discover Hospitality Desk Features
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Everything you need to manage and improve your restaurant's online presence
+          </p>
+          <Button 
+            onClick={handleGetStarted}
+            size="lg"
+            className="group"
+          >
+            Get Started Now
+            <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </div>
+
         <ScrollArea className="h-full">
-          <div className="space-y-24 pb-24">
+          <div className="space-y-32 pb-24">
             <LearnMoreSection
               title="Review Management"
               description="Efficiently manage and respond to customer reviews across all your venues"
@@ -41,6 +61,7 @@ const LearnMore = () => {
               icon="MessageSquare"
               imageUrl="/placeholder.svg"
               delay={0}
+              imagePosition="right"
             />
             <LearnMoreSection
               title="AI-Powered Responses"
@@ -54,6 +75,7 @@ const LearnMore = () => {
               icon="Brain"
               imageUrl="/placeholder.svg"
               delay={200}
+              imagePosition="left"
             />
             <LearnMoreSection
               title="Business Analytics"
@@ -67,6 +89,7 @@ const LearnMore = () => {
               icon="BarChart"
               imageUrl="/placeholder.svg"
               delay={400}
+              imagePosition="right"
             />
             <LearnMoreSection
               title="Multi-Location Management"
@@ -80,6 +103,7 @@ const LearnMore = () => {
               icon="Store"
               imageUrl="/placeholder.svg"
               delay={600}
+              imagePosition="left"
             />
             <LearnMoreSection
               title="Google Business Integration"
@@ -93,7 +117,23 @@ const LearnMore = () => {
               icon="Globe"
               imageUrl="/placeholder.svg"
               delay={800}
+              imagePosition="right"
             />
+
+            <div className="text-center space-y-6 pt-8 animate-fadeIn">
+              <h2 className="text-3xl font-bold">Ready to Transform Your Review Management?</h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Join thousands of restaurants already using Hospitality Desk
+              </p>
+              <Button 
+                onClick={handleGetStarted}
+                size="lg"
+                className="group"
+              >
+                Start Your Free Trial
+                <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
           </div>
         </ScrollArea>
         
