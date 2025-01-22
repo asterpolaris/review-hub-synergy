@@ -42,10 +42,10 @@ export const HeroSection = () => {
             <Button 
               size="lg"
               variant="outline"
-              onClick={() => navigate("/login?demo=true")}
+              onClick={() => navigate("/learn-more")}
               className="w-full sm:w-auto border-slate-300 hover:border-slate-400 px-8 py-6 h-auto text-lg rounded-xl transition-all duration-200 hover:scale-105"
             >
-              View demo
+              Learn More
             </Button>
           </div>
 
