@@ -155,6 +155,8 @@ Important guidelines for all responses:
 1. Always use gender-neutral language
 2. Never make assumptions about the reviewer's gender
 3. Focus on the specific experience and feedback provided
+4. Keep greetings minimal and professional - avoid words like "dear" or overly formal language
+5. Start responses directly with "Thank you" instead of formal greetings
 
 Additional guidelines for negative reviews:
 1. Always maintain a polite and professional tone
@@ -199,7 +201,8 @@ ${isNegative ?
 Remember to:
 1. Use gender-neutral language
 2. Never assume the reviewer's gender
-3. Respond in ${responseLanguage} only.`
+3. Start directly with "Thank you" - avoid formal greetings
+4. Respond in ${responseLanguage} only.`
         }]
       })
     });
