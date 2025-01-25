@@ -107,7 +107,6 @@ serve(async (req) => {
       authorName: review.authorName
     });
     
-    // Normalize venue name and find matching template
     const normalizedVenueName = review.venueName.toUpperCase();
     const venueKey = Object.keys(venueDescriptions).find(key => 
       key.toUpperCase() === normalizedVenueName
@@ -123,10 +122,14 @@ serve(async (req) => {
     const isNegative = review.rating <= 3;
     const responseLanguage = determineResponseLanguage(review.comment);
 
+    // Select model based on review rating
+    const model = isNegative ? 'claude-3-sonnet-20241022' : 'claude-3-haiku-20241022';
+
     console.log('Generating response with parameters:', {
       venue: venueKey,
       isNegative,
-      responseLanguage
+      responseLanguage,
+      model
     });
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -137,7 +140,7 @@ serve(async (req) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model,
         max_tokens: 500,
         system: `You are a professional customer service representative for ${venueKey}, a hospitality venue. 
 
@@ -178,8 +181,7 @@ ${isNegative ?
   'Keep the response very concise but genuine. Do not write more than 2 sentences.'}
 
 Remember to respond in ${responseLanguage} only.`
-        }],
-        temperature: 0.7
+        }]
       })
     });
 
