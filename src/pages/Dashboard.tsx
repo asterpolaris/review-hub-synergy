@@ -62,7 +62,8 @@ const Dashboard = () => {
     return null;
   }
 
-  const firstName = session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'there';
+  const rawName = session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'there';
+  const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
   const greeting = `${getGreeting()}, ${firstName}`;
 
   return (
