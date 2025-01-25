@@ -42,7 +42,7 @@ const GetStarted = () => {
       await supabase.functions.invoke('send-registration-email', {
         body: {
           type: 'admin_notification',
-          email: 'juan@asterpolaris.com', // Admin email
+          email: 'juan@asterpolaris.com',
         }
       });
 
@@ -161,6 +161,6 @@ const GetStarted = () => {
       </Card>
     </div>
   );
-};
+}
 
 export default GetStarted;

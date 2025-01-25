@@ -78,7 +78,8 @@ export function ProfileSettings() {
         avatarUrl = publicUrl;
       }
       
-      const { error } = await supabase
+      // Update both profile and user metadata
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
           first_name: data.firstName,
@@ -87,7 +88,17 @@ export function ProfileSettings() {
         })
         .eq('id', session.user.id);
         
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Update user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+        }
+      });
+
+      if (updateError) throw updateError;
       
       toast({
         title: "Profile updated",
