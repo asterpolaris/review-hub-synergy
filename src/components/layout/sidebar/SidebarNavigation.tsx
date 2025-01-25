@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { BarChart3, MessageSquare, Building2, Settings } from "lucide-react";
+import { BarChart3, MessageSquare, Building2, Settings, Link } from "lucide-react";
 import { SidebarMenuItem } from "./SidebarMenuItem";
 import { SidebarGroupContent } from "@/components/ui/sidebar";
 
@@ -21,7 +21,7 @@ const menuItems = [
   },
   {
     to: "https://www.sevenrooms.com/login",
-    icon: Building2,
+    icon: Link,
     label: "Sevenrooms",
     external: true
   },
