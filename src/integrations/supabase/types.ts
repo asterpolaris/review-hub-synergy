@@ -209,6 +209,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_registrations: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          password_hash: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["registration_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          password_hash: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["registration_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          password_hash?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["registration_status"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           brand_id: string | null
@@ -358,6 +397,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_registration: {
+        Args: {
+          registration_id: string
+          admin_id: string
+        }
+        Returns: string
+      }
+      reject_registration: {
+        Args: {
+          registration_id: string
+          admin_id: string
+        }
+        Returns: undefined
+      }
       reviews: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -375,7 +428,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      registration_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never

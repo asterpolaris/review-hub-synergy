@@ -4,28 +4,80 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const GetStarted = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    company: "",
+    locations: "",
+    message: "",
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Here you would typically send this data to your backend
-    // For now we'll just show a success message
-    toast({
-      title: "Thank you for your interest!",
-      description: "We'll be in touch with you shortly.",
-    });
-    
-    setTimeout(() => {
-      navigate("/");
-    }, 2000);
+    try {
+      // Hash the password (this would typically be done server-side)
+      const { data: hashData, error: hashError } = await supabase.auth.admin.hashPassword(
+        formData.password
+      );
+
+      if (hashError) throw hashError;
+
+      // Create pending registration
+      const { error: registrationError } = await supabase
+        .from('pending_registrations')
+        .insert({
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          password_hash: hashData.hashed_password,
+        });
+
+      if (registrationError) throw registrationError;
+
+      // Notify admin
+      await supabase.functions.invoke('send-registration-email', {
+        body: {
+          type: 'admin_notification',
+          email: 'juan@asterpolaris.com', // Admin email
+        }
+      });
+
+      toast({
+        title: "Registration Submitted",
+        description: "Your registration is pending approval. We'll notify you once it's reviewed.",
+      });
+      
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
 
   return (
@@ -34,43 +86,73 @@ const GetStarted = () => {
         <CardContent className="pt-6">
           <h1 className="text-3xl font-bold text-center mb-2">Get Started with Hospitality Desk</h1>
           <p className="text-center text-muted-foreground mb-8">
-            Fill out the form below and we'll help you get started with managing your business reviews.
+            Fill out the form below to request an account. We'll review your application and get back to you shortly.
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" required />
+                <Input 
+                  id="firstName" 
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  required 
+                />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" required />
+                <Input 
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  required 
+                />
               </div>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="email">Business Email</Label>
-              <Input id="email" type="email" required />
+              <Input 
+                id="email" 
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required 
+              />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="company">Company Name</Label>
-              <Input id="company" required />
+              <Input 
+                id="company"
+                value={formData.company}
+                onChange={handleInputChange}
+                required 
+              />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="locations">Number of Business Locations</Label>
-              <Input id="locations" type="number" min="1" required />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="message">Tell us about your review management needs</Label>
-              <Textarea 
-                id="message" 
-                placeholder="What challenges are you facing with managing reviews?" 
-                className="min-h-[100px]"
+              <Input 
+                id="locations" 
+                type="number" 
+                min="1"
+                value={formData.locations}
+                onChange={handleInputChange}
+                required 
               />
             </div>
             
@@ -79,7 +161,7 @@ const GetStarted = () => {
               className="w-full"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Submitting..." : "Submit"}
+              {isSubmitting ? "Submitting..." : "Submit Registration"}
             </Button>
           </form>
         </CardContent>

@@ -16,6 +16,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Profile from "./pages/Profile";
 import LearnMore from "./pages/LearnMore";
+import AdminRegistrations from "./pages/AdminRegistrations";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/registrations"
+              element={
+                <ProtectedRoute>
+                  <AdminRegistrations />
                 </ProtectedRoute>
               }
             />
