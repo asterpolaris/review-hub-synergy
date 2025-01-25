@@ -62,7 +62,7 @@ const Dashboard = () => {
     return null;
   }
 
-  const firstName = session.user.user_metadata?.first_name || '';
+  const firstName = session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'there';
   const greeting = `${getGreeting()}, ${firstName}`;
 
   return (
