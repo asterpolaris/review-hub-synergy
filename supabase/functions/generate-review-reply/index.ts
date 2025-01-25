@@ -123,7 +123,7 @@ serve(async (req) => {
     const responseLanguage = determineResponseLanguage(review.comment);
 
     // Select model based on review rating
-    const model = isNegative ? 'claude-3-sonnet-20241022' : 'claude-3-haiku-20241022';
+    const model = isNegative ? 'claude-3-sonnet-20240307' : 'claude-3-haiku-20240307';
 
     console.log('Generating response with parameters:', {
       venue: venueKey,
