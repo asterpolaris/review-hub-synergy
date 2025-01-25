@@ -18,44 +18,55 @@ serve(async (req) => {
   }
 
   try {
-    const { type, email, registrationId } = await req.json() as EmailRequest
+    const { type, email } = await req.json() as EmailRequest
     
-    // Initialize Supabase client with service role key
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
     let subject = ''
     let content = ''
 
     switch (type) {
       case 'admin_notification':
-        subject = 'New Registration Pending Approval'
-        content = `A new user has registered and is waiting for approval. Please review their application.`
+        subject = 'New Registration Pending Approval - Hospitality Desk'
+        content = `A new user has registered and is waiting for approval. Please review their application in the admin dashboard.`
         break
       case 'user_approved':
-        subject = 'Your Registration Has Been Approved'
-        content = `Your registration has been approved. You can now log in to your account.`
+        subject = 'Welcome to Hospitality Desk - Registration Approved'
+        content = `Your registration has been approved! You can now log in to your account at https://hospitality-desk.com/login`
         break
       case 'user_rejected':
-        subject = 'Registration Status Update'
-        content = `We regret to inform you that your registration request has been declined.`
+        subject = 'Hospitality Desk Registration Status'
+        content = `We regret to inform you that your registration request has been declined. If you believe this was a mistake, please contact our support team.`
         break
     }
 
-    // Here you would integrate with your email service (e.g., Resend)
-    // For now, we'll just log the email
-    console.log(`Would send email:
-      To: ${email}
-      Subject: ${subject}
-      Content: ${content}`)
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
+      },
+      body: JSON.stringify({
+        from: "Hospitality Desk <no-reply@hospitality-desk.com>",
+        to: [email],
+        subject: subject,
+        text: content,
+      }),
+    })
+
+    if (!res.ok) {
+      const error = await res.text()
+      console.error('Resend API error:', error)
+      throw new Error('Failed to send email')
+    }
+
+    const data = await res.json()
+    console.log('Email sent successfully:', data)
 
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('Error in send-registration-email function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
