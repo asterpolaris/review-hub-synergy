@@ -101,10 +101,11 @@ serve(async (req) => {
 
     const { review } = await req.json();
     
-    console.log('Processing review:', {
+    // Step 1: Read and analyze the review
+    console.log('Step 1: Analyzing review:', {
       venueName: review.venueName,
       rating: review.rating,
-      authorName: review.authorName
+      comment: review.comment
     });
     
     const normalizedVenueName = review.venueName.toUpperCase();
@@ -113,25 +114,25 @@ serve(async (req) => {
     );
     
     if (!venueKey) {
-      console.error(`Venue ${review.venueName} (normalized: ${normalizedVenueName}) not found in templates`);
-      console.log('Available venues:', Object.keys(venueDescriptions));
+      console.error(`Venue ${review.venueName} not found in templates`);
       throw new Error(`Venue ${review.venueName} not found in templates. Available venues: ${Object.keys(venueDescriptions).join(', ')}`);
     }
 
-    const venueInfo = venueDescriptions[venueKey as keyof typeof venueDescriptions];
+    // Step 2: Determine the best model based on review rating
     const isNegative = review.rating <= 3;
-    const responseLanguage = determineResponseLanguage(review.comment);
-
-    // Select model based on review rating
     const model = isNegative ? 'claude-3-sonnet-20240307' : 'claude-3-haiku-20240307';
-
-    console.log('Generating response with parameters:', {
-      venue: venueKey,
+    console.log('Step 2: Selected model:', {
+      rating: review.rating,
       isNegative,
-      responseLanguage,
-      model
+      selectedModel: model
     });
 
+    const venueInfo = venueDescriptions[venueKey as keyof typeof venueDescriptions];
+    const responseLanguage = determineResponseLanguage(review.comment);
+    console.log('Language detection result:', responseLanguage);
+
+    // Step 3: Generate the response
+    console.log('Step 3: Generating response with Claude');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -204,14 +205,34 @@ Remember to respond in ${responseLanguage} only.`
     const claudeResponse = await response.json();
     console.log('Claude API response:', claudeResponse);
 
-    if (!claudeResponse.content || !claudeResponse.content[0] || !claudeResponse.content[0].text) {
-      console.error('Unexpected Claude API response format:', claudeResponse);
-      throw new Error('Invalid response format from Claude API');
+    // Step 4: Validate the response
+    console.log('Step 4: Validating generated response');
+    const generatedReply = claudeResponse.content[0].text;
+    
+    // Validation checks
+    const validationResults = {
+      hasResponse: generatedReply.length > 0,
+      matchesLanguage: responseLanguage === 'french' ? 
+        /[àâçéèêëîïôûùüÿæœ]/.test(generatedReply) : 
+        !/[àâçéèêëîïôûùüÿæœ]/.test(generatedReply),
+      includesEmailForNegative: !isNegative || generatedReply.includes(venueInfo.contactEmail),
+      addressesIssues: !isNegative || review.comment.toLowerCase().split(' ').some(word => 
+        generatedReply.toLowerCase().includes(word)
+      )
+    };
+
+    console.log('Validation results:', validationResults);
+
+    if (!validationResults.hasResponse || 
+        !validationResults.matchesLanguage || 
+        !validationResults.includesEmailForNegative ||
+        !validationResults.addressesIssues) {
+      console.error('Response validation failed:', validationResults);
+      throw new Error('Generated response failed validation checks');
     }
 
-    const generatedReply = claudeResponse.content[0].text;
-    console.log('Successfully generated response');
-
+    // Step 5: Return the validated response
+    console.log('Step 5: Returning validated response to user');
     return new Response(
       JSON.stringify({ reply: generatedReply }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
