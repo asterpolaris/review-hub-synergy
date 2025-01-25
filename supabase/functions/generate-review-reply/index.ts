@@ -82,9 +82,14 @@ const determineResponseLanguage = (reviewText: string): 'english' | 'french' => 
   return romancePatterns.test(reviewText) ? 'french' : 'english';
 };
 
+const extractEmailFromExample = (example: string): string => {
+  const emailMatch = example.match(/\b[\w\.-]+@[\w\.-]+\.\w{2,}\b/);
+  return emailMatch ? emailMatch[0] : 'contact@venue.com';
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -95,7 +100,7 @@ serve(async (req) => {
       throw new Error('ANTHROPIC_API_KEY is not configured');
     }
 
-    const { review } = await req.json()
+    const { review } = await req.json();
     
     console.log('Processing review:', {
       venueName: review.venueName,
@@ -118,6 +123,7 @@ serve(async (req) => {
     const venueInfo = venueDescriptions[venueKey as keyof typeof venueDescriptions];
     const isNegative = review.rating <= 3;
     const responseLanguage = determineResponseLanguage(review.comment);
+    const contactEmail = extractEmailFromExample(venueInfo.examples.negative);
 
     const systemPrompt = `You are a professional customer service representative for ${venueKey}, a hospitality venue. 
 
@@ -129,7 +135,7 @@ Language instructions: Respond in ${responseLanguage}. This is crucial - do not 
 
 Important guidelines:
 1. Always maintain a polite and professional tone
-2. For negative reviews (3 stars or less), always include the venue's contact email (${venueInfo.examples.negative.match(/\b[\w\.-]+@[\w\.-]+\.\w{2,}\b/)[0]}) and encourage the reviewer to reach out directly
+2. For negative reviews (3 stars or less), always include the venue's contact email (${contactEmail}) and encourage the reviewer to reach out directly
 3. For positive reviews, keep responses concise (maximum 2 sentences)
 4. Ensure your response matches the sophistication level of the venue
 
@@ -204,7 +210,7 @@ Remember to respond in ${responseLanguage} only.`;
     return new Response(
       JSON.stringify({ reply: generatedReply }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
     console.error('Error in generate-review-reply:', error);
     return new Response(
@@ -219,6 +225,6 @@ Remember to respond in ${responseLanguage} only.`;
           'Content-Type': 'application/json' 
         } 
       }
-    )
+    );
   }
-})
+});
