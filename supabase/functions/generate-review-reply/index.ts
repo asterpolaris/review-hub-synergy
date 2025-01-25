@@ -151,7 +151,12 @@ Writing style: ${venueInfo.style}
 
 Language instructions: Respond in ${responseLanguage}. This is crucial - do not deviate from this language choice regardless of the original review's language.
 
-Important guidelines for negative reviews:
+Important guidelines for all responses:
+1. Always use gender-neutral language
+2. Never make assumptions about the reviewer's gender
+3. Focus on the specific experience and feedback provided
+
+Additional guidelines for negative reviews:
 1. Always maintain a polite and professional tone
 2. Specifically acknowledge and address the issues mentioned in the review
 3. Show genuine understanding of their specific complaints
@@ -191,7 +196,10 @@ ${isNegative ?
   'Keep the response professional and thorough while focusing on their specific concerns.' : 
   'Keep the response very concise but genuine. Do not write more than 2 sentences.'}
 
-Remember to respond in ${responseLanguage} only.`
+Remember to:
+1. Use gender-neutral language
+2. Never assume the reviewer's gender
+3. Respond in ${responseLanguage} only.`
         }]
       })
     });
