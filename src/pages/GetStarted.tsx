@@ -26,13 +26,6 @@ const GetStarted = () => {
     setIsSubmitting(true);
     
     try {
-      // Hash the password (this would typically be done server-side)
-      const { data: hashData, error: hashError } = await supabase.auth.admin.hashPassword(
-        formData.password
-      );
-
-      if (hashError) throw hashError;
-
       // Create pending registration
       const { error: registrationError } = await supabase
         .from('pending_registrations')
@@ -40,7 +33,7 @@ const GetStarted = () => {
           email: formData.email,
           first_name: formData.firstName,
           last_name: formData.lastName,
-          password_hash: hashData.hashed_password,
+          password_hash: formData.password, // The server will hash this when approving
         });
 
       if (registrationError) throw registrationError;
