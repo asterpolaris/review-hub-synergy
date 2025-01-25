@@ -66,6 +66,22 @@ const venueDescriptions = {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+const determineResponseLanguage = (reviewText: string): 'english' | 'french' => {
+  // Common words/patterns for language detection
+  const frenchPatterns = /[àâçéèêëîïôûùüÿæœ]|(\b(je|tu|il|nous|vous|ils|le|la|les|un|une|des|est|sont|avoir|être|fait|dans|pour|avec|bonjour|merci)\b)/i;
+  const englishPatterns = /\b(the|be|to|of|and|a|in|that|have|it|for|not|on|with|he|she|they|at|by|this|we|you|do|but|from|or|which|one|would|all|will|there|say|who|make|when|can|more|if|no|man|out|other|what|time|up|go|about|than|into|could|state|only|new|year|some|take|come|these|know|see|use|get|like|then|first|any|work|now|may|such|give|over|think)\b/i;
+  
+  // Romance language patterns (for non-English/French detection)
+  const romancePatterns = /[áéíóúñ]|\b(el|la|los|las|un|una|es|son|estar|hacer|por|con|como|pero|para|este|ese|muy|bien|gracias|ciao|bella|sono|questo|quella|anche|pero|assim|isso|aqui|muito|bem|obrigado)\b/i;
+
+  // Check for direct French or English first
+  if (frenchPatterns.test(reviewText)) return 'french';
+  if (englishPatterns.test(reviewText)) return 'english';
+
+  // For other languages, default to French if it seems like a Romance language
+  return romancePatterns.test(reviewText) ? 'french' : 'english';
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -101,6 +117,7 @@ serve(async (req) => {
 
     const venueInfo = venueDescriptions[venueKey as keyof typeof venueDescriptions];
     const isNegative = review.rating <= 3;
+    const responseLanguage = determineResponseLanguage(review.comment);
 
     const systemPrompt = `You are a professional customer service representative for ${venueKey}, a hospitality venue. 
 
@@ -108,13 +125,15 @@ Venue description: ${venueInfo.long}
 
 Writing style: ${venueInfo.style}
 
+Language instructions: Respond in ${responseLanguage}. This is crucial - do not deviate from this language choice regardless of the original review's language.
+
 Important guidelines:
 1. Always maintain a polite and professional tone
 2. For negative reviews (3 stars or less), always include the venue's contact email (${venueInfo.examples.negative.match(/\b[\w\.-]+@[\w\.-]+\.\w{2,}\b/)[0]}) and encourage the reviewer to reach out directly
-3. Regardless of the review's original language, ALWAYS respond in English only
-4. For positive reviews, keep responses concise (maximum 2 sentences)
+3. For positive reviews, keep responses concise (maximum 2 sentences)
+4. Ensure your response matches the sophistication level of the venue
 
-Here is an example of how we've responded to ${isNegative ? 'negative' : 'positive'} reviews in the past (use this as inspiration for tone and style, but do not copy verbatim):
+Here is an example of how we've responded to ${isNegative ? 'negative' : 'positive'} reviews in ${responseLanguage} (use this as inspiration for tone and style, but do not copy verbatim):
 
 ${isNegative ? venueInfo.examples.negative : venueInfo.examples.positive}`;
 
@@ -135,7 +154,9 @@ ${isNegative ? `
 
 ${isNegative ? 
   'Keep the response professional and thorough to address their concerns.' : 
-  'Keep the response very concise but genuine. Do not write more than 2 sentences.'}`;
+  'Keep the response very concise but genuine. Do not write more than 2 sentences.'}
+
+Remember to respond in ${responseLanguage} only.`;
 
     console.log('Sending request to Claude API');
 
