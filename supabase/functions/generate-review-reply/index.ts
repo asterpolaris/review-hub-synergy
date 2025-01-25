@@ -101,25 +101,31 @@ serve(async (req) => {
 
     const venueInfo = venueDescriptions[venueKey as keyof typeof venueDescriptions];
     const isNegative = review.rating <= 3;
-    
-    const prompt = `You are a professional customer service representative for ${venueKey}, a hospitality venue. 
+
+    const systemPrompt = `You are a professional customer service representative for ${venueKey}, a hospitality venue. 
 
 Venue description: ${venueInfo.long}
 
 Writing style: ${venueInfo.style}
 
+Important guidelines:
+1. Always maintain a polite and professional tone
+2. For negative reviews (3 stars or less), always include the venue's contact email (${venueInfo.examples.negative.match(/\b[\w\.-]+@[\w\.-]+\.\w{2,}\b/)[0]}) and encourage the reviewer to reach out directly
+3. Regardless of the review's original language, ALWAYS respond in English only
+4. For positive reviews, keep responses concise (maximum 2 sentences)
+
 Here is an example of how we've responded to ${isNegative ? 'negative' : 'positive'} reviews in the past (use this as inspiration for tone and style, but do not copy verbatim):
 
-${isNegative ? venueInfo.examples.negative : venueInfo.examples.positive}
+${isNegative ? venueInfo.examples.negative : venueInfo.examples.positive}`;
 
-You are responding to a ${review.rating}-star review from ${review.authorName}. 
+    const prompt = `You are responding to a ${review.rating}-star review from ${review.authorName}. 
 Their review: "${review.comment}"
 
 Write a unique response that:
 ${isNegative ? `
 - Shows genuine concern and apologizes for their experience
 - Acknowledges specific issues mentioned in their review
-- Offers a way to make things right
+- Includes the venue's contact email and encourages direct communication
 - Maintains professionalism while showing empathy` 
 : `
 - Shows genuine appreciation in a concise way
@@ -143,10 +149,16 @@ ${isNegative ?
       body: JSON.stringify({
         model: 'claude-3-sonnet-20240229',
         max_tokens: 500,
-        messages: [{
-          role: 'user',
-          content: prompt
-        }],
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
         temperature: 0.7
       })
     });
