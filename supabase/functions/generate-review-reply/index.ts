@@ -88,7 +88,7 @@ const determineResponseLanguage = (reviewText: string): 'english' | 'french' => 
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -150,11 +150,19 @@ Writing style: ${venueInfo.style}
 
 Language instructions: Respond in ${responseLanguage}. This is crucial - do not deviate from this language choice regardless of the original review's language.
 
-Important guidelines:
+Important guidelines for negative reviews:
 1. Always maintain a polite and professional tone
-2. For negative reviews (3 stars or less), always include the venue's contact email (${venueInfo.contactEmail}) and encourage the reviewer to reach out directly
-3. For positive reviews, keep responses concise (maximum 2 sentences)
-4. Ensure your response matches the sophistication level of the venue
+2. Specifically acknowledge and address the issues mentioned in the review
+3. Show genuine understanding of their specific complaints
+4. Explain what actions will be taken to address their concerns
+5. Include the venue's contact email (${venueInfo.contactEmail}) and encourage direct communication
+6. Keep the response focused on their specific experience
+
+Important guidelines for positive reviews:
+1. Keep responses concise (maximum 2 sentences)
+2. Show genuine appreciation
+3. Be warm but brief
+4. Maintain the venue's unique voice
 
 Here is an example of how we've responded to ${isNegative ? 'negative' : 'positive'} reviews in ${responseLanguage} (use this as inspiration for tone and style, but do not copy verbatim):
 
@@ -166,8 +174,10 @@ Their review: "${review.comment}"
 
 Write a unique response that:
 ${isNegative ? `
-- Shows genuine concern and apologizes for their experience
-- Acknowledges specific issues mentioned in their review
+- Specifically acknowledges the issues they mentioned in their review
+- Shows understanding of their particular experience
+- Addresses each main point of criticism
+- Explains what specific actions will be taken
 - Includes the venue's contact email and encourages direct communication
 - Maintains professionalism while showing empathy` 
 : `
@@ -177,7 +187,7 @@ ${isNegative ? `
 - Maintain the venue's unique voice`}
 
 ${isNegative ? 
-  'Keep the response professional and thorough to address their concerns.' : 
+  'Keep the response professional and thorough while focusing on their specific concerns.' : 
   'Keep the response very concise but genuine. Do not write more than 2 sentences.'}
 
 Remember to respond in ${responseLanguage} only.`
