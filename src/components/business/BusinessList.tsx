@@ -28,7 +28,7 @@ export const BusinessList = () => {
           console.error(`HTTP error! status: ${response.status}`);
           const errorText = await response.text();
           console.error('Error response:', errorText);
-          throw new Error(`API Error: ${errorText}`);
+          throw new Error(`We're having trouble connecting to Google. Please try again in a few minutes.`);
         }
 
         const data = await response.json();
@@ -40,7 +40,7 @@ export const BusinessList = () => {
         await delay(Math.pow(2, i) * 1000);
       }
     }
-    throw new Error("Max retries reached");
+    throw new Error("We couldn't reach Google after several attempts. Please try again later.");
   };
 
   const fetchGoogleBusinesses = async () => {
@@ -54,8 +54,8 @@ export const BusinessList = () => {
       if (deleteError) {
         console.error("Error clearing existing businesses:", deleteError);
         toast({
-          title: "Error",
-          description: "Failed to refresh business list. Please try again.",
+          title: "Something went wrong",
+          description: "We couldn't refresh your business list. Please try again.",
           variant: "destructive",
         });
         return;
@@ -67,8 +67,8 @@ export const BusinessList = () => {
       if (!googleAuthToken?.access_token) {
         console.error("No Google auth token found");
         toast({
-          title: "Error",
-          description: "Please connect your Google account first",
+          title: "Connection needed",
+          description: "Please connect your Google Business Profile first to see your businesses.",
           variant: "destructive",
         });
         return;
@@ -91,7 +91,7 @@ export const BusinessList = () => {
         console.log("No Google Business accounts found");
         toast({
           title: "No businesses found",
-          description: "No Google Business accounts were found for your account.",
+          description: "We couldn't find any businesses connected to your Google Business Profile. Make sure you have access to manage the businesses you want to connect.",
           variant: "destructive",
         });
         return;
@@ -180,21 +180,21 @@ export const BusinessList = () => {
       
       if (addedCount > 0) {
         toast({
-          title: "Success",
-          description: `Successfully imported ${addedCount} Google business${addedCount === 1 ? '' : 'es'}${errorCount > 0 ? `. ${errorCount} failed.` : ''}`,
+          title: "Success!",
+          description: `We've imported ${addedCount} business${addedCount === 1 ? '' : 'es'}${errorCount > 0 ? `. ${errorCount} couldn't be imported.` : ''}`,
         });
       } else {
         toast({
           title: "No businesses imported",
-          description: "No eligible businesses were found to import.",
+          description: "We couldn't find any businesses to import. Make sure you have the right permissions in your Google Business Profile.",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Error fetching Google businesses:", error);
       toast({
-        title: "Error",
-        description: "Failed to fetch Google businesses. Please try again.",
+        title: "Connection issue",
+        description: "We're having trouble connecting to Google. Please try again in a few minutes.",
         variant: "destructive",
       });
     }
@@ -203,7 +203,7 @@ export const BusinessList = () => {
   if (isLoading) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        Loading businesses...
+        Loading your businesses...
       </div>
     );
   }
@@ -218,8 +218,7 @@ export const BusinessList = () => {
       
       {!businesses?.length ? (
         <div className="text-center py-12 text-muted-foreground">
-          No businesses added yet. Click the button above to add your first
-          business.
+          No businesses added yet. Click the button above to import your businesses from Google.
         </div>
       ) : (
         <div className="divide-y border-t border-b">
