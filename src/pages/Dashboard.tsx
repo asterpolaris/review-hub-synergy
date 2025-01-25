@@ -12,6 +12,13 @@ import { MetricCard } from "@/components/dashboard/MetricCard";
 import { VenueMetricsTable } from "@/components/dashboard/VenueMetricsTable";
 import { DatePeriod } from "@/types/metrics";
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { session, isLoading, googleAuthToken } = useAuth();
@@ -55,11 +62,19 @@ const Dashboard = () => {
     return null;
   }
 
+  const firstName = session.user.user_metadata?.first_name || '';
+  const greeting = `${getGreeting()}, ${firstName}`;
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fadeIn">
-        <div className="flex justify-between items-center">
-          <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
+        <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-medium tracking-tight text-muted-foreground">
+              {greeting}
+            </h2>
+            <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
+          </div>
           <div className="flex gap-2">
             <Select value={period} onValueChange={(value: DatePeriod) => setPeriod(value)}>
               <SelectTrigger className="w-[180px]">
