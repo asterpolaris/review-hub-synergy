@@ -12,19 +12,29 @@ export const AuthError = ({ error, details }: AuthErrorProps) => {
     
     switch (error.message) {
       case 'Invalid login credentials':
-        return 'Invalid email or password. Please check your credentials and try again.';
+        return "We couldn't find an account with those credentials. Please check your email and password and try again.";
       case 'Email not confirmed':
-        return 'Please verify your email address before signing in.';
+        return "You need to verify your email address before signing in. Please check your inbox for a verification email.";
       case 'Invalid grant':
-        return 'Invalid email or password. Please check your credentials and try again.';
+        return "We couldn't sign you in with those credentials. Please check your email and password and try again.";
+      case 'Email already registered':
+        return "An account with this email already exists. Would you like to sign in instead?";
+      case 'Password is too short':
+        return "Please use a longer password (at least 6 characters) to keep your account secure.";
+      case 'User already registered':
+        return "Looks like you already have an account! Try signing in instead.";
+      case 'Invalid email':
+        return "Please enter a valid email address.";
+      case 'Request failed':
+        return "We're having trouble connecting to our servers. Please check your internet connection and try again.";
       default:
-        return error.message;
+        return "Something went wrong. Please try again or contact support if the problem persists.";
     }
   };
 
   return (
     <Alert variant="destructive" className="mb-4">
-      <AlertTitle>Authentication Error</AlertTitle>
+      <AlertTitle>Oops! Something's not quite right</AlertTitle>
       <AlertDescription>
         <div className="mt-2">
           <p className="font-medium">{getErrorMessage(error)}</p>
