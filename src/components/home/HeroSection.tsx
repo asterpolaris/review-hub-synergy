@@ -25,7 +25,7 @@ export const HeroSection = () => {
             </span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto animate-fadeIn [animation-delay:200ms]">
+          <p className="text-xl md:text-2xl text-white max-w-2xl mx-auto animate-fadeIn [animation-delay:200ms]">
             Transform your online reputation with intelligent review management and AI-powered responses
           </p>
 
@@ -49,7 +49,7 @@ export const HeroSection = () => {
             </Button>
           </div>
 
-          <p className="text-sm text-gray-400 pt-4">
+          <p className="text-sm text-white pt-4">
             No credit card required · Free trial available
           </p>
         </div>
