@@ -31,7 +31,7 @@ export const PricingCard = ({
         <h3 className="text-2xl font-bold mb-2 text-foreground">{name}</h3>
         <p className="text-muted-foreground mb-4">{description}</p>
         <div className="text-4xl font-bold mb-2 text-foreground">
-          {price === "Free" ? price : `$${price}`}
+          ${price}
           <span className="text-lg text-muted-foreground">/month</span>
         </div>
       </div>
