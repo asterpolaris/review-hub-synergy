@@ -1,5 +1,5 @@
 import { PAYMENT_FREQUENCIES, TIERS } from "./pricing-data";
-import { PricingCard } from "@/components/ui/pricing-card";
+import { PricingCard } from "./PricingCard";
 
 export const PricingSection = () => {
   return (
@@ -17,7 +17,7 @@ export const PricingSection = () => {
           <PricingCard
             key={tier.id}
             name={tier.name}
-            price={tier.price.monthly}
+            price={tier.price.monthly.toString()}
             description={tier.description}
             features={tier.features}
             highlighted={tier.highlighted}

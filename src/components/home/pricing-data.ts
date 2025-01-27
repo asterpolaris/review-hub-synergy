@@ -22,8 +22,8 @@ export const TIERS = [
     id: "standard",
     name: "Standard",
     price: {
-      monthly: 25,
-      yearly: 20,
+      monthly: "25",
+      yearly: "20",
     },
     description: "Perfect for small businesses getting started with review management",
     features: [
@@ -39,8 +39,8 @@ export const TIERS = [
     id: "premium",
     name: "Premium",
     price: {
-      monthly: 50,
-      yearly: 40,
+      monthly: "50",
+      yearly: "40",
     },
     description: "Advanced features for businesses seeking growth and efficiency",
     features: [
