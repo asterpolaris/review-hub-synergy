@@ -48,10 +48,6 @@ export const HeroSection = () => {
               Learn More
             </Button>
           </div>
-
-          <p className="text-sm text-white pt-4">
-            No credit card required · Free trial available
-          </p>
         </div>
       </div>
     </div>
