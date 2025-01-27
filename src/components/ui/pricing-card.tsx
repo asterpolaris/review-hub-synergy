@@ -58,7 +58,8 @@ export function PricingCard({ tier, paymentFrequency }: PricingCardProps) {
               format={{
                 style: "currency",
                 currency: "USD",
-                trailingZeroDisplay: "stripIfInteger",
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
               }}
               value={price}
               className="text-4xl font-medium"
