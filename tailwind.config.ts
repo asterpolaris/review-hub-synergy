@@ -93,6 +93,9 @@ export default {
         slideIn: "slideIn 0.3s ease-out",
         fadeIn: "fadeIn 0.6s ease-out forwards",
       },
+      maskImage: {
+        'radial-gradient': 'radial-gradient(var(--tw-gradient-stops))',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
