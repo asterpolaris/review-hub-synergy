@@ -6,9 +6,9 @@ export const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-[85vh] flex items-center bg-enterprise-dark">
+    <div className="relative min-h-[85vh] flex items-center bg-background">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-enterprise-dark via-enterprise-gray-900 to-enterprise-dark opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-enterprise-gray-900 to-background opacity-50" />
       
       {/* Animated gradient orbs */}
       <div className="absolute inset-0 overflow-hidden">
