@@ -2,6 +2,23 @@ export const PAYMENT_FREQUENCIES = ["monthly", "yearly"];
 
 export const TIERS = [
   {
+    id: "free",
+    name: "Free",
+    price: {
+      monthly: "Free",
+      yearly: "Free",
+    },
+    description: "Perfect for single business owners",
+    features: [
+      "Single business management",
+      "Basic review monitoring",
+      "Manual review responses",
+      "7-day review history",
+      "Limited analytics",
+    ],
+    cta: "Get Started",
+  },
+  {
     id: "standard",
     name: "Standard",
     price: {
