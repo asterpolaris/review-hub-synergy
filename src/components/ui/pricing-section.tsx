@@ -4,11 +4,11 @@ import * as React from "react"
 import { PricingCard, type PricingTier } from "@/components/ui/pricing-card"
 import { Tab } from "@/components/ui/pricing-tab"
 
-interface PricingSectionProps {
-  title: string
-  subtitle: string
-  tiers: PricingTier[]
-  frequencies: string[]
+export interface PricingSectionProps {
+  title: string;
+  subtitle: string;
+  tiers: PricingTier[];
+  frequencies: string[];
 }
 
 export function PricingSection({
