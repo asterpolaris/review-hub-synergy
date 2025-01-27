@@ -2,10 +2,11 @@ import { Navigation } from "@/components/layout/Navigation";
 import { PricingSection } from "@/components/home/PricingSection";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { PAYMENT_FREQUENCIES, TIERS } from "@/components/home/pricing-data";
 
 export default function Pricing() {
   return (
-    <div className="min-h-screen bg-enterprise-dark">
+    <div className="min-h-screen bg-[#1A1F2C]">
       <Navigation />
       
       <main className="pt-24">
@@ -29,7 +30,15 @@ export default function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <PricingSection />
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-background to-secondary/20 pointer-events-none" />
+          <PricingSection
+            title="Simple, transparent pricing"
+            subtitle="Choose the plan that's right for your business"
+            frequencies={PAYMENT_FREQUENCIES}
+            tiers={TIERS}
+          />
+        </div>
 
         {/* FAQ Section */}
         <div className="container mx-auto px-4 py-24">
