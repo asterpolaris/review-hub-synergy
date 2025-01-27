@@ -21,16 +21,16 @@ function Header1() {
             description: "",
         },
         {
-            title: "Learn More",
+            title: "Product",
             description: "Discover how we can help manage your online presence",
             items: [
                 {
                     title: "Features",
-                    href: "/learn-more#features",
+                    href: "/features",
                 },
                 {
                     title: "Pricing",
-                    href: "/learn-more#pricing",
+                    href: "/pricing",
                 },
             ],
         },
