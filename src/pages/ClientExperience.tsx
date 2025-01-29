@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import type { VenueExperience, VenueSection } from "@/types/venue";
 
 const ClientExperience = () => {
   const { data: venueExperiences, isLoading } = useQuery({
@@ -29,7 +30,7 @@ const ClientExperience = () => {
   const infoSections = [
     {
       title: "Location & Access",
-      items: (venue: any) => [
+      items: (venue: VenueExperience) => [
         { label: "Address", value: venue.address },
         { label: "Closest Metro", value: venue.closest_metro },
         { label: "Parking", value: venue.parking_info },
@@ -38,7 +39,7 @@ const ClientExperience = () => {
     },
     {
       title: "Venue Requirements",
-      items: (venue: any) => [
+      items: (venue: VenueExperience) => [
         { label: "Age Restriction", value: venue.age_restriction },
         { label: "Dress Code", value: venue.dress_code },
         { label: "Entrance Fee", value: venue.entrance_fee },
@@ -46,7 +47,7 @@ const ClientExperience = () => {
     },
     {
       title: "Dining Information",
-      items: (venue: any) => [
+      items: (venue: VenueExperience) => [
         { label: "Service Times", value: venue.dinner_service_times },
         { label: "Service Duration", value: venue.dinner_service_duration },
         { label: "Group Menu Minimum", value: venue.group_menu_minimum ? `${venue.group_menu_minimum} people` : "N/A" },
@@ -56,7 +57,7 @@ const ClientExperience = () => {
     },
     {
       title: "Venue Features",
-      items: (venue: any) => [
+      items: (venue: VenueExperience) => [
         { label: "Private Rooms", value: venue.private_rooms },
         { label: "Performance Times", value: venue.performance_times },
         { label: "Nightclub Start", value: venue.nightclub_start_time },
@@ -65,14 +66,14 @@ const ClientExperience = () => {
     },
     {
       title: "Seating & Service",
-      items: (venue: any) => [
+      items: (venue: VenueExperience) => [
         { label: "Bottle Service", value: venue.bottle_service_info },
         { label: "Booth Seating", value: venue.booth_seating_info },
       ],
     },
     {
       title: "Additional Information",
-      items: (venue: any) => [
+      items: (venue: VenueExperience) => [
         { label: "Nearby Hotels", value: venue.nearby_hotels },
         { label: "Other Recommendations", value: venue.other_recommendations },
         { label: "Additional Notes", value: venue.additional_notes },
