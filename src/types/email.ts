@@ -28,3 +28,13 @@ export interface EmailResponse {
 export type EmailRequestType = EmailRequest['type'];
 export type EmailRequestStatus = EmailRequest['status'];
 export type EmailResponseType = EmailResponse['type'];
+
+export interface EmailConfiguration {
+  id: string;
+  business_id: string;
+  email_address: string;
+  type: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

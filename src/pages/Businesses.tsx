@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { AddBusinessDialog } from "@/components/business/AddBusinessDialog";
 import { BusinessList } from "@/components/business/BusinessList";
+import { EmailConfigDialog } from "@/components/email/EmailConfigDialog";
+import { EmailConfigList } from "@/components/email/EmailConfigList";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,7 +28,6 @@ const Businesses = () => {
         description: "Disconnected from Google Business Profile",
       });
 
-      // Force a page reload to refresh the auth state
       window.location.reload();
     } catch (error) {
       console.error('Error disconnecting from Google:', error);
@@ -64,6 +65,13 @@ const Businesses = () => {
           </div>
         </div>
         <BusinessList />
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-semibold">Email Configurations</h2>
+            <EmailConfigDialog businessId={/* TODO: Add selected business ID */} />
+          </div>
+          <EmailConfigList businessId={/* TODO: Add selected business ID */} />
+        </div>
       </div>
     </AppLayout>
   );
