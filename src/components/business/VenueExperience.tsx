@@ -1,111 +1,92 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { VenueExperience as VenueExperienceType } from "@/types/venue";
 
 interface VenueExperienceProps {
-  businessId?: string;
+  venue: VenueExperienceType;
 }
 
-export const VenueExperience = ({ businessId }: VenueExperienceProps) => {
-  const { data: venueExperience, isLoading } = useQuery({
-    queryKey: ["venue-experience", businessId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("venue_experiences")
-        .select("*")
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  if (isLoading) {
-    return <div className="text-center py-4">Loading venue information...</div>;
-  }
-
-  if (!venueExperience) {
-    return <div className="text-center py-4">No venue experience information available.</div>;
-  }
-
+export const VenueExperience = ({ venue }: VenueExperienceProps) => {
   const infoSections = [
     {
       title: "Location & Access",
       items: [
-        { label: "Address", value: venueExperience.address },
-        { label: "Closest Metro", value: venueExperience.closest_metro },
-        { label: "Parking", value: venueExperience.parking_info },
-        { label: "Wheelchair Accessible", value: venueExperience.wheelchair_accessible ? "Yes" : "No" },
+        { label: "Address", value: venue.address },
+        { label: "Closest Metro", value: venue.closest_metro },
+        { label: "Parking", value: venue.parking_info },
+        { label: "Wheelchair Accessible", value: venue.wheelchair_accessible ? "Yes" : "No" },
       ],
     },
     {
       title: "Venue Requirements",
       items: [
-        { label: "Age Restriction", value: venueExperience.age_restriction },
-        { label: "Dress Code", value: venueExperience.dress_code },
-        { label: "Entrance Fee", value: venueExperience.entrance_fee },
+        { label: "Age Restriction", value: venue.age_restriction },
+        { label: "Dress Code", value: venue.dress_code },
+        { label: "Entrance Fee", value: venue.entrance_fee },
       ],
     },
     {
       title: "Dining Information",
       items: [
-        { label: "Service Times", value: venueExperience.dinner_service_times },
-        { label: "Service Duration", value: venueExperience.dinner_service_duration },
-        { label: "Group Menu Minimum", value: venueExperience.group_menu_minimum ? `${venueExperience.group_menu_minimum} people` : "N/A" },
-        { label: "Dietary Accommodations", value: venueExperience.dietary_accommodations ? "Available" : "Not Available" },
-        { label: "Halal/Kosher Options", value: venueExperience.halal_kosher_options ? "Available" : "Not Available" },
+        { label: "Service Times", value: venue.dinner_service_times },
+        { label: "Service Duration", value: venue.dinner_service_duration },
+        { label: "Group Menu Minimum", value: venue.group_menu_minimum ? `${venue.group_menu_minimum} people` : "N/A" },
+        { label: "Dietary Accommodations", value: venue.dietary_accommodations ? "Available" : "Not Available" },
+        { label: "Halal/Kosher Options", value: venue.halal_kosher_options ? "Available" : "Not Available" },
       ],
     },
     {
       title: "Venue Features",
       items: [
-        { label: "Private Rooms", value: venueExperience.private_rooms },
-        { label: "Performance Times", value: venueExperience.performance_times },
-        { label: "Nightclub Start", value: venueExperience.nightclub_start_time },
-        { label: "Guestlist End", value: venueExperience.guestlist_end_time },
+        { label: "Private Rooms", value: venue.private_rooms },
+        { label: "Performance Times", value: venue.performance_times },
+        { label: "Nightclub Start", value: venue.nightclub_start_time },
+        { label: "Guestlist End", value: venue.guestlist_end_time },
       ],
     },
     {
       title: "Seating & Service",
       items: [
-        { label: "Bottle Service", value: venueExperience.bottle_service_info },
-        { label: "Booth Seating", value: venueExperience.booth_seating_info },
+        { label: "Bottle Service", value: venue.bottle_service_info },
+        { label: "Booth Seating", value: venue.booth_seating_info },
       ],
     },
     {
       title: "Additional Information",
       items: [
-        { label: "Nearby Hotels", value: venueExperience.nearby_hotels },
-        { label: "Other Recommendations", value: venueExperience.other_recommendations },
-        { label: "Additional Notes", value: venueExperience.additional_notes },
+        { label: "Nearby Hotels", value: venue.nearby_hotels },
+        { label: "Other Recommendations", value: venue.other_recommendations },
+        { label: "Additional Notes", value: venue.additional_notes },
       ],
     },
   ];
 
   return (
-    <ScrollArea className="h-[600px] pr-4">
-      <div className="space-y-6">
-        {infoSections.map((section) => (
-          <Card key={section.title} className="p-4">
-            <h3 className="text-lg font-semibold mb-3">{section.title}</h3>
-            <div className="space-y-2">
-              {section.items.map(({ label, value }) => (
-                value && (
-                  <div key={label}>
-                    <div className="flex justify-between items-start">
-                      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-                      <span className="text-sm text-right ml-4">{value}</span>
+    <Card className="p-6">
+      <h2 className="text-2xl font-semibold mb-4">{venue.venue}</h2>
+      <ScrollArea className="h-[500px] pr-4">
+        <div className="space-y-6">
+          {infoSections.map((section) => (
+            <div key={section.title}>
+              <h3 className="text-lg font-semibold mb-3">{section.title}</h3>
+              <div className="space-y-2">
+                {section.items.map(({ label, value }) => (
+                  value && (
+                    <div key={label}>
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium text-muted-foreground">{label}</span>
+                        <span className="text-sm text-right ml-4">{value}</span>
+                      </div>
+                      <Separator className="my-2" />
                     </div>
-                    <Separator className="my-2" />
-                  </div>
-                )
-              ))}
+                  )
+                ))}
+              </div>
             </div>
-          </Card>
-        ))}
-      </div>
-    </ScrollArea>
+          ))}
+        </div>
+      </ScrollArea>
+    </Card>
   );
 };
