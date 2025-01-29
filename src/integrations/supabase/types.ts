@@ -527,6 +527,101 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_experiences: {
+        Row: {
+          additional_notes: string | null
+          address: string | null
+          age_restriction: string | null
+          booth_seating_info: string | null
+          bottle_service_info: string | null
+          business_id: string | null
+          closest_metro: string | null
+          created_at: string
+          dietary_accommodations: boolean | null
+          dinner_service_duration: string | null
+          dinner_service_times: string | null
+          dress_code: string | null
+          entrance_fee: string | null
+          group_menu_minimum: number | null
+          guestlist_end_time: string | null
+          halal_kosher_options: boolean | null
+          id: string
+          nearby_hotels: string | null
+          nightclub_start_time: string | null
+          other_recommendations: string | null
+          parking_info: string | null
+          performance_times: string | null
+          private_rooms: string | null
+          updated_at: string
+          venue: Database["public"]["Enums"]["venue_name"]
+          wheelchair_accessible: boolean | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          address?: string | null
+          age_restriction?: string | null
+          booth_seating_info?: string | null
+          bottle_service_info?: string | null
+          business_id?: string | null
+          closest_metro?: string | null
+          created_at?: string
+          dietary_accommodations?: boolean | null
+          dinner_service_duration?: string | null
+          dinner_service_times?: string | null
+          dress_code?: string | null
+          entrance_fee?: string | null
+          group_menu_minimum?: number | null
+          guestlist_end_time?: string | null
+          halal_kosher_options?: boolean | null
+          id?: string
+          nearby_hotels?: string | null
+          nightclub_start_time?: string | null
+          other_recommendations?: string | null
+          parking_info?: string | null
+          performance_times?: string | null
+          private_rooms?: string | null
+          updated_at?: string
+          venue: Database["public"]["Enums"]["venue_name"]
+          wheelchair_accessible?: boolean | null
+        }
+        Update: {
+          additional_notes?: string | null
+          address?: string | null
+          age_restriction?: string | null
+          booth_seating_info?: string | null
+          bottle_service_info?: string | null
+          business_id?: string | null
+          closest_metro?: string | null
+          created_at?: string
+          dietary_accommodations?: boolean | null
+          dinner_service_duration?: string | null
+          dinner_service_times?: string | null
+          dress_code?: string | null
+          entrance_fee?: string | null
+          group_menu_minimum?: number | null
+          guestlist_end_time?: string | null
+          halal_kosher_options?: boolean | null
+          id?: string
+          nearby_hotels?: string | null
+          nightclub_start_time?: string | null
+          other_recommendations?: string | null
+          parking_info?: string | null
+          performance_times?: string | null
+          private_rooms?: string | null
+          updated_at?: string
+          venue?: Database["public"]["Enums"]["venue_name"]
+          wheelchair_accessible?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_experiences_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -567,6 +662,13 @@ export type Database = {
       email_request_type: "booking" | "support" | "general"
       email_response_type: "manual" | "ai" | "template"
       registration_status: "pending" | "approved" | "rejected"
+      venue_name:
+        | "Bordelle"
+        | "Yoko"
+        | "Hang"
+        | "Farsides"
+        | "Farsides Brossard"
+        | "Muzique"
     }
     CompositeTypes: {
       [_ in never]: never

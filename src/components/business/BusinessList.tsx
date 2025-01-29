@@ -225,6 +225,7 @@ export const BusinessList = () => {
           {businesses.map((business) => (
             <BusinessCard
               key={business.id}
+              id={business.id}
               name={business.name}
               location={business.location}
               googleBusinessAccountId={business.google_business_account_id}
