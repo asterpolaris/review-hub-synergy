@@ -8,11 +8,13 @@ import { EmailConfigDialog } from "@/components/email/EmailConfigDialog";
 import { EmailConfigList } from "@/components/email/EmailConfigList";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Businesses = () => {
   const { googleAuthToken } = useAuth();
   const { isConnecting, handleGoogleConnect } = useGoogleAuth();
   const { toast } = useToast();
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
   const handleGoogleDisconnect = async () => {
     try {
@@ -64,14 +66,16 @@ const Businesses = () => {
             <AddBusinessDialog />
           </div>
         </div>
-        <BusinessList />
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Email Configurations</h2>
-            <EmailConfigDialog businessId={/* TODO: Add selected business ID */} />
+        <BusinessList onBusinessSelect={setSelectedBusinessId} />
+        {selectedBusinessId && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold">Email Configurations</h2>
+              <EmailConfigDialog businessId={selectedBusinessId} />
+            </div>
+            <EmailConfigList businessId={selectedBusinessId} />
           </div>
-          <EmailConfigList businessId={/* TODO: Add selected business ID */} />
-        </div>
+        )}
       </div>
     </AppLayout>
   );

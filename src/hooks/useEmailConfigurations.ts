@@ -29,10 +29,15 @@ export function useEmailConfigurations(businessId?: string) {
   });
 
   const addConfiguration = useMutation({
-    mutationFn: async (newConfig: Partial<EmailConfiguration>) => {
+    mutationFn: async (newConfig: Omit<EmailConfiguration, 'id' | 'created_at' | 'updated_at'>) => {
       const { error } = await supabase
         .from('email_configurations')
-        .insert(newConfig);
+        .insert({
+          business_id: businessId,
+          email_address: newConfig.email_address,
+          type: newConfig.type,
+          is_active: true,
+        });
 
       if (error) throw error;
     },
