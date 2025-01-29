@@ -1,13 +1,36 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { VenueExperience as VenueExperienceType } from "@/types/venue";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VenueExperienceProps {
-  venue: VenueExperienceType;
+  businessId: string;
 }
 
-export const VenueExperience = ({ venue }: VenueExperienceProps) => {
+export const VenueExperience = ({ businessId }: VenueExperienceProps) => {
+  const { data: venue, isLoading } = useQuery({
+    queryKey: ["venue-experience", businessId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("venue_experiences")
+        .select("*")
+        .eq("business_id", businessId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (isLoading) {
+    return <div>Loading venue information...</div>;
+  }
+
+  if (!venue) {
+    return <div>No venue experience information available.</div>;
+  }
+
   const infoSections = [
     {
       title: "Location & Access",
