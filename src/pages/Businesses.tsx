@@ -4,17 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { AddBusinessDialog } from "@/components/business/AddBusinessDialog";
 import { BusinessList } from "@/components/business/BusinessList";
-import { EmailConfigDialog } from "@/components/email/EmailConfigDialog";
-import { EmailConfigList } from "@/components/email/EmailConfigList";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 
 const Businesses = () => {
   const { googleAuthToken } = useAuth();
   const { isConnecting, handleGoogleConnect } = useGoogleAuth();
   const { toast } = useToast();
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
   const handleGoogleDisconnect = async () => {
     try {
@@ -30,6 +26,7 @@ const Businesses = () => {
         description: "Disconnected from Google Business Profile",
       });
 
+      // Force a page reload to refresh the auth state
       window.location.reload();
     } catch (error) {
       console.error('Error disconnecting from Google:', error);
@@ -66,16 +63,7 @@ const Businesses = () => {
             <AddBusinessDialog />
           </div>
         </div>
-        <BusinessList onBusinessSelect={setSelectedBusinessId} />
-        {selectedBusinessId && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Email Configurations</h2>
-              <EmailConfigDialog businessId={selectedBusinessId} />
-            </div>
-            <EmailConfigList businessId={selectedBusinessId} />
-          </div>
-        )}
+        <BusinessList />
       </div>
     </AppLayout>
   );
