@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VenueExperience } from "./VenueExperience";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BusinessCardProps {
   id: string;
@@ -12,6 +14,20 @@ interface BusinessCardProps {
 
 export const BusinessCard = ({ id, name, location, googleBusinessAccountId }: BusinessCardProps) => {
   const { toast } = useToast();
+
+  const { data: venue, isLoading } = useQuery({
+    queryKey: ["venue-experience", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("venue_experiences")
+        .select("*")
+        .eq("business_id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const handleConnect = async () => {
     try {
@@ -56,7 +72,13 @@ export const BusinessCard = ({ id, name, location, googleBusinessAccountId }: Bu
         </TabsContent>
         
         <TabsContent value="experience">
-          <VenueExperience businessId={id} />
+          {isLoading ? (
+            <div>Loading venue information...</div>
+          ) : venue ? (
+            <VenueExperience venue={venue} />
+          ) : (
+            <div>No venue experience information available.</div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
