@@ -19,6 +19,7 @@ import Features from "./pages/Features";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import AdminRegistrations from "./pages/AdminRegistrations";
+import ClientExperience from "./pages/ClientExperience";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client-experience"
+              element={
+                <ProtectedRoute>
+                  <ClientExperience />
                 </ProtectedRoute>
               }
             />
