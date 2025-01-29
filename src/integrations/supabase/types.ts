@@ -90,6 +90,141 @@ export type Database = {
         }
         Relationships: []
       }
+      email_configurations: {
+        Row: {
+          business_id: string
+          created_at: string
+          email_address: string
+          id: string
+          is_active: boolean | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email_address: string
+          id?: string
+          is_active?: boolean | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email_address?: string
+          id?: string
+          is_active?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_configurations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_requests: {
+        Row: {
+          assigned_to: string | null
+          business_id: string
+          created_at: string
+          id: string
+          message_id: string
+          parsed_details: Json | null
+          parsed_intent: string | null
+          raw_content: string
+          sender_email: string
+          sender_name: string
+          status: Database["public"]["Enums"]["email_request_status"]
+          subject: string
+          summary: string | null
+          type: Database["public"]["Enums"]["email_request_type"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          business_id: string
+          created_at?: string
+          id?: string
+          message_id: string
+          parsed_details?: Json | null
+          parsed_intent?: string | null
+          raw_content: string
+          sender_email: string
+          sender_name: string
+          status?: Database["public"]["Enums"]["email_request_status"]
+          subject: string
+          summary?: string | null
+          type: Database["public"]["Enums"]["email_request_type"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          message_id?: string
+          parsed_details?: Json | null
+          parsed_intent?: string | null
+          raw_content?: string
+          sender_email?: string
+          sender_name?: string
+          status?: Database["public"]["Enums"]["email_request_status"]
+          subject?: string
+          summary?: string | null
+          type?: Database["public"]["Enums"]["email_request_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_responses: {
+        Row: {
+          content: string
+          created_at: string
+          email_request_id: string
+          id: string
+          sent_by: string
+          type: Database["public"]["Enums"]["email_response_type"]
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          email_request_id: string
+          id?: string
+          sent_by: string
+          type: Database["public"]["Enums"]["email_response_type"]
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          email_request_id?: string
+          id?: string
+          sent_by?: string
+          type?: Database["public"]["Enums"]["email_response_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_responses_email_request_id_fkey"
+            columns: ["email_request_id"]
+            isOneToOne: false
+            referencedRelation: "email_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_auth_tokens: {
         Row: {
           access_token: string
@@ -428,6 +563,9 @@ export type Database = {
       }
     }
     Enums: {
+      email_request_status: "pending" | "resolved" | "archived"
+      email_request_type: "booking" | "support" | "general"
+      email_response_type: "manual" | "ai" | "template"
       registration_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
