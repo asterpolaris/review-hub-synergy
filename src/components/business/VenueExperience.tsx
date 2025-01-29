@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface VenueExperienceProps {
-  businessId: string;
+  businessId?: string;
 }
 
 export const VenueExperience = ({ businessId }: VenueExperienceProps) => {
@@ -15,8 +15,7 @@ export const VenueExperience = ({ businessId }: VenueExperienceProps) => {
       const { data, error } = await supabase
         .from("venue_experiences")
         .select("*")
-        .eq("business_id", businessId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

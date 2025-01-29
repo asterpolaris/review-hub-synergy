@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { VenueExperience, VenueSection } from "@/types/venue";
+import type { VenueExperience } from "@/types/venue";
 
 const ClientExperience = () => {
   const { data: venueExperiences, isLoading } = useQuery({
