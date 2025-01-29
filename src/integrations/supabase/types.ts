@@ -90,6 +90,44 @@ export type Database = {
         }
         Relationships: []
       }
+      email_configurations: {
+        Row: {
+          business_id: string
+          created_at: string
+          email_address: string
+          id: string
+          is_active: boolean | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          email_address: string
+          id?: string
+          is_active?: boolean | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          email_address?: string
+          id?: string
+          is_active?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_configurations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_requests: {
         Row: {
           assigned_to: string | null
