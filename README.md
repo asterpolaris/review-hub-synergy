@@ -9,22 +9,47 @@ JEGantic Hospitality Desk is a web application designed to help businesses manag
 - Centralized dashboard for monitoring review metrics
 - Multi-business review management
 - Google Business Profile API integration
+- AI-powered review response generation using Claude
+- Review filtering and sorting capabilities
+- Review response templates
+- Real-time metrics and analytics
 - Secure user authentication
 - Admin user management
 - Review response capabilities
+- Team and organization management
+- Role-based access control
 
-## Development
+## Tech Stack
 
-This project is built with modern web technologies:
+### Frontend
+- React 18 with TypeScript
+- Vite for build tooling
+- TanStack Query for data fetching
+- Tailwind CSS for styling
+- shadcn/ui component library
+- Lucide React for icons
+- React Router for navigation
+- React Hook Form for form handling
+- Zod for schema validation
 
-- Vite
+### Backend & Infrastructure
+- Supabase for:
+  - PostgreSQL database
+  - Authentication
+  - Row Level Security
+  - Edge Functions
+  - Storage
+- Google Business Profile API
+- Anthropic's Claude AI for review responses
+- Stripe for payments and subscriptions
+
+### Development Tools
 - TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- Supabase for backend services
+- ESLint
+- PostCSS
+- Git for version control
 
-### Local Development Setup
+## Local Development Setup
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -40,6 +65,15 @@ npm i
 
 # Step 4: Start the development server
 npm run dev
+```
+
+## Environment Variables
+
+The following environment variables are required:
+
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ## Deployment
