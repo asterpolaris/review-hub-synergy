@@ -10,14 +10,14 @@ const menuItems = [
     label: "Dashboard"
   },
   {
-    to: "/reviews",
-    icon: MessageSquare,
-    label: "Reviews"
-  },
-  {
     to: "/businesses",
     icon: Building2,
     label: "Businesses"
+  },
+  {
+    to: "/reviews",
+    icon: MessageSquare,
+    label: "Reviews"
   },
   {
     to: "/client-experience",
