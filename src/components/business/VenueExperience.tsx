@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, X } from "lucide-react";
 import type { VenueExperience as VenueExperienceType } from "@/types/venue";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useState } from "react";
 
 interface VenueExperienceProps {
   venue: VenueExperienceType;
@@ -18,6 +19,7 @@ interface VenueExperienceProps {
 
 export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
   const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleDelete = async () => {
     const { error } = await supabase
@@ -100,12 +102,22 @@ export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
       <div className="flex justify-between items-start mb-4">
         <h2 className="text-2xl font-semibold">{venue.venue}</h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon">
-            <Pencil className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Pencil className="h-4 w-4" />
+            )}
           </Button>
-          <Button variant="outline" size="icon" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {isEditing && (
+            <Button variant="outline" size="icon" onClick={handleDelete}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
