@@ -1,16 +1,11 @@
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, X } from "lucide-react";
 import type { VenueExperience as VenueExperienceType } from "@/types/venue";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { useState } from "react";
+import { VenueHeader } from "./venue/VenueHeader";
+import { VenueSections } from "./venue/VenueSections";
+import type { VenueSection } from "./venue/types";
 
 interface VenueExperienceProps {
   venue: VenueExperienceType;
@@ -44,15 +39,13 @@ export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
   };
 
   const handleEditContent = async () => {
-    // For now, just show a toast to indicate the feature is coming soon
     toast({
       title: "Coming Soon",
       description: "The edit content feature will be available soon!",
     });
-    // Later we can implement a form or dialog to edit the venue content
   };
 
-  const sections = [
+  const sections: VenueSection[] = [
     {
       title: "Location & Access",
       content: [
@@ -108,54 +101,14 @@ export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
 
   return (
     <Card className="p-6">
-      <div className="flex justify-between items-start mb-4">
-        <h2 className="text-2xl font-semibold">{venue.venue}</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <Pencil className="h-4 w-4" />
-            )}
-          </Button>
-          {isEditing && (
-            <>
-              <Button variant="outline" size="icon" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleEditContent}>
-                Edit Content
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-
-      <Accordion type="single" collapsible className="w-full">
-        {sections.map((section, index) => (
-          <AccordionItem value={`section-${index}`} key={index}>
-            <AccordionTrigger className="text-lg font-medium">
-              {section.title}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-2">
-                {section.content.map(({ label, value }) => 
-                  value && (
-                    <div key={label} className="flex justify-between items-start py-1">
-                      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-                      <span className="text-sm text-right ml-4 max-w-[60%]">{value}</span>
-                    </div>
-                  )
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      <VenueHeader
+        venueName={venue.venue}
+        isEditing={isEditing}
+        onEditToggle={() => setIsEditing(!isEditing)}
+        onDelete={handleDelete}
+        onEditContent={handleEditContent}
+      />
+      <VenueSections sections={sections} />
     </Card>
   );
 };
