@@ -43,6 +43,15 @@ export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
     });
   };
 
+  const handleEditContent = async () => {
+    // For now, just show a toast to indicate the feature is coming soon
+    toast({
+      title: "Coming Soon",
+      description: "The edit content feature will be available soon!",
+    });
+    // Later we can implement a form or dialog to edit the venue content
+  };
+
   const sections = [
     {
       title: "Location & Access",
@@ -118,7 +127,7 @@ export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
               <Button variant="outline" size="icon" onClick={handleDelete}>
                 <Trash2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleEditContent}>
                 Edit Content
               </Button>
             </>
