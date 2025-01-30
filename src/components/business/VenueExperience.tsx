@@ -1,13 +1,42 @@
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash2 } from "lucide-react";
 import type { VenueExperience as VenueExperienceType } from "@/types/venue";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VenueExperienceProps {
   venue: VenueExperienceType;
+  onDelete: (id: string) => void;
 }
 
-export const VenueExperience = ({ venue }: VenueExperienceProps) => {
+export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+    const { error } = await supabase
+      .from('venue_experiences')
+      .delete()
+      .eq('id', venue.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete venue. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onDelete(venue.id);
+    toast({
+      title: "Success",
+      description: "Venue deleted successfully",
+    });
+  };
+
   const infoSections = [
     {
       title: "Location & Access",
@@ -64,7 +93,17 @@ export const VenueExperience = ({ venue }: VenueExperienceProps) => {
 
   return (
     <Card className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">{venue.venue}</h2>
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-2xl font-semibold">{venue.venue}</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon">
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={handleDelete}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       <ScrollArea className="h-[500px] pr-4">
         <div className="space-y-6">
           {infoSections.map((section) => (
