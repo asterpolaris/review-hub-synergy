@@ -26,7 +26,7 @@ const ClientExperience = () => {
         .from("venue_experiences")
         .insert([
           {
-            venue: "New Venue",
+            venue: "Bordelle", // Using a valid enum value
             address: "",
             closest_metro: "",
             parking_info: "",
