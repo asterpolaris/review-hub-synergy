@@ -114,9 +114,14 @@ export const VenueExperience = ({ venue, onDelete }: VenueExperienceProps) => {
             )}
           </Button>
           {isEditing && (
-            <Button variant="outline" size="icon" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <>
+              <Button variant="outline" size="icon" onClick={handleDelete}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm">
+                Edit Content
+              </Button>
+            </>
           )}
         </div>
       </div>
