@@ -1,4 +1,3 @@
-
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 const Reviews = () => {
+  // Initialize with empty arrays instead of undefined
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
