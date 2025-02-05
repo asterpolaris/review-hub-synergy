@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
-  const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
+  const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>(["all"]);
   const [selectedSort, setSelectedSort] = useState<string>("newest");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined } | undefined>(undefined);
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useReviews();

@@ -56,33 +56,21 @@ export const ReviewFilters = ({
   const [openRating, setOpenRating] = useState(false);
 
   const handleLocationSelect = (locationId: string) => {
-    if (!selectedLocations) return;
-    
-    let newLocations: string[];
-    
-    if (locationId === "all_businesses") {
-      newLocations = [];
-    } else if (selectedLocations.includes(locationId)) {
-      newLocations = selectedLocations.filter(id => id !== locationId);
-    } else {
-      newLocations = [...selectedLocations, locationId];
-    }
+    const newLocations = locationId === "all_businesses" 
+      ? [] 
+      : selectedLocations.includes(locationId)
+        ? selectedLocations.filter(id => id !== locationId)
+        : [...selectedLocations, locationId];
     
     onLocationChange(newLocations.join(","));
   };
 
   const handleRatingSelect = (rating: string) => {
-    if (!selectedRatings) return;
-    
-    let newRatings: string[];
-    
-    if (rating === "all_ratings") {
-      newRatings = [];
-    } else if (selectedRatings.includes(rating)) {
-      newRatings = selectedRatings.filter(r => r !== rating);
-    } else {
-      newRatings = [...selectedRatings, rating];
-    }
+    const newRatings = rating === "all_ratings"
+      ? []
+      : selectedRatings.includes(rating)
+        ? selectedRatings.filter(r => r !== rating)
+        : [...selectedRatings, rating];
     
     onRatingChange(newRatings.join(","));
   };
@@ -122,7 +110,7 @@ export const ReviewFilters = ({
                   />
                   All Businesses
                 </CommandItem>
-                {businesses?.map((business) => (
+                {businesses.map((business) => (
                   <CommandItem
                     key={business.google_place_id}
                     onSelect={() => handleLocationSelect(business.google_place_id)}
