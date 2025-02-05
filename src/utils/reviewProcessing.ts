@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 
@@ -10,7 +11,18 @@ interface ReviewsData {
   }>;
 }
 
-export const processReviewData = async (reviewsData: ReviewsData): Promise<{ reviews: Review[], errors: string[] }> => {
+interface PageTokens {
+  [key: string]: string;
+}
+
+export const processReviewData = async (
+  reviewsData: ReviewsData, 
+  pageTokens?: PageTokens
+): Promise<{ 
+  reviews: Review[], 
+  errors: string[],
+  nextPageTokens?: PageTokens 
+}> => {
   const errors: string[] = [];
   const reviews: Review[] = [];
 
@@ -25,7 +37,8 @@ export const processReviewData = async (reviewsData: ReviewsData): Promise<{ rev
     const { data: reviewsResponse, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
       body: {
         access_token: reviewsData.access_token,
-        location_names: reviewsData.businesses.map(b => b.google_place_id)
+        location_names: reviewsData.businesses.map(b => b.google_place_id),
+        page_tokens: pageTokens
       },
       headers: {
         Authorization: `Bearer ${session.access_token}`
@@ -77,11 +90,16 @@ export const processReviewData = async (reviewsData: ReviewsData): Promise<{ rev
       }
     });
 
+    console.log("Final reviews count:", reviews.length);
+    return { 
+      reviews, 
+      errors,
+      nextPageTokens: reviewsResponse.nextPageTokens
+    };
+
   } catch (error) {
     console.error("Error processing reviews:", error);
     errors.push(`Failed to process reviews: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return { reviews, errors };
   }
-
-  console.log("Final reviews count:", reviews.length);
-  return { reviews, errors };
 };

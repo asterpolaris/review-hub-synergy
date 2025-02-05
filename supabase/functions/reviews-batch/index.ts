@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
-    const { access_token, location_names } = JSON.parse(requestBody);
+    const { access_token, location_names, page_tokens } = JSON.parse(requestBody);
     console.log('Processing request for locations:', location_names);
 
     if (!access_token || !location_names) {
@@ -105,7 +106,10 @@ Deno.serve(async (req) => {
     console.log('Using account ID:', accountId);
 
     const locationReviews = [];
-    for (const locationId of location_names) {
+    const nextPageTokens = {};
+
+    for (let i = 0; i < location_names.length; i++) {
+      const locationId = location_names[i];
       try {
         // Clean up the location ID by removing any duplicate "locations/" prefix
         const cleanLocationId = locationId.replace(/^locations\//, '');
@@ -114,7 +118,15 @@ Deno.serve(async (req) => {
         const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${cleanLocationId}/reviews`;
         console.log('Fetching reviews from:', reviewsUrl);
 
-        const reviewsResponse = await fetch(reviewsUrl, {
+        // Add page token to URL if it exists for this location
+        const pageToken = page_tokens?.[locationId];
+        const urlWithParams = new URL(reviewsUrl);
+        urlWithParams.searchParams.append('pageSize', '50');
+        if (pageToken) {
+          urlWithParams.searchParams.append('pageToken', pageToken);
+        }
+
+        const reviewsResponse = await fetch(urlWithParams.toString(), {
           headers: {
             'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
@@ -139,6 +151,11 @@ Deno.serve(async (req) => {
           locationName: locationId,
           reviews: reviewsData.reviews || []
         });
+
+        // Store next page token if it exists
+        if (reviewsData.nextPageToken) {
+          nextPageTokens[locationId] = reviewsData.nextPageToken;
+        }
       } catch (error) {
         console.error(`Error processing location ${locationId}:`, error);
         continue;
@@ -146,9 +163,13 @@ Deno.serve(async (req) => {
     }
 
     console.log('Successfully fetched reviews for locations:', locationReviews.length);
+    console.log('Next page tokens:', nextPageTokens);
 
     return new Response(
-      JSON.stringify({ locationReviews }),
+      JSON.stringify({ 
+        locationReviews,
+        nextPageTokens 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

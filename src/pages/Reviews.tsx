@@ -1,3 +1,4 @@
+
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,7 @@ const Reviews = () => {
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>("newest");
-  const { data, isLoading, error } = useReviews();
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useReviews();
   const { googleAuthToken } = useAuth();
   const navigate = useNavigate();
 
@@ -84,7 +85,12 @@ const Reviews = () => {
     );
   }
 
-  const filteredReviews = data?.reviews?.filter((review) => {
+  // Combine all reviews from all pages
+  const allReviews = data?.pages.flatMap(page => page.reviews) || [];
+  // Get businesses from the first page
+  const businesses = data?.pages[0]?.businesses || [];
+
+  const filteredReviews = allReviews.filter((review) => {
     const locationMatch = 
       selectedLocations.length === 0 || 
       selectedLocations.includes('all_businesses') ||
@@ -117,7 +123,7 @@ const Reviews = () => {
         </div>
 
         <ReviewFilters
-          businesses={data?.businesses || []}
+          businesses={businesses}
           selectedLocations={selectedLocations}
           selectedRatings={selectedRatings}
           selectedReplyStatus={selectedReplyStatus}
@@ -128,7 +134,12 @@ const Reviews = () => {
           onSortChange={handleSortChange}
         />
 
-        <ReviewList reviews={filteredReviews || []} />
+        <ReviewList 
+          reviews={filteredReviews}
+          hasNextPage={hasNextPage}
+          isLoading={isFetchingNextPage}
+          onLoadMore={() => fetchNextPage()}
+        />
       </div>
     </AppLayout>
   );
