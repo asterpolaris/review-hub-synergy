@@ -125,8 +125,9 @@ export const BusinessList = () => {
             }
 
             // Fetch reviews for this location with pageSize=150
+            const locationId = location.name.split('/').pop();
             const reviewsData = await fetchWithRetry(
-              `https://mybusiness.googleapis.com/v4/${account.name}/locations/${location.name.split('/').pop()}/reviews?pageSize=150`,
+              `https://mybusiness.googleapis.com/v4/${account.name}/locations/${locationId}/reviews?pageSize=150`,
               { headers }
             );
 
