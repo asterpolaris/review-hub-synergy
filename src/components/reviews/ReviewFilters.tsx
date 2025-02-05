@@ -6,9 +6,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowUpDown, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowUpDown, Calendar as CalendarIcon, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
@@ -16,6 +23,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface ReviewFiltersProps {
   businesses: Array<{ google_place_id: string; name: string }>;
@@ -44,44 +53,145 @@ export const ReviewFilters = ({
   onSortChange,
   onDateRangeChange,
 }: ReviewFiltersProps) => {
+  const [openLocation, setOpenLocation] = useState(false);
+  const [openRating, setOpenRating] = useState(false);
+
+  const handleLocationSelect = (locationId: string) => {
+    let newLocations: string[];
+    
+    if (locationId === "all_businesses") {
+      newLocations = [];
+    } else if (selectedLocations.includes(locationId)) {
+      newLocations = selectedLocations.filter(id => id !== locationId);
+    } else {
+      newLocations = [...selectedLocations, locationId];
+    }
+    
+    onLocationChange(newLocations.join(","));
+  };
+
+  const handleRatingSelect = (rating: string) => {
+    let newRatings: string[];
+    
+    if (rating === "all_ratings") {
+      newRatings = [];
+    } else if (selectedRatings.includes(rating)) {
+      newRatings = selectedRatings.filter(r => r !== rating);
+    } else {
+      newRatings = [...selectedRatings, rating];
+    }
+    
+    onRatingChange(newRatings.join(","));
+  };
+
   return (
     <div className="flex flex-wrap gap-4 mb-6 items-end">
       <div className="w-64">
-        <Select
-          value={selectedLocations.join(",")}
-          onValueChange={onLocationChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by location" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all_businesses">All Businesses</SelectItem>
-            {businesses?.map((business) => (
-              <SelectItem key={business.google_place_id} value={business.google_place_id}>
-                {business.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={openLocation} onOpenChange={setOpenLocation}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              {selectedLocations.length > 0 ? (
+                <>
+                  <span className="mr-2">{selectedLocations.length} selected</span>
+                  <Badge variant="secondary">
+                    {selectedLocations.length}
+                  </Badge>
+                </>
+              ) : (
+                "Filter by location"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Search locations..." />
+              <CommandEmpty>No location found.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  onSelect={() => handleLocationSelect("all_businesses")}
+                  className="cursor-pointer"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedLocations.length === 0 ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  All Businesses
+                </CommandItem>
+                {businesses?.map((business) => (
+                  <CommandItem
+                    key={business.google_place_id}
+                    onSelect={() => handleLocationSelect(business.google_place_id)}
+                    className="cursor-pointer"
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedLocations.includes(business.google_place_id)
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                    {business.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="w-64">
-        <Select
-          value={selectedRatings.join(",")}
-          onValueChange={onRatingChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by rating" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all_ratings">All Ratings</SelectItem>
-            {['1', '2', '3', '4', '5'].map((rating) => (
-              <SelectItem key={rating} value={rating}>
-                {rating} Stars
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={openRating} onOpenChange={setOpenRating}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              {selectedRatings.length > 0 ? (
+                <>
+                  <span className="mr-2">{selectedRatings.length} selected</span>
+                  <Badge variant="secondary">
+                    {selectedRatings.length}
+                  </Badge>
+                </>
+              ) : (
+                "Filter by rating"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-0" align="start">
+            <Command>
+              <CommandGroup>
+                <CommandItem
+                  onSelect={() => handleRatingSelect("all_ratings")}
+                  className="cursor-pointer"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedRatings.length === 0 ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  All Ratings
+                </CommandItem>
+                {['1', '2', '3', '4', '5'].map((rating) => (
+                  <CommandItem
+                    key={rating}
+                    onSelect={() => handleRatingSelect(rating)}
+                    className="cursor-pointer"
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedRatings.includes(rating) ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {rating} Stars
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="w-64">
@@ -175,3 +285,4 @@ export const ReviewFilters = ({
     </div>
   );
 };
+
