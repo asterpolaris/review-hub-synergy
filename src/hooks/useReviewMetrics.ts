@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useReviews } from "./useReviews";
 import { ReviewMetrics } from "@/types/metrics";
@@ -10,14 +9,12 @@ export const useReviewMetrics = (period: string = 'last-month') => {
   return useQuery({
     queryKey: ["reviewMetrics", period],
     queryFn: () => {
-      if (!reviewsData?.pages) {
+      if (!reviewsData?.reviews) {
         console.log("No reviews data available");
         return null;
       }
 
-      // Combine all reviews from all pages
-      const allReviews = reviewsData.pages.flatMap(page => page.reviews);
-      console.log("Raw reviews data:", allReviews);
+      console.log("Raw reviews data:", reviewsData.reviews);
 
       const now = new Date();
       let startDate: Date;
@@ -57,14 +54,14 @@ export const useReviewMetrics = (period: string = 'last-month') => {
         previousStartDate
       });
 
-      const periodReviews = allReviews.filter(review => {
+      const periodReviews = reviewsData.reviews.filter(review => {
         const reviewDate = new Date(review.createTime);
         return reviewDate >= startDate && reviewDate <= endDate;
       });
 
       console.log("Filtered period reviews:", periodReviews.length);
 
-      const previousPeriodReviews = allReviews.filter(review => {
+      const previousPeriodReviews = reviewsData.reviews.filter(review => {
         const reviewDate = new Date(review.createTime);
         const previousPeriodEndDate = new Date(startDate);
         previousPeriodEndDate.setDate(previousPeriodEndDate.getDate() - 1);
@@ -80,7 +77,7 @@ export const useReviewMetrics = (period: string = 'last-month') => {
       console.log("Previous period metrics:", previousMetrics);
 
       const monthOverMonth = calculateMetricVariance(currentMetrics, previousMetrics);
-      const venueMetrics = calculateVenueMetrics(allReviews, period);
+      const venueMetrics = calculateVenueMetrics(reviewsData.reviews, period);
 
       console.log("Venue metrics:", venueMetrics);
 
@@ -93,6 +90,6 @@ export const useReviewMetrics = (period: string = 'last-month') => {
 
       return metrics;
     },
-    enabled: !!reviewsData?.pages,
+    enabled: !!reviewsData?.reviews,
   });
 };

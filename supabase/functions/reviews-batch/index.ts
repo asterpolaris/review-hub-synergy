@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -57,9 +56,8 @@ Deno.serve(async (req) => {
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
-    const { access_token, location_names, pageToken } = JSON.parse(requestBody);
+    const { access_token, location_names } = JSON.parse(requestBody);
     console.log('Processing request for locations:', location_names);
-    console.log('Page token:', pageToken);
 
     if (!access_token || !location_names) {
       console.error('Missing required parameters:', { 
@@ -103,94 +101,54 @@ Deno.serve(async (req) => {
       throw new Error('No Google Business accounts found');
     }
 
-    const accountName = accountsData.accounts[0].name;
-    console.log('Using account:', accountName);
+    const accountId = accountsData.accounts[0].name;
+    console.log('Using account ID:', accountId);
 
-    // Format location names with account prefix
-    const formattedLocationNames = location_names.map(locationId => {
-      // If locationId already contains the full path, use it as is
-      if (locationId.startsWith('accounts/')) {
-        return locationId;
-      }
-      // If locationId is just the ID number, format it properly
-      const cleanLocationId = locationId.replace('locations/', '');
-      return `${accountName}/locations/${cleanLocationId}`;
-    });
+    const locationReviews = [];
+    for (const locationId of location_names) {
+      try {
+        // Clean up the location ID by removing any duplicate "locations/" prefix
+        const cleanLocationId = locationId.replace(/^locations\//, '');
+        
+        // Use the correct Business Profile API endpoint for reviews
+        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${cleanLocationId}/reviews`;
+        console.log('Fetching reviews from:', reviewsUrl);
 
-    console.log('Formatted location names:', formattedLocationNames);
-
-    // Use the batchGetReviews endpoint
-    const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountName}/locations:batchGetReviews`;
-    console.log('Making batch reviews request to:', batchReviewsUrl);
-
-    const batchRequestBody = {
-      locationNames: formattedLocationNames,
-      pageSize: 50,
-      pageToken: pageToken || undefined,
-      ignoreRatingOnlyReviews: false,
-      orderBy: 'updateTime desc'
-    };
-    console.log('Batch reviews request body:', batchRequestBody);
-
-    const reviewsResponse = await fetch(
-      batchReviewsUrl,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(batchRequestBody)
-      }
-    );
-
-    const responseStatus = reviewsResponse.status;
-    let errorMessage = null;
-
-    if (!reviewsResponse.ok) {
-      errorMessage = await reviewsResponse.text();
-      console.error('Error response from batch reviews endpoint:', {
-        status: responseStatus,
-        statusText: reviewsResponse.statusText,
-        response: errorMessage
-      });
-
-      await supabaseAdmin
-        .from('review_fetch_logs')
-        .insert({
-          location_name: 'batch_request',
-          review_count: 0,
-          response_status: responseStatus,
-          error_message: errorMessage
+        const reviewsResponse = await fetch(reviewsUrl, {
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
         });
 
-      throw new Error(`Failed to fetch reviews: ${responseStatus} ${errorMessage}`);
+        if (!reviewsResponse.ok) {
+          const errorText = await reviewsResponse.text();
+          console.error(`Failed to fetch reviews for location ${cleanLocationId}:`, {
+            status: reviewsResponse.status,
+            statusText: reviewsResponse.statusText,
+            response: errorText
+          });
+          continue;
+        }
+
+        const reviewsData = await reviewsResponse.json();
+        console.log(`Reviews data for location ${cleanLocationId}:`, reviewsData);
+        
+        locationReviews.push({
+          locationName: locationId,
+          reviews: reviewsData.reviews || []
+        });
+      } catch (error) {
+        console.error(`Error processing location ${locationId}:`, error);
+        continue;
+      }
     }
 
-    const reviewsData = await reviewsResponse.json();
-    console.log('Reviews response:', {
-      locationReviewsCount: reviewsData.locationReviews ? reviewsData.locationReviews.length : 0,
-      firstLocationReviewCount: reviewsData.locationReviews?.[0]?.reviews?.length || 0,
-      nextPageToken: reviewsData.nextPageToken
-    });
-
-    // Log successful fetch
-    await supabaseAdmin
-      .from('review_fetch_logs')
-      .insert({
-        location_name: 'batch_request',
-        review_count: reviewsData.locationReviews?.reduce((total: number, loc: any) => 
-          total + (loc.reviews?.length || 0), 0) || 0,
-        response_status: responseStatus,
-        error_message: null
-      });
+    console.log('Successfully fetched reviews for locations:', locationReviews.length);
 
     return new Response(
-      JSON.stringify({ 
-        locationReviews: reviewsData.locationReviews || [],
-        nextPageToken: reviewsData.nextPageToken 
-      }),
+      JSON.stringify({ locationReviews }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

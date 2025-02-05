@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 
@@ -11,17 +10,9 @@ interface ReviewsData {
   }>;
 }
 
-export const processReviewData = async (
-  reviewsData: ReviewsData, 
-  pageToken?: string | null
-): Promise<{ 
-  reviews: Review[]; 
-  nextPageToken?: string;
-  errors: string[]; 
-}> => {
+export const processReviewData = async (reviewsData: ReviewsData): Promise<{ reviews: Review[], errors: string[] }> => {
   const errors: string[] = [];
   const reviews: Review[] = [];
-  let nextPageToken: string | undefined;
 
   try {
     // Get the current session
@@ -31,11 +22,10 @@ export const processReviewData = async (
     }
 
     // Fetch reviews directly from Google API via Edge Function
-    const { data, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
+    const { data: reviewsResponse, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
       body: {
         access_token: reviewsData.access_token,
-        location_names: reviewsData.businesses.map(b => b.google_place_id),
-        pageToken
+        location_names: reviewsData.businesses.map(b => b.google_place_id)
       },
       headers: {
         Authorization: `Bearer ${session.access_token}`
@@ -48,23 +38,23 @@ export const processReviewData = async (
       return { reviews, errors };
     }
 
-    if (!data) {
+    if (!reviewsResponse) {
       errors.push("No reviews data received from API");
       return { reviews, errors };
     }
 
     // Add debug logging
-    console.log("Reviews response from Edge Function:", data);
+    console.log("Reviews response from Edge Function:", reviewsResponse);
 
-    // Check if data has the expected structure
-    if (!data.locationReviews) {
-      console.error("Unexpected response structure:", data);
+    // Check if reviewsResponse has the expected structure
+    if (!reviewsResponse.locationReviews) {
+      console.error("Unexpected response structure:", reviewsResponse);
       errors.push("Unexpected response structure from API");
       return { reviews, errors };
     }
 
     // Process the reviews from the response
-    data.locationReviews.forEach((locationReview: any) => {
+    reviewsResponse.locationReviews.forEach((locationReview: any) => {
       if (locationReview.reviews) {
         const processedReviews = locationReview.reviews.map((review: any) => ({
           id: review.reviewId,
@@ -87,18 +77,11 @@ export const processReviewData = async (
       }
     });
 
-    // Get the next page token from the response
-    nextPageToken = data.nextPageToken;
-
   } catch (error) {
     console.error("Error processing reviews:", error);
     errors.push(`Failed to process reviews: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   console.log("Final reviews count:", reviews.length);
-  return { 
-    reviews, 
-    errors,
-    nextPageToken
-  };
+  return { reviews, errors };
 };

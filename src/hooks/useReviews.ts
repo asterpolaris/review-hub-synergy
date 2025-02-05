@@ -1,8 +1,8 @@
-
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Review, ReviewsResponse } from "@/types/review";
+import { Review } from "@/types/review";
 import { useToast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 import { processReviewData } from "@/utils/reviewProcessing";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -21,10 +21,10 @@ export const useReviews = () => {
   const { toast } = useToast();
   const { session } = useAuth();
 
-  return useInfiniteQuery({
+  return useQuery({
     queryKey: ["reviews"],
-    queryFn: async ({ pageParam }) => {
-      console.log("Fetching reviews data with pageToken:", pageParam);
+    queryFn: async () => {
+      console.log("Fetching reviews data...");
       
       if (!session?.access_token) {
         throw new Error("No access token available");
@@ -42,16 +42,12 @@ export const useReviews = () => {
 
       if (!reviewsData?.businesses || reviewsData.businesses.length === 0) {
         console.log("No businesses found in reviews data");
-        return { 
-          reviews: [], 
-          businesses: [],
-          nextPageToken: undefined 
-        };
+        return { reviews: [], businesses: [] };
       }
 
       console.log("Reviews data received:", reviewsData);
 
-      const { reviews, nextPageToken, errors } = await processReviewData(reviewsData, pageParam);
+      const { reviews, errors } = await processReviewData(reviewsData);
 
       if (errors.length > 0) {
         toast({
@@ -64,11 +60,10 @@ export const useReviews = () => {
       console.log("Final reviews count:", reviews.length);
       return {
         reviews,
-        businesses: reviewsData.businesses,
-        nextPageToken
+        businesses: reviewsData.businesses
       };
     },
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextPageToken,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 };

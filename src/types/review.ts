@@ -1,4 +1,3 @@
-
 export interface Review {
   id: string;
   authorName: string;
@@ -12,9 +11,4 @@ export interface Review {
   };
   venueName: string;
   placeId: string;
-}
-
-export interface ReviewsResponse {
-  reviews: Review[];
-  nextPageToken?: string;
 }
