@@ -124,6 +124,20 @@ export const BusinessList = () => {
               continue;
             }
 
+            // Fetch reviews for this location with pageSize=150
+            const reviewsData = await fetchWithRetry(
+              `https://mybusiness.googleapis.com/v4/${account.name}/locations/${location.name.split('/').pop()}/reviews?pageSize=150`,
+              { headers }
+            );
+
+            // Calculate average rating from reviews
+            let averageRating = 0;
+            if (reviewsData.reviews && reviewsData.reviews.length > 0) {
+              const totalRating = reviewsData.reviews.reduce((sum: number, review: any) => 
+                sum + (review.starRating || 0), 0);
+              averageRating = totalRating / reviewsData.reviews.length;
+            }
+
             // Extract and format address
             let formattedAddress = "";
             if (location.storefrontAddress) {
@@ -160,6 +174,7 @@ export const BusinessList = () => {
               google_place_id: location.name,
               google_business_account_id: account.name,
               user_id: session?.user.id,
+              current_rating: averageRating || null,
             });
 
             if (error) {
