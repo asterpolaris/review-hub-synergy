@@ -1,4 +1,3 @@
-
 import {
   Select,
   SelectContent,
@@ -6,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowUpDown, Calendar as CalendarIcon, Check, X } from "lucide-react";
+import { ArrowUpDown, Calendar as CalendarIcon, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -59,6 +58,7 @@ export const ReviewFilters = ({
   // Ensure we always have arrays, even if empty
   const locationArray = selectedLocations || [];
   const ratingArray = selectedRatings || [];
+  const replyStatusArray = selectedReplyStatus || [];
 
   const handleLocationSelect = (locationId: string) => {
     let newLocations: string[];
@@ -200,7 +200,7 @@ export const ReviewFilters = ({
 
       <div className="w-64">
         <Select
-          value={selectedReplyStatus.join(",")}
+          value={replyStatusArray.join(",")}
           onValueChange={onReplyStatusChange}
         >
           <SelectTrigger>
