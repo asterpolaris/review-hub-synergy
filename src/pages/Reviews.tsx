@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 const Reviews = () => {
-  // Initialize with empty arrays and ensure they're never undefined
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
@@ -98,14 +97,11 @@ const Reviews = () => {
   const filteredReviews = allReviews.filter((review) => {
     const locationMatch = 
       selectedLocations.length === 0 || 
-      selectedLocations.includes('all_businesses') ||
       selectedLocations.includes(review.placeId);
     
-    const numericRating = convertGoogleRating(review.rating.toString());
     const ratingMatch = 
       selectedRatings.length === 0 || 
-      selectedRatings.includes('all_ratings') ||
-      selectedRatings.includes(numericRating.toString());
+      selectedRatings.includes(review.rating.toString());
     
     const replyStatusMatch = 
       selectedReplyStatus.length === 0 || 

@@ -40,7 +40,7 @@ interface ReviewFiltersProps {
 }
 
 export const ReviewFilters = ({
-  businesses,
+  businesses = [],
   selectedLocations = [],
   selectedRatings = [],
   selectedReplyStatus = [],
@@ -56,6 +56,8 @@ export const ReviewFilters = ({
   const [openRating, setOpenRating] = useState(false);
 
   const handleLocationSelect = (locationId: string) => {
+    if (!selectedLocations) return;
+    
     let newLocations: string[];
     
     if (locationId === "all_businesses") {
@@ -70,6 +72,8 @@ export const ReviewFilters = ({
   };
 
   const handleRatingSelect = (rating: string) => {
+    if (!selectedRatings) return;
+    
     let newRatings: string[];
     
     if (rating === "all_ratings") {
@@ -264,7 +268,7 @@ export const ReviewFilters = ({
               initialFocus
               mode="range"
               defaultMonth={dateRange?.from}
-              selected={{ from: dateRange?.from, to: dateRange?.to }}
+              selected={dateRange}
               onSelect={onDateRangeChange}
               numberOfMonths={2}
             />
