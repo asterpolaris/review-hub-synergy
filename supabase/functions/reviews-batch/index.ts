@@ -105,94 +105,73 @@ Deno.serve(async (req) => {
     const accountId = accountsData.accounts[0].name;
     console.log('Using account ID:', accountId);
 
-    const locationReviews = [];
-    for (const locationId of location_names) {
-      try {
-        // Clean up the location ID by removing any duplicate "locations/" prefix
-        const cleanLocationId = locationId.replace(/^locations\//, '');
-        
-        // Build the reviews URL with parameters for 100 reviews
-        const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${cleanLocationId}/reviews`;
-        const params = new URLSearchParams({
-          pageSize: '100',  // Request 100 reviews
-          orderBy: 'updateTime desc'  // Get the most recent reviews
-        });
-        const fullUrl = `${reviewsUrl}?${params.toString()}`;
-        console.log('Fetching reviews from:', fullUrl);
+    // Use the batchGetReviews endpoint
+    const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
+    console.log('Making batch reviews request to:', batchReviewsUrl);
 
-        const reviewsResponse = await fetch(fullUrl, {
-          headers: {
-            'Authorization': `Bearer ${access_token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
+    const batchRequestBody = {
+      locationNames: location_names,
+      pageSize: 100,
+      ignoreRatingOnlyReviews: false,
+      orderBy: 'updateTime desc'
+    };
+    console.log('Batch reviews request body:', batchRequestBody);
 
-        const responseStatus = reviewsResponse.status;
-        let errorMessage = null;
-
-        if (!reviewsResponse.ok) {
-          errorMessage = await reviewsResponse.text();
-          console.error(`Failed to fetch reviews for location ${cleanLocationId}:`, {
-            status: responseStatus,
-            statusText: reviewsResponse.statusText,
-            response: errorMessage
-          });
-
-          // Log the error to our new logging table
-          await supabaseAdmin
-            .from('review_fetch_logs')
-            .insert({
-              location_name: locationId,
-              review_count: 0,
-              response_status: responseStatus,
-              error_message: errorMessage
-            });
-
-          continue;
-        }
-
-        const reviewsData = await reviewsResponse.json();
-        console.log(`Reviews data for location ${cleanLocationId}:`, {
-          totalReviewCount: reviewsData.reviews ? reviewsData.reviews.length : 0,
-          hasNextPageToken: !!reviewsData.nextPageToken
-        });
-        
-        // Log successful fetch to our logging table
-        await supabaseAdmin
-          .from('review_fetch_logs')
-          .insert({
-            location_name: locationId,
-            review_count: reviewsData.reviews ? reviewsData.reviews.length : 0,
-            response_status: responseStatus,
-            error_message: null
-          });
-        
-        locationReviews.push({
-          locationName: locationId,
-          reviews: reviewsData.reviews || []
-        });
-      } catch (error) {
-        console.error(`Error processing location ${locationId}:`, error);
-        
-        // Log the error to our logging table
-        await supabaseAdmin
-          .from('review_fetch_logs')
-          .insert({
-            location_name: locationId,
-            review_count: 0,
-            response_status: 500,
-            error_message: error.message
-          });
-        
-        continue;
+    const reviewsResponse = await fetch(
+      batchReviewsUrl,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(batchRequestBody)
       }
+    );
+
+    const responseStatus = reviewsResponse.status;
+    let errorMessage = null;
+
+    if (!reviewsResponse.ok) {
+      errorMessage = await reviewsResponse.text();
+      console.error('Error response from batch reviews endpoint:', {
+        status: responseStatus,
+        statusText: reviewsResponse.statusText,
+        response: errorMessage
+      });
+
+      await supabaseAdmin
+        .from('review_fetch_logs')
+        .insert({
+          location_name: 'batch_request',
+          review_count: 0,
+          response_status: responseStatus,
+          error_message: errorMessage
+        });
+
+      throw new Error(`Failed to fetch reviews: ${responseStatus} ${errorMessage}`);
     }
 
-    console.log('Successfully fetched reviews for locations:', locationReviews.length);
+    const reviewsData = await reviewsResponse.json();
+    console.log('Reviews response:', {
+      locationReviewsCount: reviewsData.locationReviews ? reviewsData.locationReviews.length : 0,
+      firstLocationReviewCount: reviewsData.locationReviews?.[0]?.reviews?.length || 0
+    });
+
+    // Log successful fetch
+    await supabaseAdmin
+      .from('review_fetch_logs')
+      .insert({
+        location_name: 'batch_request',
+        review_count: reviewsData.locationReviews?.reduce((total: number, loc: any) => 
+          total + (loc.reviews?.length || 0), 0) || 0,
+        response_status: responseStatus,
+        error_message: null
+      });
 
     return new Response(
-      JSON.stringify({ locationReviews }),
+      JSON.stringify({ locationReviews: reviewsData.locationReviews || [] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
