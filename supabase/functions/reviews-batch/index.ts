@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -110,11 +111,16 @@ Deno.serve(async (req) => {
         // Clean up the location ID by removing any duplicate "locations/" prefix
         const cleanLocationId = locationId.replace(/^locations\//, '');
         
-        // Use the correct Business Profile API endpoint for reviews
+        // Build the reviews URL with parameters for 100 reviews
         const reviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${cleanLocationId}/reviews`;
-        console.log('Fetching reviews from:', reviewsUrl);
+        const params = new URLSearchParams({
+          pageSize: '100',  // Request 100 reviews
+          orderBy: 'updateTime desc'  // Get the most recent reviews
+        });
+        const fullUrl = `${reviewsUrl}?${params.toString()}`;
+        console.log('Fetching reviews from:', fullUrl);
 
-        const reviewsResponse = await fetch(reviewsUrl, {
+        const reviewsResponse = await fetch(fullUrl, {
           headers: {
             'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
@@ -122,18 +128,45 @@ Deno.serve(async (req) => {
           }
         });
 
+        const responseStatus = reviewsResponse.status;
+        let errorMessage = null;
+
         if (!reviewsResponse.ok) {
-          const errorText = await reviewsResponse.text();
+          errorMessage = await reviewsResponse.text();
           console.error(`Failed to fetch reviews for location ${cleanLocationId}:`, {
-            status: reviewsResponse.status,
+            status: responseStatus,
             statusText: reviewsResponse.statusText,
-            response: errorText
+            response: errorMessage
           });
+
+          // Log the error to our new logging table
+          await supabaseAdmin
+            .from('review_fetch_logs')
+            .insert({
+              location_name: locationId,
+              review_count: 0,
+              response_status: responseStatus,
+              error_message: errorMessage
+            });
+
           continue;
         }
 
         const reviewsData = await reviewsResponse.json();
-        console.log(`Reviews data for location ${cleanLocationId}:`, reviewsData);
+        console.log(`Reviews data for location ${cleanLocationId}:`, {
+          totalReviewCount: reviewsData.reviews ? reviewsData.reviews.length : 0,
+          hasNextPageToken: !!reviewsData.nextPageToken
+        });
+        
+        // Log successful fetch to our logging table
+        await supabaseAdmin
+          .from('review_fetch_logs')
+          .insert({
+            location_name: locationId,
+            review_count: reviewsData.reviews ? reviewsData.reviews.length : 0,
+            response_status: responseStatus,
+            error_message: null
+          });
         
         locationReviews.push({
           locationName: locationId,
@@ -141,6 +174,17 @@ Deno.serve(async (req) => {
         });
       } catch (error) {
         console.error(`Error processing location ${locationId}:`, error);
+        
+        // Log the error to our logging table
+        await supabaseAdmin
+          .from('review_fetch_logs')
+          .insert({
+            location_name: locationId,
+            review_count: 0,
+            response_status: 500,
+            error_message: error.message
+          });
+        
         continue;
       }
     }

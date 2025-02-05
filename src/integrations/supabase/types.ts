@@ -482,6 +482,33 @@ export type Database = {
         }
         Relationships: []
       }
+      review_fetch_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          location_name: string | null
+          response_status: number | null
+          review_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          location_name?: string | null
+          response_status?: number | null
+          review_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          location_name?: string | null
+          response_status?: number | null
+          review_count?: number | null
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           created_at: string
