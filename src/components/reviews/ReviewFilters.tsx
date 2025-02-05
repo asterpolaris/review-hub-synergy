@@ -207,7 +207,7 @@ export const ReviewFilters = ({
             <SelectValue placeholder="Filter by reply status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="waiting">Waiting for Reply</SelectItem>
             <SelectItem value="replied">Replied</SelectItem>
           </SelectContent>
