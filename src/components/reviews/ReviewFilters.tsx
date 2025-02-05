@@ -195,7 +195,7 @@ export const ReviewFilters = ({
 
       <div className="w-64">
         <Select
-          value={selectedReplyStatus.length ? selectedReplyStatus[0] : "all"}
+          value={selectedReplyStatus[0] || "all"}
           onValueChange={onReplyStatusChange}
         >
           <SelectTrigger>

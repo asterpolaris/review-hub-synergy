@@ -31,7 +31,7 @@ const Reviews = () => {
   };
 
   const handleReplyStatusChange = (value: string) => {
-    setSelectedReplyStatus(value ? value.split(",") : []);
+    setSelectedReplyStatus(value === "all" ? [] : [value]);
   };
 
   const handleSortChange = (value: string) => {
@@ -109,9 +109,8 @@ const Reviews = () => {
     
     const replyStatusMatch = 
       selectedReplyStatus.length === 0 || 
-      selectedReplyStatus.includes('all_status') ||
-      (selectedReplyStatus.includes('waiting') && !review.reply) ||
-      (selectedReplyStatus.includes('replied') && review.reply);
+      (selectedReplyStatus[0] === "waiting" && !review.reply) ||
+      (selectedReplyStatus[0] === "replied" && review.reply);
 
     const dateMatch = 
       !dateRange?.from || !dateRange?.to ||
