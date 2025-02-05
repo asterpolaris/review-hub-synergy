@@ -1,3 +1,4 @@
+
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +15,7 @@ import { Loader2 } from "lucide-react";
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
-  const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>(["all"]);
+  const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>("newest");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined } | undefined>(undefined);
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useReviews();
@@ -22,15 +23,15 @@ const Reviews = () => {
   const navigate = useNavigate();
 
   const handleLocationChange = (value: string) => {
-    setSelectedLocations(value ? value.split(",") : []);
+    setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
   };
 
   const handleRatingChange = (value: string) => {
-    setSelectedRatings(value ? value.split(",") : []);
+    setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
   };
 
   const handleReplyStatusChange = (value: string) => {
-    setSelectedReplyStatus(value === "all" ? [] : [value]);
+    setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
   };
 
   const handleSortChange = (value: string) => {
@@ -97,16 +98,20 @@ const Reviews = () => {
   const filteredReviews = allReviews.filter((review) => {
     const locationMatch = 
       selectedLocations.length === 0 || 
+      selectedLocations.includes('all_businesses') ||
       selectedLocations.includes(review.placeId);
     
+    const numericRating = convertGoogleRating(review.rating.toString());
     const ratingMatch = 
       selectedRatings.length === 0 || 
-      selectedRatings.includes(review.rating.toString());
+      selectedRatings.includes('all_ratings') ||
+      selectedRatings.includes(numericRating.toString());
     
     const replyStatusMatch = 
       selectedReplyStatus.length === 0 || 
-      (selectedReplyStatus[0] === "waiting" && !review.reply) ||
-      (selectedReplyStatus[0] === "replied" && review.reply);
+      selectedReplyStatus.includes('all_status') ||
+      (selectedReplyStatus.includes('waiting') && !review.reply) ||
+      (selectedReplyStatus.includes('replied') && review.reply);
 
     const dateMatch = 
       !dateRange?.from || !dateRange?.to ||
