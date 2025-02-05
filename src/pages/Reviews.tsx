@@ -17,6 +17,7 @@ const Reviews = () => {
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>("newest");
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined } | undefined>(undefined);
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useReviews();
   const { googleAuthToken } = useAuth();
   const navigate = useNavigate();
@@ -35,6 +36,10 @@ const Reviews = () => {
 
   const handleSortChange = (value: string) => {
     setSelectedSort(value);
+  };
+
+  const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined } | undefined) => {
+    setDateRange(range);
   };
 
   if (!googleAuthToken) {
@@ -107,8 +112,13 @@ const Reviews = () => {
       selectedReplyStatus.includes('all_status') ||
       (selectedReplyStatus.includes('waiting') && !review.reply) ||
       (selectedReplyStatus.includes('replied') && review.reply);
+
+    const dateMatch = 
+      !dateRange?.from || !dateRange?.to ||
+      (new Date(review.createTime) >= dateRange.from &&
+       new Date(review.createTime) <= new Date(dateRange.to.setHours(23, 59, 59, 999)));
     
-    return locationMatch && ratingMatch && replyStatusMatch;
+    return locationMatch && ratingMatch && replyStatusMatch && dateMatch;
   }).sort((a, b) => {
     const dateA = new Date(a.createTime).getTime();
     const dateB = new Date(b.createTime).getTime();
@@ -128,10 +138,12 @@ const Reviews = () => {
           selectedRatings={selectedRatings}
           selectedReplyStatus={selectedReplyStatus}
           selectedSort={selectedSort}
+          dateRange={dateRange}
           onLocationChange={handleLocationChange}
           onRatingChange={handleRatingChange}
           onReplyStatusChange={handleReplyStatusChange}
           onSortChange={handleSortChange}
+          onDateRangeChange={handleDateRangeChange}
         />
 
         <ReviewList 
