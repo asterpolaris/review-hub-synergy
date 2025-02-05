@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 
@@ -10,7 +11,14 @@ interface ReviewsData {
   }>;
 }
 
-export const processReviewData = async (reviewsData: ReviewsData): Promise<{ reviews: Review[], errors: string[] }> => {
+export const processReviewData = async (
+  reviewsData: ReviewsData, 
+  pageToken?: string | null
+): Promise<{ 
+  reviews: Review[]; 
+  nextPageToken?: string;
+  errors: string[]; 
+}> => {
   const errors: string[] = [];
   const reviews: Review[] = [];
 
@@ -25,7 +33,8 @@ export const processReviewData = async (reviewsData: ReviewsData): Promise<{ rev
     const { data: reviewsResponse, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
       body: {
         access_token: reviewsData.access_token,
-        location_names: reviewsData.businesses.map(b => b.google_place_id)
+        location_names: reviewsData.businesses.map(b => b.google_place_id),
+        pageToken
       },
       headers: {
         Authorization: `Bearer ${session.access_token}`
@@ -83,5 +92,9 @@ export const processReviewData = async (reviewsData: ReviewsData): Promise<{ rev
   }
 
   console.log("Final reviews count:", reviews.length);
-  return { reviews, errors };
+  return { 
+    reviews, 
+    errors,
+    nextPageToken: reviewsResponse?.nextPageToken
+  };
 };

@@ -1,6 +1,6 @@
+
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useReviews } from "@/hooks/useReviews";
 import { useState } from "react";
 import { ReviewFilters } from "@/components/reviews/ReviewFilters";
@@ -16,7 +16,14 @@ const Reviews = () => {
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>("newest");
-  const { data, isLoading, error } = useReviews();
+  const { 
+    data, 
+    isLoading, 
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage
+  } = useReviews();
   const { googleAuthToken } = useAuth();
   const navigate = useNavigate();
 
@@ -84,7 +91,9 @@ const Reviews = () => {
     );
   }
 
-  const filteredReviews = data?.reviews?.filter((review) => {
+  const allReviews = data?.pages.flatMap(page => page.reviews) || [];
+  
+  const filteredReviews = allReviews.filter((review) => {
     const locationMatch = 
       selectedLocations.length === 0 || 
       selectedLocations.includes('all_businesses') ||
@@ -109,6 +118,8 @@ const Reviews = () => {
     return selectedSort === "newest" ? dateB - dateA : dateA - dateB;
   });
 
+  const businesses = data?.pages[0]?.businesses || [];
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fadeIn">
@@ -117,7 +128,7 @@ const Reviews = () => {
         </div>
 
         <ReviewFilters
-          businesses={data?.businesses || []}
+          businesses={businesses}
           selectedLocations={selectedLocations}
           selectedRatings={selectedRatings}
           selectedReplyStatus={selectedReplyStatus}
@@ -128,7 +139,12 @@ const Reviews = () => {
           onSortChange={handleSortChange}
         />
 
-        <ReviewList reviews={filteredReviews || []} />
+        <ReviewList 
+          reviews={filteredReviews} 
+          onLoadMore={() => fetchNextPage()} 
+          hasNextPage={hasNextPage}
+          isLoadingMore={isFetchingNextPage}
+        />
       </div>
     </AppLayout>
   );

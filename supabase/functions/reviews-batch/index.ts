@@ -57,8 +57,9 @@ Deno.serve(async (req) => {
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
 
-    const { access_token, location_names } = JSON.parse(requestBody);
+    const { access_token, location_names, pageToken } = JSON.parse(requestBody);
     console.log('Processing request for locations:', location_names);
+    console.log('Page token:', pageToken);
 
     if (!access_token || !location_names) {
       console.error('Missing required parameters:', { 
@@ -124,7 +125,8 @@ Deno.serve(async (req) => {
 
     const batchRequestBody = {
       locationNames: formattedLocationNames,
-      pageSize: 100,
+      pageSize: 50,
+      pageToken: pageToken || undefined,
       ignoreRatingOnlyReviews: false,
       orderBy: 'updateTime desc'
     };
@@ -169,7 +171,8 @@ Deno.serve(async (req) => {
     const reviewsData = await reviewsResponse.json();
     console.log('Reviews response:', {
       locationReviewsCount: reviewsData.locationReviews ? reviewsData.locationReviews.length : 0,
-      firstLocationReviewCount: reviewsData.locationReviews?.[0]?.reviews?.length || 0
+      firstLocationReviewCount: reviewsData.locationReviews?.[0]?.reviews?.length || 0,
+      nextPageToken: reviewsData.nextPageToken
     });
 
     // Log successful fetch
@@ -184,7 +187,10 @@ Deno.serve(async (req) => {
       });
 
     return new Response(
-      JSON.stringify({ locationReviews: reviewsData.locationReviews || [] }),
+      JSON.stringify({ 
+        locationReviews: reviewsData.locationReviews || [],
+        nextPageToken: reviewsData.nextPageToken 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
