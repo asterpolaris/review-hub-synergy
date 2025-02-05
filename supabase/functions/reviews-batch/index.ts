@@ -102,15 +102,28 @@ Deno.serve(async (req) => {
       throw new Error('No Google Business accounts found');
     }
 
-    const accountId = accountsData.accounts[0].name;
-    console.log('Using account ID:', accountId);
+    const accountName = accountsData.accounts[0].name;
+    console.log('Using account:', accountName);
+
+    // Format location names with account prefix
+    const formattedLocationNames = location_names.map(locationId => {
+      // If locationId already contains the full path, use it as is
+      if (locationId.startsWith('accounts/')) {
+        return locationId;
+      }
+      // If locationId is just the ID number, format it properly
+      const cleanLocationId = locationId.replace('locations/', '');
+      return `${accountName}/locations/${cleanLocationId}`;
+    });
+
+    console.log('Formatted location names:', formattedLocationNames);
 
     // Use the batchGetReviews endpoint
-    const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations:batchGetReviews`;
+    const batchReviewsUrl = `https://mybusiness.googleapis.com/v4/${accountName}/locations:batchGetReviews`;
     console.log('Making batch reviews request to:', batchReviewsUrl);
 
     const batchRequestBody = {
-      locationNames: location_names,
+      locationNames: formattedLocationNames,
       pageSize: 100,
       ignoreRatingOnlyReviews: false,
       orderBy: 'updateTime desc'
