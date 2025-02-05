@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 const Reviews = () => {
-  // Initialize with empty arrays instead of undefined
+  // Initialize with empty arrays and ensure they're never undefined
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
@@ -23,15 +23,15 @@ const Reviews = () => {
   const navigate = useNavigate();
 
   const handleLocationChange = (value: string) => {
-    setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
+    setSelectedLocations(value ? value.split(",") : []);
   };
 
   const handleRatingChange = (value: string) => {
-    setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
+    setSelectedRatings(value ? value.split(",") : []);
   };
 
   const handleReplyStatusChange = (value: string) => {
-    setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
+    setSelectedReplyStatus(value ? value.split(",") : []);
   };
 
   const handleSortChange = (value: string) => {
