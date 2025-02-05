@@ -104,7 +104,7 @@ export const BusinessList = () => {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress,regularHours,rating`,
             { headers }
           );
 
@@ -160,6 +160,7 @@ export const BusinessList = () => {
               google_place_id: location.name,
               google_business_account_id: account.name,
               user_id: session?.user.id,
+              current_rating: location.rating || null,
             });
 
             if (error) {
