@@ -85,6 +85,7 @@ export const useReviews = () => {
         nextPageTokens
       };
     },
+    initialPageParam: null as PageTokens | null,
     getNextPageParam: (lastPage) => {
       if (!lastPage.hasNextPage) return undefined;
       return lastPage.nextPageTokens;
