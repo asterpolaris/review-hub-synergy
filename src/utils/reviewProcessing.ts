@@ -21,6 +21,7 @@ export const processReviewData = async (
 }> => {
   const errors: string[] = [];
   const reviews: Review[] = [];
+  let nextPageToken: string | undefined;
 
   try {
     // Get the current session
@@ -30,7 +31,7 @@ export const processReviewData = async (
     }
 
     // Fetch reviews directly from Google API via Edge Function
-    const { data: reviewsResponse, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
+    const { data, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
       body: {
         access_token: reviewsData.access_token,
         location_names: reviewsData.businesses.map(b => b.google_place_id),
@@ -47,23 +48,23 @@ export const processReviewData = async (
       return { reviews, errors };
     }
 
-    if (!reviewsResponse) {
+    if (!data) {
       errors.push("No reviews data received from API");
       return { reviews, errors };
     }
 
     // Add debug logging
-    console.log("Reviews response from Edge Function:", reviewsResponse);
+    console.log("Reviews response from Edge Function:", data);
 
-    // Check if reviewsResponse has the expected structure
-    if (!reviewsResponse.locationReviews) {
-      console.error("Unexpected response structure:", reviewsResponse);
+    // Check if data has the expected structure
+    if (!data.locationReviews) {
+      console.error("Unexpected response structure:", data);
       errors.push("Unexpected response structure from API");
       return { reviews, errors };
     }
 
     // Process the reviews from the response
-    reviewsResponse.locationReviews.forEach((locationReview: any) => {
+    data.locationReviews.forEach((locationReview: any) => {
       if (locationReview.reviews) {
         const processedReviews = locationReview.reviews.map((review: any) => ({
           id: review.reviewId,
@@ -86,6 +87,9 @@ export const processReviewData = async (
       }
     });
 
+    // Get the next page token from the response
+    nextPageToken = data.nextPageToken;
+
   } catch (error) {
     console.error("Error processing reviews:", error);
     errors.push(`Failed to process reviews: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -95,6 +99,6 @@ export const processReviewData = async (
   return { 
     reviews, 
     errors,
-    nextPageToken: reviewsResponse?.nextPageToken
+    nextPageToken
   };
 };
