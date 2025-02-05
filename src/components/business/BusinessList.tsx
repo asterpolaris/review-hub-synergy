@@ -104,7 +104,7 @@ export const BusinessList = () => {
         try {
           console.log(`Fetching locations for account ${account.name}...`);
           const locationsData = await fetchWithRetry(
-            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=storeCode,profile,title,storefrontAddress`,
+            `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,storefrontAddress`,
             { headers }
           );
 
@@ -154,32 +154,12 @@ export const BusinessList = () => {
               formattedAddress = "Address not provided";
             }
 
-            // Fetch reviews for this location
-            console.log(`Fetching reviews for location ${location.name}...`);
-            const reviewsData = await fetchWithRetry(
-              `https://mybusiness.googleapis.com/v4/${account.name}/locations/${location.name.split('/').pop()}/reviews`,
-              { headers }
-            );
-
-            console.log(`Reviews data for location ${location.name}:`, reviewsData);
-
-            // Calculate average rating from reviews
-            let averageRating = null;
-            if (reviewsData.reviews && reviewsData.reviews.length > 0) {
-              const totalRating = reviewsData.reviews.reduce((sum: number, review: any) => {
-                const rating = parseInt(review.starRating.replace('STAR_', ''));
-                return sum + (isNaN(rating) ? 0 : rating);
-              }, 0);
-              averageRating = totalRating / reviewsData.reviews.length;
-            }
-
             const { error } = await supabase.from("businesses").insert({
               name: location.title,
               location: formattedAddress,
               google_place_id: location.name,
               google_business_account_id: account.name,
               user_id: session?.user.id,
-              current_rating: averageRating || location.profile?.averageRating || null,
             });
 
             if (error) {
