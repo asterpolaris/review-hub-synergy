@@ -56,15 +56,19 @@ export const ReviewFilters = ({
   const [openLocation, setOpenLocation] = useState(false);
   const [openRating, setOpenRating] = useState(false);
 
+  // Ensure we always have arrays, even if empty
+  const locationArray = selectedLocations || [];
+  const ratingArray = selectedRatings || [];
+
   const handleLocationSelect = (locationId: string) => {
     let newLocations: string[];
     
     if (locationId === "all_businesses") {
       newLocations = [];
-    } else if (selectedLocations.includes(locationId)) {
-      newLocations = selectedLocations.filter(id => id !== locationId);
+    } else if (locationArray.includes(locationId)) {
+      newLocations = locationArray.filter(id => id !== locationId);
     } else {
-      newLocations = [...selectedLocations, locationId];
+      newLocations = [...locationArray, locationId];
     }
     
     onLocationChange(newLocations.join(","));
@@ -75,10 +79,10 @@ export const ReviewFilters = ({
     
     if (rating === "all_ratings") {
       newRatings = [];
-    } else if (selectedRatings.includes(rating)) {
-      newRatings = selectedRatings.filter(r => r !== rating);
+    } else if (ratingArray.includes(rating)) {
+      newRatings = ratingArray.filter(r => r !== rating);
     } else {
-      newRatings = [...selectedRatings, rating];
+      newRatings = [...ratingArray, rating];
     }
     
     onRatingChange(newRatings.join(","));
@@ -90,11 +94,11 @@ export const ReviewFilters = ({
         <Popover open={openLocation} onOpenChange={setOpenLocation}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-between">
-              {selectedLocations.length > 0 ? (
+              {locationArray.length > 0 ? (
                 <>
-                  <span className="mr-2">{selectedLocations.length} selected</span>
+                  <span className="mr-2">{locationArray.length} selected</span>
                   <Badge variant="secondary">
-                    {selectedLocations.length}
+                    {locationArray.length}
                   </Badge>
                 </>
               ) : (
@@ -114,7 +118,7 @@ export const ReviewFilters = ({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      selectedLocations.length === 0 ? "opacity-100" : "opacity-0"
+                      locationArray.length === 0 ? "opacity-100" : "opacity-0"
                     )}
                   />
                   All Businesses
@@ -128,7 +132,7 @@ export const ReviewFilters = ({
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        selectedLocations.includes(business.google_place_id)
+                        locationArray.includes(business.google_place_id)
                           ? "opacity-100"
                           : "opacity-0"
                       )}
@@ -146,11 +150,11 @@ export const ReviewFilters = ({
         <Popover open={openRating} onOpenChange={setOpenRating}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-between">
-              {selectedRatings.length > 0 ? (
+              {ratingArray.length > 0 ? (
                 <>
-                  <span className="mr-2">{selectedRatings.length} selected</span>
+                  <span className="mr-2">{ratingArray.length} selected</span>
                   <Badge variant="secondary">
-                    {selectedRatings.length}
+                    {ratingArray.length}
                   </Badge>
                 </>
               ) : (
@@ -168,7 +172,7 @@ export const ReviewFilters = ({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      selectedRatings.length === 0 ? "opacity-100" : "opacity-0"
+                      ratingArray.length === 0 ? "opacity-100" : "opacity-0"
                     )}
                   />
                   All Ratings
@@ -182,7 +186,7 @@ export const ReviewFilters = ({
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        selectedRatings.includes(rating) ? "opacity-100" : "opacity-0"
+                        ratingArray.includes(rating) ? "opacity-100" : "opacity-0"
                       )}
                     />
                     {rating} Stars
@@ -285,4 +289,3 @@ export const ReviewFilters = ({
     </div>
   );
 };
-
