@@ -23,7 +23,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { session, isLoading, googleAuthToken } = useAuth();
   const queryClient = useQueryClient();
-  const [period, setPeriod] = useState<DatePeriod>('last-30-days');
+  const [period, setPeriod] = useState<DatePeriod>('last-month');
   
   const { data: metrics, isLoading: isMetricsLoading, refetch } = useReviewMetrics(period);
 
