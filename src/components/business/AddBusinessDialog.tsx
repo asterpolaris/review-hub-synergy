@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,44 +60,5 @@ export const AddBusinessDialog = () => {
     });
   };
 
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Business
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add New Business</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Business Name</Label>
-            <Input
-              id="name"
-              value={newBusiness.name}
-              onChange={(e) =>
-                setNewBusiness({ ...newBusiness, name: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={newBusiness.location}
-              onChange={(e) =>
-                setNewBusiness({ ...newBusiness, location: e.target.value })
-              }
-            />
-          </div>
-          <Button onClick={handleAddBusiness} className="w-full">
-            Add Business
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  return null; // Component no longer renders anything since we're using Google integration
 };
