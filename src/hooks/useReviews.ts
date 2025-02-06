@@ -41,60 +41,7 @@ export const useReviews = () => {
         throw new Error("No access token available");
       }
 
-      // First try to get cached reviews
-      const { data: cachedReviews, error: cacheError } = await supabase
-        .from('reviews')
-        .select(`
-          id,
-          google_review_id,
-          author_name,
-          rating,
-          comment,
-          create_time,
-          reply,
-          reply_time,
-          photo_urls,
-          status,
-          businesses (
-            id,
-            name,
-            google_place_id,
-            venue_name
-          )
-        `)
-        .order('create_time', { ascending: false });
-
-      // If we have cached reviews and no pageParam, return them
-      if (!pageParam && cachedReviews && !cacheError) {
-        const businesses = cachedReviews
-          .map(r => r.businesses)
-          .filter((b, i, arr) => b && arr.findIndex(x => x?.id === b?.id) === i);
-
-        const reviews = cachedReviews.map(r => ({
-          id: r.id,
-          googleReviewId: r.google_review_id,
-          authorName: r.author_name,
-          rating: r.rating,
-          comment: r.comment,
-          createTime: r.create_time,
-          photoUrls: r.photo_urls,
-          reply: r.reply ? {
-            comment: r.reply,
-            createTime: r.reply_time
-          } : undefined,
-          venueName: r.businesses?.venue_name || 'Unknown Venue',
-          placeId: r.businesses?.google_place_id || '',
-          status: r.status
-        }));
-
-        return {
-          reviews,
-          businesses,
-          hasNextPage: false
-        };
-      }
-
-      // If no cache or requesting next page, fetch from Google
+      // First get the user's Google token and businesses
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
         data: ReviewsData | null;
         error: Error | null;
@@ -105,6 +52,7 @@ export const useReviews = () => {
         throw reviewsError || new Error('No reviews data available');
       }
 
+      // Process and fetch reviews from Google
       const { reviews, errors, nextPageTokens } = await processReviewData(
         reviewsData,
         pageParam as PageTokens
@@ -116,6 +64,31 @@ export const useReviews = () => {
           description: errors.join('\n'),
           variant: "destructive",
         });
+      }
+
+      // After getting Google reviews, store them in our cache
+      if (reviews.length > 0) {
+        const { error: cacheError } = await supabase
+          .from('reviews')
+          .upsert(
+            reviews.map(review => ({
+              google_review_id: review.googleReviewId,
+              business_id: reviewsData.businesses.find(b => b.google_place_id === review.placeId)?.id,
+              author_name: review.authorName,
+              rating: review.rating,
+              comment: review.comment,
+              create_time: review.createTime,
+              reply: review.reply?.comment,
+              reply_time: review.reply?.createTime,
+              photo_urls: review.photoUrls,
+              status: review.status
+            })),
+            { onConflict: 'google_review_id' }
+          );
+
+        if (cacheError) {
+          console.error("Error caching reviews:", cacheError);
+        }
       }
 
       return {
