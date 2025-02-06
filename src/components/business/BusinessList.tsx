@@ -43,9 +43,23 @@ export const BusinessList = () => {
     throw new Error("We couldn't reach Google after several attempts. Please try again later.");
   };
 
-  const fetchGoogleBusinesses = async () => {
+  const clearExistingBusinesses = async () => {
     try {
-      // Clear existing businesses first to prevent duplicates
+      // First, delete all reviews for this user's businesses
+      const { error: reviewsError } = await supabase
+        .from("reviews")
+        .delete()
+        .in(
+          "business_id",
+          businesses?.map(b => b.id) || []
+        );
+
+      if (reviewsError) {
+        console.error("Error clearing existing reviews:", reviewsError);
+        throw reviewsError;
+      }
+
+      // Then delete the businesses
       const { error: deleteError } = await supabase
         .from("businesses")
         .delete()
@@ -53,13 +67,18 @@ export const BusinessList = () => {
 
       if (deleteError) {
         console.error("Error clearing existing businesses:", deleteError);
-        toast({
-          title: "Something went wrong",
-          description: "We couldn't refresh your business list. Please try again.",
-          variant: "destructive",
-        });
-        return;
+        throw deleteError;
       }
+    } catch (error) {
+      console.error("Error in clearExistingBusinesses:", error);
+      throw error;
+    }
+  };
+
+  const fetchGoogleBusinesses = async () => {
+    try {
+      // Clear existing businesses and their reviews first
+      await clearExistingBusinesses();
 
       console.log("Starting fetchGoogleBusinesses function");
       console.log("Google Auth Token:", googleAuthToken);
