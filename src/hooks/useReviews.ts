@@ -1,3 +1,4 @@
+
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
@@ -9,7 +10,6 @@ interface Business {
   id: string;
   name: string;
   google_place_id: string;
-  venue_name: string;
 }
 
 interface ReviewsData {
@@ -41,18 +41,27 @@ export const useReviews = () => {
         throw new Error("No access token available");
       }
 
-      // First get the user's Google token and businesses
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
         data: ReviewsData | null;
         error: Error | null;
       };
       
-      if (reviewsError || !reviewsData) {
+      if (reviewsError) {
         console.error("Error fetching reviews data:", reviewsError);
-        throw reviewsError || new Error('No reviews data available');
+        throw reviewsError;
       }
 
-      // Process and fetch reviews from Google
+      if (!reviewsData?.businesses || reviewsData.businesses.length === 0) {
+        console.log("No businesses found in reviews data");
+        return { 
+          reviews: [], 
+          businesses: [],
+          hasNextPage: false 
+        };
+      }
+
+      console.log("Reviews data received:", reviewsData);
+
       const { reviews, errors, nextPageTokens } = await processReviewData(
         reviewsData,
         pageParam as PageTokens
@@ -66,30 +75,8 @@ export const useReviews = () => {
         });
       }
 
-      // After getting Google reviews, store them in our cache
-      if (reviews.length > 0) {
-        const { error: cacheError } = await supabase
-          .from('reviews')
-          .upsert(
-            reviews.map(review => ({
-              google_review_id: review.googleReviewId,
-              business_id: reviewsData.businesses.find(b => b.google_place_id === review.placeId)?.id,
-              author_name: review.authorName,
-              rating: review.rating,
-              comment: review.comment,
-              create_time: review.createTime,
-              reply: review.reply?.comment,
-              reply_time: review.reply?.createTime,
-              photo_urls: review.photoUrls,
-              status: review.status
-            })),
-            { onConflict: 'google_review_id' }
-          );
-
-        if (cacheError) {
-          console.error("Error caching reviews:", cacheError);
-        }
-      }
+      console.log("Final reviews count:", reviews.length);
+      console.log("Next page tokens:", nextPageTokens);
 
       return {
         reviews,

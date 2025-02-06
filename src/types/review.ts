@@ -1,8 +1,5 @@
-import { VenueName } from "./venue";
-
 export interface Review {
   id: string;
-  googleReviewId: string;
   authorName: string;
   rating: number;
   comment: string;
@@ -12,7 +9,6 @@ export interface Review {
     comment: string;
     createTime: string;
   };
-  venueName: VenueName;
+  venueName: string;
   placeId: string;
-  status: 'pending' | 'replied' | 'archived';
 }
