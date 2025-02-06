@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MapPin, Reply, Pencil, Trash2, Search } from "lucide-react";
+import { MapPin, Reply, Pencil, Trash2, Search, Mail } from "lucide-react";
 import { Review } from "@/types/review";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -50,6 +50,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [analysis, setAnalysis] = useState<{ sentiment: string; summary: string } | null>(null);
   const { submitReply, deleteReply } = useReviewActions();
   const { toast } = useToast();
@@ -102,6 +103,35 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
       });
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const sendAnalysisEmail = async () => {
+    if (!analysis) return;
+    
+    setIsSendingEmail(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-review-analysis', {
+        body: { 
+          venueName: review.venueName,
+          analysis: `Sentiment: ${analysis.sentiment}\n\nSummary: ${analysis.summary}`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Analysis sent",
+        description: "The analysis has been sent to venue stakeholders.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error sending analysis",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -184,9 +214,21 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
 
         {analysis && (
           <div className="bg-muted p-4 rounded-md space-y-2">
-            <div className="flex items-center gap-2">
-              <Search size={16} className="text-muted-foreground" />
-              <span className="text-sm font-medium">AI Analysis</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Search size={16} className="text-muted-foreground" />
+                <span className="text-sm font-medium">AI Analysis</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={sendAnalysisEmail}
+                disabled={isSendingEmail}
+                className="flex items-center gap-2"
+              >
+                <Mail size={16} />
+                {isSendingEmail ? "Sending..." : "Email Analysis"}
+              </Button>
             </div>
             <div className="space-y-1">
               <p className="text-sm"><span className="font-medium">Sentiment:</span> {analysis.sentiment}</p>
