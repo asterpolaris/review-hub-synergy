@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 
@@ -8,6 +7,7 @@ interface ReviewsData {
     id: string;
     name: string;
     google_place_id: string;
+    venue_name: string;
   }>;
 }
 
@@ -27,13 +27,12 @@ export const processReviewData = async (
   const reviews: Review[] = [];
 
   try {
-    // Get the current session
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       throw new Error('No active session found');
     }
 
-    // Fetch reviews directly from Google API via Edge Function
+    // Fetch reviews from Google API via Edge Function
     const { data: reviewsResponse, error: reviewsError } = await supabase.functions.invoke('reviews-batch', {
       body: {
         access_token: reviewsData.access_token,
@@ -56,39 +55,68 @@ export const processReviewData = async (
       return { reviews, errors };
     }
 
-    // Add debug logging
     console.log("Reviews response from Edge Function:", reviewsResponse);
 
-    // Check if reviewsResponse has the expected structure
     if (!reviewsResponse.locationReviews) {
       console.error("Unexpected response structure:", reviewsResponse);
       errors.push("Unexpected response structure from API");
       return { reviews, errors };
     }
 
-    // Process the reviews from the response
-    reviewsResponse.locationReviews.forEach((locationReview: any) => {
+    // Process and cache reviews
+    for (const locationReview of reviewsResponse.locationReviews) {
+      const business = reviewsData.businesses.find(b => 
+        b.google_place_id === locationReview.locationName
+      );
+
+      if (!business) continue;
+
       if (locationReview.reviews) {
-        const processedReviews = locationReview.reviews.map((review: any) => ({
-          id: review.reviewId,
-          authorName: review.reviewer.displayName,
-          rating: review.starRating,
-          comment: review.comment,
-          createTime: review.createTime,
-          photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
-          reply: review.reviewReply ? {
-            comment: review.reviewReply.comment,
-            createTime: review.reviewReply.createTime
-          } : undefined,
-          venueName: reviewsData.businesses.find(b => 
-            b.google_place_id === locationReview.locationName
-          )?.name || 'Unknown Venue',
-          placeId: locationReview.locationName
+        const processedReviews = await Promise.all(locationReview.reviews.map(async (review: any) => {
+          // Cache the review in the database
+          const { error: upsertError } = await supabase
+            .from('reviews')
+            .upsert({
+              google_review_id: review.reviewId,
+              business_id: business.id,
+              author_name: review.reviewer.displayName,
+              rating: review.starRating,
+              comment: review.comment,
+              create_time: review.createTime,
+              reply: review.reviewReply?.comment,
+              reply_time: review.reviewReply?.createTime,
+              photo_urls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
+              status: review.reviewReply ? 'replied' : 'pending'
+            }, {
+              onConflict: 'google_review_id'
+            });
+
+          if (upsertError) {
+            console.error("Error caching review:", upsertError);
+            errors.push(`Failed to cache review: ${upsertError.message}`);
+          }
+
+          return {
+            id: review.reviewId,
+            googleReviewId: review.reviewId,
+            authorName: review.reviewer.displayName,
+            rating: review.starRating,
+            comment: review.comment,
+            createTime: review.createTime,
+            photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
+            reply: review.reviewReply ? {
+              comment: review.reviewReply.comment,
+              createTime: review.reviewReply.createTime
+            } : undefined,
+            venueName: business.venue_name || 'Unknown Venue',
+            placeId: locationReview.locationName,
+            status: review.reviewReply ? 'replied' : 'pending'
+          };
         }));
 
         reviews.push(...processedReviews);
       }
-    });
+    }
 
     console.log("Final reviews count:", reviews.length);
     return { 

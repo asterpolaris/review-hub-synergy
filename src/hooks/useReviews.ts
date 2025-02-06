@@ -1,4 +1,3 @@
-
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
@@ -10,6 +9,7 @@ interface Business {
   id: string;
   name: string;
   google_place_id: string;
+  venue_name: string;
 }
 
 interface ReviewsData {
@@ -41,26 +41,69 @@ export const useReviews = () => {
         throw new Error("No access token available");
       }
 
+      // First try to get cached reviews
+      const { data: cachedReviews, error: cacheError } = await supabase
+        .from('reviews')
+        .select(`
+          id,
+          google_review_id,
+          author_name,
+          rating,
+          comment,
+          create_time,
+          reply,
+          reply_time,
+          photo_urls,
+          status,
+          businesses (
+            id,
+            name,
+            google_place_id,
+            venue_name
+          )
+        `)
+        .order('create_time', { ascending: false });
+
+      // If we have cached reviews and no pageParam, return them
+      if (!pageParam && cachedReviews && !cacheError) {
+        const businesses = cachedReviews
+          .map(r => r.businesses)
+          .filter((b, i, arr) => b && arr.findIndex(x => x?.id === b?.id) === i);
+
+        const reviews = cachedReviews.map(r => ({
+          id: r.id,
+          googleReviewId: r.google_review_id,
+          authorName: r.author_name,
+          rating: r.rating,
+          comment: r.comment,
+          createTime: r.create_time,
+          photoUrls: r.photo_urls,
+          reply: r.reply ? {
+            comment: r.reply,
+            createTime: r.reply_time
+          } : undefined,
+          venueName: r.businesses?.venue_name || 'Unknown Venue',
+          placeId: r.businesses?.google_place_id || '',
+          status: r.status
+        }));
+
+        return {
+          reviews,
+          businesses,
+          hasNextPage: false
+        };
+      }
+
+      // If no cache or requesting next page, fetch from Google
       const { data: reviewsData, error: reviewsError } = await supabase.rpc('reviews') as { 
         data: ReviewsData | null;
         error: Error | null;
       };
       
-      if (reviewsError) {
+      if (reviewsError || !reviewsData) {
         console.error("Error fetching reviews data:", reviewsError);
-        throw reviewsError;
+        throw reviewsError || new Error('No reviews data available');
       }
-
-      if (!reviewsData?.businesses || reviewsData.businesses.length === 0) {
-        console.log("No businesses found in reviews data");
-        return { 
-          reviews: [], 
-          businesses: [],
-          hasNextPage: false 
-        };
-      }
-
-      console.log("Reviews data received:", reviewsData);
 
       const { reviews, errors, nextPageTokens } = await processReviewData(
         reviewsData,
@@ -74,9 +117,6 @@ export const useReviews = () => {
           variant: "destructive",
         });
       }
-
-      console.log("Final reviews count:", reviews.length);
-      console.log("Next page tokens:", nextPageTokens);
 
       return {
         reviews,

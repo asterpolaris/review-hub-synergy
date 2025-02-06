@@ -1,5 +1,6 @@
 export interface Review {
   id: string;
+  googleReviewId: string;
   authorName: string;
   rating: number;
   comment: string;
@@ -11,4 +12,5 @@ export interface Review {
   };
   venueName: string;
   placeId: string;
+  status: 'pending' | 'replied' | 'archived';
 }
