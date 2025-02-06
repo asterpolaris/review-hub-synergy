@@ -45,22 +45,6 @@ export const BusinessList = () => {
 
   const fetchGoogleBusinesses = async () => {
     try {
-      // Clear existing businesses first to prevent duplicates
-      const { error: deleteError } = await supabase
-        .from("businesses")
-        .delete()
-        .eq("user_id", session?.user.id);
-
-      if (deleteError) {
-        console.error("Error clearing existing businesses:", deleteError);
-        toast({
-          title: "Something went wrong",
-          description: "We couldn't refresh your business list. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       console.log("Starting fetchGoogleBusinesses function");
       console.log("Google Auth Token:", googleAuthToken);
       
@@ -118,7 +102,6 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Processing location:", location);
 
-            // Skip if location title is missing
             if (!location.title) {
               console.log(`Skipping location with no name: ${location.name}`);
               continue;
@@ -149,25 +132,36 @@ export const BusinessList = () => {
               formattedAddress = addressParts.join(", ");
             }
 
-            // If no address is available, use a default message
             if (!formattedAddress) {
               formattedAddress = "Address not provided";
             }
 
-            const { error } = await supabase.from("businesses").insert({
-              name: location.title,
-              location: formattedAddress,
-              google_place_id: location.name,
-              google_business_account_id: account.name,
-              user_id: session?.user.id,
-            });
+            // Check if business already exists
+            const { data: existingBusiness } = await supabase
+              .from("businesses")
+              .select("id")
+              .eq("google_place_id", location.name)
+              .eq("user_id", session?.user.id)
+              .single();
 
-            if (error) {
-              console.error("Error storing location:", error);
-              errorCount++;
+            if (!existingBusiness) {
+              const { error } = await supabase.from("businesses").insert({
+                name: location.title,
+                location: formattedAddress,
+                google_place_id: location.name,
+                google_business_account_id: account.name,
+                user_id: session?.user.id,
+              });
+
+              if (error) {
+                console.error("Error storing location:", error);
+                errorCount++;
+              } else {
+                console.log(`Successfully saved business: ${location.title}`);
+                addedCount++;
+              }
             } else {
-              console.log(`Successfully saved business: ${location.title}`);
-              addedCount++;
+              console.log(`Business ${location.title} already exists, skipping`);
             }
           }
         } catch (error) {
@@ -181,13 +175,12 @@ export const BusinessList = () => {
       if (addedCount > 0) {
         toast({
           title: "Success!",
-          description: `We've imported ${addedCount} business${addedCount === 1 ? '' : 'es'}${errorCount > 0 ? `. ${errorCount} couldn't be imported.` : ''}`,
+          description: `We've imported ${addedCount} new business${addedCount === 1 ? '' : 'es'}${errorCount > 0 ? `. ${errorCount} couldn't be imported.` : ''}`,
         });
       } else {
         toast({
-          title: "No businesses imported",
-          description: "We couldn't find any businesses to import. Make sure you have the right permissions in your Google Business Profile.",
-          variant: "destructive",
+          title: "No new businesses imported",
+          description: "All your Google Business Profile locations are already imported.",
         });
       }
     } catch (error) {
