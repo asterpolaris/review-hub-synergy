@@ -144,6 +144,7 @@ const Reviews = () => {
           onReplyStatusChange={handleReplyStatusChange}
           onSortChange={handleSortChange}
           onDateRangeChange={handleDateRangeChange}
+          visibleReviews={filteredReviews}
         />
 
         <ReviewList 
