@@ -10,7 +10,7 @@ export interface Review {
     comment: string;
     createTime: string;
   };
-  venueName: string;
+  venueName: VenueName;
   placeId: string;
   status: 'pending' | 'replied' | 'archived';
 }
