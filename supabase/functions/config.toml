@@ -2,9 +2,7 @@ project_id = "eqgtvisxqjfntyhqkadj"
 
 [global.env]
 SUPABASE_URL = "env"
+SUPABASE_ANON_KEY = "env"
 SUPABASE_SERVICE_ROLE_KEY = "env"
+ANTHROPIC_API_KEY = "env"
 RESEND_API_KEY = "env"
-
-[[functions]]
-name = "send-registration-email"
-verify_jwt = false
