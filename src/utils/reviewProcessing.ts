@@ -1,6 +1,7 @@
 import { Review } from "@/types/review";
 import { VenueName } from "@/types/venue";
 import { supabase } from "@/integrations/supabase/client";
+import { convertGoogleRating } from "@/utils/reviewUtils";
 
 export const processReviewData = async (reviewsData: any, pageTokens?: any) => {
   const reviews: Review[] = [];
@@ -37,7 +38,7 @@ export const processReviewData = async (reviewsData: any, pageTokens?: any) => {
               id: review.reviewId,
               googleReviewId: review.reviewId,
               authorName: review.reviewer.displayName,
-              rating: review.starRating,
+              rating: convertGoogleRating(review.starRating),
               comment: review.comment || '',
               createTime: review.createTime,
               photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
@@ -59,6 +60,31 @@ export const processReviewData = async (reviewsData: any, pageTokens?: any) => {
       } catch (error) {
         console.error(`Error fetching reviews for ${venueName}:`, error);
         errors.push(`Failed to fetch reviews for ${venueName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // After getting Google reviews, store them in our cache
+    if (reviews.length > 0) {
+      const { error: cacheError } = await supabase
+        .from('reviews')
+        .upsert(
+          reviews.map(review => ({
+            google_review_id: review.googleReviewId,
+            business_id: reviewsData.businesses.find(b => b.google_place_id === review.placeId)?.id,
+            author_name: review.authorName,
+            rating: review.rating,
+            comment: review.comment,
+            create_time: review.createTime,
+            reply: review.reply?.comment,
+            reply_time: review.reply?.createTime,
+            photo_urls: review.photoUrls,
+            status: review.status
+          })),
+          { onConflict: 'google_review_id' }
+        );
+
+      if (cacheError) {
+        console.error("Error caching reviews:", cacheError);
       }
     }
   } catch (error) {
