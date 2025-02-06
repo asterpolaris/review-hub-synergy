@@ -3,11 +3,13 @@ import { Mail, Search, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { StakeholderDialog } from "./StakeholderDialog";
 
+type VenueName = "Bordelle" | "Yoko" | "Hang" | "Farsides" | "Farsides Brossard" | "Muzique";
+
 interface ReviewAnalysisProps {
   analysis: { sentiment: string; summary: string } | null;
   onSendEmail: () => void;
   isSendingEmail: boolean;
-  venueName: string;
+  venueName: VenueName;
 }
 
 export const ReviewAnalysis = ({ 
