@@ -649,6 +649,47 @@ export type Database = {
           },
         ]
       }
+      venue_stakeholders: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["stakeholder_role"]
+          updated_at: string
+          venue_name: Database["public"]["Enums"]["venue_name"]
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          role: Database["public"]["Enums"]["stakeholder_role"]
+          updated_at?: string
+          venue_name: Database["public"]["Enums"]["venue_name"]
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["stakeholder_role"]
+          updated_at?: string
+          venue_name?: Database["public"]["Enums"]["venue_name"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_stakeholders_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -689,6 +730,7 @@ export type Database = {
       email_request_type: "booking" | "support" | "general"
       email_response_type: "manual" | "ai" | "template"
       registration_status: "pending" | "approved" | "rejected"
+      stakeholder_role: "owner" | "manager" | "operations"
       venue_name:
         | "Bordelle"
         | "Yoko"
