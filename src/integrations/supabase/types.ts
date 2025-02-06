@@ -41,7 +41,6 @@ export type Database = {
           name: string
           updated_at: string
           user_id: string
-          venue_name: Database["public"]["Enums"]["venue_name"] | null
         }
         Insert: {
           created_at?: string
@@ -53,7 +52,6 @@ export type Database = {
           name: string
           updated_at?: string
           user_id: string
-          venue_name?: Database["public"]["Enums"]["venue_name"] | null
         }
         Update: {
           created_at?: string
@@ -65,7 +63,6 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
-          venue_name?: Database["public"]["Enums"]["venue_name"] | null
         }
         Relationships: []
       }
@@ -512,62 +509,6 @@ export type Database = {
         }
         Relationships: []
       }
-      reviews: {
-        Row: {
-          author_name: string
-          business_id: string
-          comment: string | null
-          create_time: string
-          created_at: string
-          google_review_id: string
-          id: string
-          photo_urls: string[] | null
-          rating: number
-          reply: string | null
-          reply_time: string | null
-          status: Database["public"]["Enums"]["review_status"] | null
-          updated_at: string
-        }
-        Insert: {
-          author_name: string
-          business_id: string
-          comment?: string | null
-          create_time: string
-          created_at?: string
-          google_review_id: string
-          id?: string
-          photo_urls?: string[] | null
-          rating: number
-          reply?: string | null
-          reply_time?: string | null
-          status?: Database["public"]["Enums"]["review_status"] | null
-          updated_at?: string
-        }
-        Update: {
-          author_name?: string
-          business_id?: string
-          comment?: string | null
-          create_time?: string
-          created_at?: string
-          google_review_id?: string
-          id?: string
-          photo_urls?: string[] | null
-          rating?: number
-          reply?: string | null
-          reply_time?: string | null
-          status?: Database["public"]["Enums"]["review_status"] | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reviews_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       settings: {
         Row: {
           created_at: string
@@ -708,47 +649,6 @@ export type Database = {
           },
         ]
       }
-      venue_stakeholders: {
-        Row: {
-          business_id: string | null
-          created_at: string
-          email: string
-          id: string
-          name: string
-          role: Database["public"]["Enums"]["stakeholder_role"]
-          updated_at: string
-          venue_name: Database["public"]["Enums"]["venue_name"]
-        }
-        Insert: {
-          business_id?: string | null
-          created_at?: string
-          email: string
-          id?: string
-          name: string
-          role: Database["public"]["Enums"]["stakeholder_role"]
-          updated_at?: string
-          venue_name: Database["public"]["Enums"]["venue_name"]
-        }
-        Update: {
-          business_id?: string | null
-          created_at?: string
-          email?: string
-          id?: string
-          name?: string
-          role?: Database["public"]["Enums"]["stakeholder_role"]
-          updated_at?: string
-          venue_name?: Database["public"]["Enums"]["venue_name"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "venue_stakeholders_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -789,8 +689,6 @@ export type Database = {
       email_request_type: "booking" | "support" | "general"
       email_response_type: "manual" | "ai" | "template"
       registration_status: "pending" | "approved" | "rejected"
-      review_status: "pending" | "replied" | "archived"
-      stakeholder_role: "owner" | "manager" | "operations"
       venue_name:
         | "Bordelle"
         | "Yoko"

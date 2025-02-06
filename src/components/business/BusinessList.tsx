@@ -45,57 +45,20 @@ export const BusinessList = () => {
 
   const fetchGoogleBusinesses = async () => {
     try {
-      // First, get all business IDs for the current user
-      const { data: userBusinesses, error: fetchError } = await supabase
+      // Clear existing businesses first to prevent duplicates
+      const { error: deleteError } = await supabase
         .from("businesses")
-        .select("id")
+        .delete()
         .eq("user_id", session?.user.id);
 
-      if (fetchError) {
-        console.error("Error fetching existing businesses:", fetchError);
+      if (deleteError) {
+        console.error("Error clearing existing businesses:", deleteError);
         toast({
           title: "Something went wrong",
           description: "We couldn't refresh your business list. Please try again.",
           variant: "destructive",
         });
         return;
-      }
-
-      // If there are existing businesses, delete their reviews first
-      if (userBusinesses && userBusinesses.length > 0) {
-        const businessIds = userBusinesses.map(b => b.id);
-        
-        // Delete all reviews for these businesses
-        const { error: reviewsDeleteError } = await supabase
-          .from("reviews")
-          .delete()
-          .in("business_id", businessIds);
-
-        if (reviewsDeleteError) {
-          console.error("Error deleting existing reviews:", reviewsDeleteError);
-          toast({
-            title: "Something went wrong",
-            description: "We couldn't refresh your business list. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Now delete the businesses
-        const { error: deleteError } = await supabase
-          .from("businesses")
-          .delete()
-          .eq("user_id", session?.user.id);
-
-        if (deleteError) {
-          console.error("Error clearing existing businesses:", deleteError);
-          toast({
-            title: "Something went wrong",
-            description: "We couldn't refresh your business list. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
       }
 
       console.log("Starting fetchGoogleBusinesses function");
@@ -155,11 +118,13 @@ export const BusinessList = () => {
           for (const location of locationsData.locations) {
             console.log("Processing location:", location);
 
+            // Skip if location title is missing
             if (!location.title) {
               console.log(`Skipping location with no name: ${location.name}`);
               continue;
             }
 
+            // Extract and format address
             let formattedAddress = "";
             if (location.storefrontAddress) {
               const address = location.storefrontAddress;
@@ -184,6 +149,7 @@ export const BusinessList = () => {
               formattedAddress = addressParts.join(", ");
             }
 
+            // If no address is available, use a default message
             if (!formattedAddress) {
               formattedAddress = "Address not provided";
             }
