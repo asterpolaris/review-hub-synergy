@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MapPin, Reply, Pencil, Trash2, Search } from "lucide-react";
+import { MapPin, Reply, Pencil, Trash2 } from "lucide-react";
 import { Review } from "@/types/review";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -49,8 +49,6 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<{ sentiment: string; summary: string } | null>(null);
   const { submitReply, deleteReply } = useReviewActions();
   const { toast } = useToast();
   const rating = convertRating(review.rating);
@@ -77,31 +75,6 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
       });
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const analyzeReview = async () => {
-    setIsAnalyzing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('analyze-review', {
-        body: { review }
-      });
-
-      if (error) throw error;
-      
-      setAnalysis(data);
-      toast({
-        title: "Review analyzed",
-        description: "AI analysis has been completed.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error analyzing review",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -182,19 +155,6 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
           </div>
         )}
 
-        {analysis && (
-          <div className="bg-muted p-4 rounded-md space-y-2">
-            <div className="flex items-center gap-2">
-              <Search size={16} className="text-muted-foreground" />
-              <span className="text-sm font-medium">AI Analysis</span>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm"><span className="font-medium">Sentiment:</span> {analysis.sentiment}</p>
-              <p className="text-sm"><span className="font-medium">Summary:</span> {analysis.summary}</p>
-            </div>
-          </div>
-        )}
-
         {review.reply && !isEditing && (
           <div className="bg-muted p-4 rounded-md">
             <div className="flex items-center justify-between mb-2">
@@ -230,30 +190,18 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
 
         {(!review.reply || isEditing) && (
           <Collapsible open={isOpen || isEditing} onOpenChange={setIsOpen}>
-            <div className="flex gap-2">
-              <CollapsibleTrigger asChild>
-                {!isEditing && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center gap-2"
-                  >
-                    <Reply size={16} />
-                    Reply to Review
-                  </Button>
-                )}
-              </CollapsibleTrigger>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={analyzeReview}
-                disabled={isAnalyzing}
-                className="flex items-center gap-2"
-              >
-                <Search size={16} />
-                {isAnalyzing ? "Analyzing..." : "Analyze Review"}
-              </Button>
-            </div>
+            <CollapsibleTrigger asChild>
+              {!isEditing && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-2"
+                >
+                  <Reply size={16} />
+                  Reply to Review
+                </Button>
+              )}
+            </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
               <ReviewReplyForm
                 onSubmit={handleSubmit}
