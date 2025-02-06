@@ -1,5 +1,6 @@
 import { Review } from "@/types/review";
 import { VenueName } from "@/types/venue";
+import { supabase } from "@/integrations/supabase/client";
 
 export const processReviewData = async (reviewsData: any, pageTokens?: any) => {
   const reviews: Review[] = [];
@@ -13,28 +14,18 @@ export const processReviewData = async (reviewsData: any, pageTokens?: any) => {
       const venueName = (business.venue_name || 'Unknown Venue') as VenueName;
 
       try {
-        // Fetch reviews for this business
-        const response = await fetch(
-          `/api/reviews-batch`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${reviewsData.access_token}`,
-            },
-            body: JSON.stringify({
-              access_token: reviewsData.access_token,
-              location_names: [business.google_place_id],
-              page_tokens: pageTokens,
-            }),
-          }
-        );
+        // Call the Supabase Edge Function instead of a direct API endpoint
+        const { data, error } = await supabase.functions.invoke('reviews-batch', {
+          body: {
+            access_token: reviewsData.access_token,
+            location_names: [business.google_place_id],
+            page_tokens: pageTokens,
+          },
+        });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch reviews for ${venueName}`);
+        if (error) {
+          throw error;
         }
-
-        const data = await response.json();
         
         // Process reviews for this location
         if (data.locationReviews && data.locationReviews.length > 0) {
