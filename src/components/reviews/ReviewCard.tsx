@@ -193,6 +193,7 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
           analysis={analysis}
           onSendEmail={sendAnalysisEmail}
           isSendingEmail={isSendingEmail}
+          venueName={review.venueName}
         />
 
         <ReviewReplySection

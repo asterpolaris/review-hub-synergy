@@ -16,20 +16,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+
+type VenueName = "Bordelle" | "Yoko" | "Hang" | "Farsides" | "Farsides Brossard" | "Muzique";
+type StakeholderRole = "owner" | "manager" | "operations";
 
 interface StakeholderDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  venueName: string;
+  venueName: VenueName;
 }
 
 export const StakeholderDialog = ({ isOpen, onClose, venueName }: StakeholderDialogProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"owner" | "manager" | "operations">("manager");
+  const [role, setRole] = useState<StakeholderRole>("manager");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -40,14 +43,12 @@ export const StakeholderDialog = ({ isOpen, onClose, venueName }: StakeholderDia
     try {
       const { error } = await supabase
         .from("venue_stakeholders")
-        .insert([
-          {
-            venue_name: venueName,
-            name,
-            email,
-            role,
-          },
-        ]);
+        .insert({
+          venue_name: venueName,
+          name,
+          email,
+          role,
+        });
 
       if (error) throw error;
 
@@ -105,7 +106,7 @@ export const StakeholderDialog = ({ isOpen, onClose, venueName }: StakeholderDia
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={(value: "owner" | "manager" | "operations") => setRole(value)}>
+            <Select value={role} onValueChange={(value: StakeholderRole) => setRole(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
