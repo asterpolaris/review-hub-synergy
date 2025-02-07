@@ -117,6 +117,7 @@ export const ReviewReplySection = ({
           onCancel={onCancelEdit}
           onGenerateReply={onGenerateReply}
           isGenerating={isGenerating}
+          isPending={false}
           initialValue={isEditing ? review.reply?.comment : ""}
         />
       </CollapsibleContent>
