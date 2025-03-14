@@ -1,3 +1,4 @@
+
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Loader2, RefreshCw } from "lucide-react";
-import { startOfDay, endOfDay, format } from "date-fns";
+import { startOfDay, endOfDay, format, parseISO } from "date-fns";
 import { syncBusinessReviews } from "@/utils/reviewProcessing";
 import { useToast } from "@/hooks/use-toast";
 import { usePaginatedReviews } from "@/hooks/usePaginatedReviews";
@@ -51,8 +52,14 @@ const Reviews = () => {
     ? selectedReplyStatus
     : undefined;
     
-  const startDateStr = dateRange?.from ? format(startOfDay(dateRange.from), "yyyy-MM-dd'T'HH:mm:ss'Z'") : undefined;
-  const endDateStr = dateRange?.to ? format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss'Z'") : undefined;
+  // Format date strings properly for the API
+  const startDateStr = dateRange?.from 
+    ? format(startOfDay(dateRange.from), "yyyy-MM-dd'T'HH:mm:ss'Z'") 
+    : undefined;
+    
+  const endDateStr = dateRange?.to 
+    ? format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss'Z'") 
+    : undefined;
 
   const { data, isLoading, error, refetch } = usePaginatedReviews({
     page: currentPage,
@@ -86,6 +93,7 @@ const Reviews = () => {
   };
 
   const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined } | undefined) => {
+    console.log("Date range changed:", range);
     setDateRange(range);
     setCurrentPage(1);
   };

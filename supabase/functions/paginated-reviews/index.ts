@@ -129,7 +129,9 @@ Deno.serve(async (req) => {
       }
     }
     
+    // Apply date range filter - ensure proper handling of ISO date strings
     if (startDate && endDate) {
+      console.log('Filtering by date range:', { startDate, endDate })
       reviewQuery = reviewQuery.gte('create_time', startDate).lte('create_time', endDate)
     }
     

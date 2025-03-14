@@ -51,6 +51,11 @@ export const usePaginatedReviews = (params: PaginatedReviewsParams) => {
         throw new Error("No access token available");
       }
 
+      // Log the request params for debugging
+      console.log("Requesting paginated reviews with params:", { 
+        page, pageSize, businessIds, ratings, replyStatus, startDate, endDate, sortBy 
+      });
+
       try {
         const { data, error } = await supabase.functions.invoke('paginated-reviews', {
           body: { 

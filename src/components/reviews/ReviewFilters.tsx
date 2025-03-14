@@ -1,3 +1,4 @@
+
 import {
   Select,
   SelectContent,
@@ -210,8 +211,14 @@ export const ReviewFilters = ({
                 initialFocus
                 mode="range"
                 defaultMonth={dateRange?.from}
-                selected={{ from: dateRange?.from, to: dateRange?.to }}
-                onSelect={onDateRangeChange}
+                selected={{ 
+                  from: dateRange?.from,
+                  to: dateRange?.to 
+                }}
+                onSelect={(range) => {
+                  console.log("Calendar range selected:", range);
+                  onDateRangeChange(range);
+                }}
                 numberOfMonths={2}
               />
             </PopoverContent>
