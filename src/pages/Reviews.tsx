@@ -79,7 +79,7 @@ const Reviews = () => {
           description: `Successfully synced reviews for ${successCount} business${successCount === 1 ? '' : 'es'}${errorCount > 0 ? `. Failed for ${errorCount} business${errorCount === 1 ? '' : 'es'}.` : '.'}`,
         });
         
-        // Refetch reviews after sync
+        // Force refetch with the forceSync parameter
         await refetch();
       } else {
         toast({

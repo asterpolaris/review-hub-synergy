@@ -18,7 +18,8 @@ interface PageTokens {
 
 export const processReviewData = async (
   reviewsData: ReviewsData, 
-  pageTokens?: PageTokens
+  pageTokens?: PageTokens,
+  forceSync: boolean = false
 ): Promise<{ 
   reviews: Review[], 
   errors: string[],
@@ -34,12 +35,38 @@ export const processReviewData = async (
       throw new Error('No active session found');
     }
 
-    console.log("Using cached reviews from database instead of direct API call");
-    
     // Get user's business IDs
     const businessIds = reviewsData.businesses.map(b => b.id);
     
-    // Fetch reviews from the database for these businesses
+    // If forceSync is true, skip initial database fetch and go straight to sync
+    if (forceSync) {
+      console.log("Force sync requested, triggering sync for all businesses");
+      
+      try {
+        // Sync all businesses first
+        for (const business of reviewsData.businesses) {
+          console.log(`Syncing business: ${business.name}`);
+          const { error: syncError } = await supabase.functions.invoke('manual-sync', {
+            body: { businessId: business.id },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+          
+          if (syncError) {
+            console.error(`Error triggering sync for business ${business.id}:`, syncError);
+            errors.push(`Failed to sync business ${business.name}: ${syncError.message}`);
+          }
+        }
+      } catch (syncError) {
+        console.error("Error during forced sync process:", syncError);
+        errors.push(`Forced sync process failed: ${syncError instanceof Error ? syncError.message : 'Unknown error'}`);
+      }
+    } else {
+      console.log("Using cached reviews from database instead of direct API call");
+    }
+    
+    // Fetch reviews from the database for these businesses (after potential sync)
     let { data: cachedReviews, error: reviewsError } = await supabase
       .from('reviews')
       .select('*')

@@ -34,8 +34,9 @@ export const useReviews = () => {
 
   return useInfiniteQuery<ReviewsResponse, Error>({
     queryKey: ["reviews"],
-    queryFn: async ({ pageParam }) => {
+    queryFn: async ({ pageParam, meta }) => {
       console.log("Fetching reviews data with pageParam:", pageParam);
+      const forceSync = meta?.forceSync === true;
       
       if (!session?.access_token) {
         throw new Error("No access token available");
@@ -64,7 +65,8 @@ export const useReviews = () => {
 
       const { reviews, errors, nextPageTokens } = await processReviewData(
         reviewsData,
-        pageParam as PageTokens
+        pageParam as PageTokens,
+        forceSync
       );
 
       if (errors.length > 0) {
