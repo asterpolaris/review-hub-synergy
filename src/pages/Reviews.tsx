@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -113,10 +114,15 @@ const Reviews = () => {
       (selectedReplyStatus.includes('waiting') && !review.reply) ||
       (selectedReplyStatus.includes('replied') && review.reply);
 
-    const dateMatch = 
-      !dateRange?.from || !dateRange?.to ||
-      (new Date(review.createTime) >= dateRange.from &&
-       new Date(review.createTime) <= new Date(dateRange.to.setHours(23, 59, 59, 999)));
+    // Improved date filtering with proper start and end of day boundaries
+    let dateMatch = true;
+    if (dateRange?.from && dateRange?.to) {
+      const reviewDate = parseISO(review.createTime);
+      const fromDate = startOfDay(dateRange.from);
+      const toDate = endOfDay(dateRange.to);
+      
+      dateMatch = reviewDate >= fromDate && reviewDate <= toDate;
+    }
     
     return locationMatch && ratingMatch && replyStatusMatch && dateMatch;
   }).sort((a, b) => {

@@ -147,6 +147,34 @@ Deno.serve(async (req) => {
         const reviewsData = await reviewsResponse.json();
         console.log(`Reviews data for location ${cleanLocationId}:`, reviewsData);
         
+        // Validate and normalize timestamps for all reviews
+        if (reviewsData.reviews) {
+          reviewsData.reviews.forEach((review: any) => {
+            // Log the raw date for debugging
+            console.log(`Review ${review.reviewId} raw createTime:`, review.createTime);
+            
+            // Ensure the date is properly formatted as ISO string
+            try {
+              // This will throw an error if the date is invalid
+              new Date(review.createTime).toISOString();
+            } catch (e) {
+              console.error(`Invalid date format for review ${review.reviewId}:`, review.createTime);
+              // Set a fallback date if the original is invalid
+              review.createTime = new Date().toISOString();
+            }
+            
+            // Do the same for reply dates if present
+            if (review.reviewReply && review.reviewReply.createTime) {
+              try {
+                new Date(review.reviewReply.createTime).toISOString();
+              } catch (e) {
+                console.error(`Invalid reply date format for review ${review.reviewId}:`, review.reviewReply.createTime);
+                review.reviewReply.createTime = new Date().toISOString();
+              }
+            }
+          });
+        }
+        
         locationReviews.push({
           locationName: locationId,
           reviews: reviewsData.reviews || []

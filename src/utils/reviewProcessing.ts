@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
+import { parseISO } from "date-fns";
 
 interface ReviewsData {
   access_token: string;
@@ -69,22 +70,40 @@ export const processReviewData = async (
     // Process the reviews from the response
     reviewsResponse.locationReviews.forEach((locationReview: any) => {
       if (locationReview.reviews) {
-        const processedReviews = locationReview.reviews.map((review: any) => ({
-          id: review.reviewId,
-          authorName: review.reviewer.displayName,
-          rating: review.starRating,
-          comment: review.comment,
-          createTime: review.createTime,
-          photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
-          reply: review.reviewReply ? {
-            comment: review.reviewReply.comment,
-            createTime: review.reviewReply.createTime
-          } : undefined,
-          venueName: reviewsData.businesses.find(b => 
-            b.google_place_id === locationReview.locationName
-          )?.name || 'Unknown Venue',
-          placeId: locationReview.locationName
-        }));
+        const processedReviews = locationReview.reviews.map((review: any) => {
+          // Ensure proper date handling for createTime
+          let createTime = review.createTime;
+          
+          // Log date information for debugging
+          console.log("Original review createTime:", createTime);
+          
+          // Make sure we have a valid ISO string
+          try {
+            // Validate the date by parsing it
+            parseISO(createTime);
+          } catch (e) {
+            console.error("Invalid date format:", createTime, e);
+            // If parsing fails, use current time as fallback
+            createTime = new Date().toISOString();
+          }
+          
+          return {
+            id: review.reviewId,
+            authorName: review.reviewer.displayName,
+            rating: review.starRating,
+            comment: review.comment,
+            createTime: createTime,
+            photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
+            reply: review.reviewReply ? {
+              comment: review.reviewReply.comment,
+              createTime: review.reviewReply.createTime
+            } : undefined,
+            venueName: reviewsData.businesses.find(b => 
+              b.google_place_id === locationReview.locationName
+            )?.name || 'Unknown Venue',
+            placeId: locationReview.locationName
+          };
+        });
 
         reviews.push(...processedReviews);
       }
