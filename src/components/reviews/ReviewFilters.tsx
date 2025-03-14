@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DateRange } from "react-day-picker";
 
 interface Business {
   id: string;
@@ -38,12 +39,12 @@ interface ReviewFiltersProps {
   selectedRatings: string[];
   selectedReplyStatus: string[];
   selectedSort: string;
-  dateRange: { from: Date | undefined; to: Date | undefined } | undefined;
+  dateRange: DateRange | undefined;
   onLocationChange: (value: string) => void;
   onRatingChange: (value: string) => void;
   onReplyStatusChange: (value: string) => void;
   onSortChange: (value: string) => void;
-  onDateRangeChange: (range: { from: Date | undefined; to: Date | undefined } | undefined) => void;
+  onDateRangeChange: (range: DateRange | undefined) => void;
   visibleReviews: any[]; // Add this prop for the reviews to analyze
 }
 
@@ -211,15 +212,13 @@ export const ReviewFilters = ({
                 initialFocus
                 mode="range"
                 defaultMonth={dateRange?.from}
-                selected={{ 
-                  from: dateRange?.from,
-                  to: dateRange?.to 
-                }}
+                selected={dateRange}
                 onSelect={(range) => {
                   console.log("Calendar range selected:", range);
                   onDateRangeChange(range);
                 }}
                 numberOfMonths={2}
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>

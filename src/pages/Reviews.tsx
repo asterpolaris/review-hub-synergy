@@ -14,6 +14,7 @@ import { startOfDay, endOfDay, format, parseISO } from "date-fns";
 import { syncBusinessReviews } from "@/utils/reviewProcessing";
 import { useToast } from "@/hooks/use-toast";
 import { usePaginatedReviews } from "@/hooks/usePaginatedReviews";
+import { DateRange } from "react-day-picker";
 import {
   Pagination,
   PaginationContent,
@@ -31,7 +32,7 @@ const Reviews = () => {
   const [selectedRatings, setSelectedRatings] = useState<string[]>([]);
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>("newest");
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined } | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -92,7 +93,7 @@ const Reviews = () => {
     setCurrentPage(1);
   };
 
-  const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined } | undefined) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     console.log("Date range changed:", range);
     setDateRange(range);
     setCurrentPage(1);
