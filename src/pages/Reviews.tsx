@@ -1,4 +1,3 @@
-
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,7 +24,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 50;
 
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -40,7 +39,6 @@ const Reviews = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Convert filter states to format expected by the API
   const businessIds = selectedLocations.length > 0 && !selectedLocations.includes('all_businesses') 
     ? selectedLocations 
     : undefined;
@@ -53,7 +51,6 @@ const Reviews = () => {
     ? selectedReplyStatus
     : undefined;
     
-  // Format date strings properly for the API
   const startDateStr = dateRange?.from 
     ? format(startOfDay(dateRange.from), "yyyy-MM-dd'T'HH:mm:ss'Z'") 
     : undefined;
@@ -75,7 +72,7 @@ const Reviews = () => {
 
   const handleLocationChange = (value: string) => {
     setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
   };
 
   const handleRatingChange = (value: string) => {
@@ -136,7 +133,6 @@ const Reviews = () => {
           description: `Successfully synced reviews for ${successCount} business${successCount === 1 ? '' : 'es'}${errorCount > 0 ? `. Failed for ${errorCount} business${errorCount === 1 ? '' : 'es'}.` : '.'}`,
         });
         
-        // Force refetch with the forceSync parameter
         await refetch();
       } else {
         toast({
@@ -270,7 +266,6 @@ const Reviews = () => {
                 )}
                 
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  // Show first page, last page, current page, and pages around current
                   let pageToShow: number | null = null;
                   
                   if (i === 0) {
