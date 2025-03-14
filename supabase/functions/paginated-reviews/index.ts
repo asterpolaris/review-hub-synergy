@@ -58,8 +58,35 @@ Deno.serve(async (req) => {
       .select('id')
       .eq('user_id', user.id)
 
-    if (businessIds && businessIds.length > 0) {
-      businessQuery = businessQuery.in('id', businessIds)
+    // Handle business filtering by Google Place IDs
+    if (businessIds && businessIds.length > 0 && !businessIds.includes('all_businesses')) {
+      // Fetch businesses that match the given Google Place IDs
+      const { data: matchingBusinesses, error: matchingError } = await supabase
+        .from('businesses')
+        .select('id')
+        .in('google_place_id', businessIds)
+        .eq('user_id', user.id)
+        
+      if (matchingError) {
+        throw matchingError
+      }
+      
+      if (matchingBusinesses && matchingBusinesses.length > 0) {
+        const matchingIds = matchingBusinesses.map(b => b.id)
+        businessQuery = businessQuery.in('id', matchingIds)
+      } else {
+        // No matching businesses found, return empty result
+        return new Response(
+          JSON.stringify({ 
+            reviews: [], 
+            businessDetails: [],
+            totalCount: 0,
+            currentPage: page,
+            totalPages: 0
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
     const { data: userBusinesses, error: businessError } = await businessQuery

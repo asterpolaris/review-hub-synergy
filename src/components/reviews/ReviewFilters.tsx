@@ -25,8 +25,14 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+interface Business {
+  id: string;
+  name: string;
+  google_place_id: string;
+}
+
 interface ReviewFiltersProps {
-  businesses: Array<{ google_place_id: string; name: string }>;
+  businesses: Business[];
   selectedLocations: string[];
   selectedRatings: string[];
   selectedReplyStatus: string[];
@@ -106,7 +112,7 @@ export const ReviewFilters = ({
             <SelectContent>
               <SelectItem value="all_businesses">All Businesses</SelectItem>
               {businesses?.map((business) => (
-                <SelectItem key={business.google_place_id} value={business.google_place_id}>
+                <SelectItem key={business.id} value={business.google_place_id}>
                   {business.name}
                 </SelectItem>
               ))}
