@@ -115,7 +115,7 @@ export const processReviewData = async (
         } : undefined,
         venueName: businessInfo?.name || 'Unknown Venue',
         placeId: businessInfo?.google_place_id || '',
-        syncStatus: review.sync_status
+        syncStatus: review.sync_status as 'synced' | 'pending_reply_sync' | 'reply_sync_failed'
       });
     });
 
