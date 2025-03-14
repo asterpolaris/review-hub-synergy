@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
-import { parseISO, isValid } from "date-fns";
+import { parseISO, isValid, subDays } from "date-fns";
 
 interface ReviewsData {
   access_token: string;
@@ -71,26 +71,12 @@ export const processReviewData = async (
     reviewsResponse.locationReviews.forEach((locationReview: any) => {
       if (locationReview.reviews) {
         const processedReviews = locationReview.reviews.map((review: any) => {
-          // Ensure proper date handling for createTime
-          let createTime = review.createTime;
+          // Handle createTime processing
+          let createTime = processDateTime(review.createTime);
           
-          // Log date information for debugging
-          console.log("Original review createTime:", createTime);
-          
-          // Make sure we have a valid ISO string
-          try {
-            // Validate the date by parsing it
-            const parsedDate = parseISO(createTime);
-            if (!isValid(parsedDate)) {
-              console.warn("Invalid date format detected:", createTime);
-              // If parsing fails, use current time as fallback
-              createTime = new Date().toISOString();
-            }
-          } catch (e) {
-            console.error("Error parsing date:", createTime, e);
-            // If parsing fails, use current time as fallback
-            createTime = new Date().toISOString();
-          }
+          // Handle reply time processing if present
+          let replyCreateTime = review.reviewReply?.createTime ? 
+            processDateTime(review.reviewReply.createTime) : undefined;
           
           return {
             id: review.reviewId,
@@ -101,7 +87,7 @@ export const processReviewData = async (
             photoUrls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || [],
             reply: review.reviewReply ? {
               comment: review.reviewReply.comment,
-              createTime: review.reviewReply.createTime
+              createTime: replyCreateTime
             } : undefined,
             venueName: reviewsData.businesses.find(b => 
               b.google_place_id === locationReview.locationName
@@ -127,3 +113,50 @@ export const processReviewData = async (
     return { reviews, errors };
   }
 };
+
+/**
+ * Process a datetime string from the Google API
+ * Handles potential relative dates (though Google actually sends ISO strings)
+ * and ensures we always return a valid ISO date string
+ */
+function processDateTime(dateTimeString: string): string {
+  // Log the original date string for debugging
+  console.log("Processing date string:", dateTimeString);
+  
+  try {
+    // Check if it's already a valid ISO string
+    const parsedDate = parseISO(dateTimeString);
+    if (isValid(parsedDate)) {
+      return parsedDate.toISOString();
+    }
+    
+    // Handle potential "X weeks ago" format (though Google API shouldn't send this)
+    // This is just a fallback in case the format changes in the future
+    if (dateTimeString.includes('weeks ago')) {
+      const weeksMatch = dateTimeString.match(/(\d+)\s*weeks?\s*ago/i);
+      if (weeksMatch && weeksMatch[1]) {
+        const weeksAgo = parseInt(weeksMatch[1], 10);
+        const date = subDays(new Date(), weeksAgo * 7);
+        return date.toISOString();
+      }
+    }
+    
+    // Handle other relative date formats as needed
+    if (dateTimeString.includes('days ago')) {
+      const daysMatch = dateTimeString.match(/(\d+)\s*days?\s*ago/i);
+      if (daysMatch && daysMatch[1]) {
+        const daysAgo = parseInt(daysMatch[1], 10);
+        const date = subDays(new Date(), daysAgo);
+        return date.toISOString();
+      }
+    }
+    
+    // If we couldn't parse it, use current time as fallback
+    console.warn("Unparseable date format, using current time:", dateTimeString);
+    return new Date().toISOString();
+  } catch (e) {
+    console.error("Error processing date:", dateTimeString, e);
+    // If any error occurs during parsing, use current time as fallback
+    return new Date().toISOString();
+  }
+}
