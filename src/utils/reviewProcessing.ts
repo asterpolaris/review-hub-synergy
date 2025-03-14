@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
-import { parseISO } from "date-fns";
+import { parseISO, isValid } from "date-fns";
 
 interface ReviewsData {
   access_token: string;
@@ -80,9 +80,14 @@ export const processReviewData = async (
           // Make sure we have a valid ISO string
           try {
             // Validate the date by parsing it
-            parseISO(createTime);
+            const parsedDate = parseISO(createTime);
+            if (!isValid(parsedDate)) {
+              console.warn("Invalid date format detected:", createTime);
+              // If parsing fails, use current time as fallback
+              createTime = new Date().toISOString();
+            }
           } catch (e) {
-            console.error("Invalid date format:", createTime, e);
+            console.error("Error parsing date:", createTime, e);
             // If parsing fails, use current time as fallback
             createTime = new Date().toISOString();
           }
