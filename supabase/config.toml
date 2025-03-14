@@ -1,3 +1,4 @@
+
 # A string used as a project reference
 project_id = "eqgtvisxqjfntyhqkadj"
 
@@ -31,6 +32,9 @@ enabled = true
 verify_jwt = true
 
 [functions.reviews-batch]
+verify_jwt = true
+
+[functions.paginated-reviews]
 verify_jwt = true
 
 [functions.generate-review-reply]

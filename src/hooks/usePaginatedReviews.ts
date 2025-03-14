@@ -51,36 +51,47 @@ export const usePaginatedReviews = (params: PaginatedReviewsParams) => {
         throw new Error("No access token available");
       }
 
-      const { data, error } = await supabase.functions.invoke('paginated-reviews', {
-        body: { 
-          page, 
-          pageSize, 
-          businessIds, 
-          ratings, 
-          replyStatus, 
-          startDate, 
-          endDate, 
-          sortBy 
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+      try {
+        const { data, error } = await supabase.functions.invoke('paginated-reviews', {
+          body: { 
+            page, 
+            pageSize, 
+            businessIds, 
+            ratings, 
+            replyStatus, 
+            startDate, 
+            endDate, 
+            sortBy 
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
+        
+        if (error) {
+          console.error("Error fetching paginated reviews:", error);
+          toast({
+            title: "Failed to load reviews",
+            description: error.message,
+            variant: "destructive",
+          });
+          throw error;
         }
-      });
-      
-      if (error) {
+
+        console.log("Received paginated reviews:", data);
+        return data as PaginatedReviewsResponse;
+      } catch (error) {
         console.error("Error fetching paginated reviews:", error);
         toast({
           title: "Failed to load reviews",
-          description: error.message,
+          description: error instanceof Error ? error.message : "Unknown error",
           variant: "destructive",
         });
         throw error;
       }
-
-      console.log("Received paginated reviews:", data);
-      return data as PaginatedReviewsResponse;
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    retry: 1,
   });
 };
