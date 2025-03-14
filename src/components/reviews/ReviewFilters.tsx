@@ -66,6 +66,9 @@ export const ReviewFilters = ({
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [analysis, setAnalysis] = useState<string>("");
   const { toast } = useToast();
+  
+  // For debugging purposes
+  console.log("Current dateRange:", dateRange);
 
   const handleAnalyzeReviews = async () => {
     if (visibleReviews.length === 0) {
@@ -215,6 +218,7 @@ export const ReviewFilters = ({
                 selected={dateRange}
                 onSelect={(range) => {
                   console.log("Calendar range selected:", range);
+                  // Ensure both from and to are set before triggering the change
                   onDateRangeChange(range);
                 }}
                 numberOfMonths={2}
