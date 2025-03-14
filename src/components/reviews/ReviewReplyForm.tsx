@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +11,7 @@ interface ReviewReplyFormProps {
   onCancel: () => void;
   onGenerateReply: (form: { setValue: (field: string, value: string) => void }) => void;
   isGenerating: boolean;
-  isPending: boolean;
+  isSending: boolean;
   initialValue?: string;
 }
 
@@ -19,7 +20,7 @@ export const ReviewReplyForm = ({
   onCancel,
   onGenerateReply,
   isGenerating,
-  isPending,
+  isSending,
   initialValue = "",
 }: ReviewReplyFormProps) => {
   const form = useForm<{ comment: string }>({
@@ -77,8 +78,8 @@ export const ReviewReplyForm = ({
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Sending..." : "Send Reply"}
+          <Button type="submit" disabled={isSending}>
+            {isSending ? "Sending..." : "Send Reply"}
           </Button>
         </div>
       </form>

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Review } from "@/types/review";
 import { parseISO, isValid, subDays } from "date-fns";
@@ -39,7 +40,7 @@ export const processReviewData = async (
     const businessIds = reviewsData.businesses.map(b => b.id);
     
     // Fetch reviews from the database for these businesses
-    const { data: cachedReviews, error: reviewsError } = await supabase
+    let { data: cachedReviews, error: reviewsError } = await supabase
       .from('reviews')
       .select('*')
       .in('business_id', businessIds)
@@ -113,7 +114,8 @@ export const processReviewData = async (
           createTime: review.reply_time || new Date().toISOString()
         } : undefined,
         venueName: businessInfo?.name || 'Unknown Venue',
-        placeId: businessInfo?.google_place_id || ''
+        placeId: businessInfo?.google_place_id || '',
+        syncStatus: review.sync_status
       });
     });
 

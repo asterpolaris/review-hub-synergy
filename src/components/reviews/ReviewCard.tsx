@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Review } from "@/types/review";
 import { useState } from "react";
@@ -9,7 +8,7 @@ import { ReviewContent } from "./ReviewContent";
 import { ReviewReplySection } from "./ReviewReplySection";
 import { submitReviewReply } from "@/utils/reviewProcessing";
 import { Badge } from "@/components/ui/badge";
-import { Cloud, CloudOff } from "lucide-react";
+import { Cloud, CloudOff, Loader2 } from "lucide-react";
 
 interface ReviewCardProps {
   review: Review;
@@ -102,7 +101,6 @@ export const ReviewCard = ({ review }: ReviewCardProps) => {
     });
   };
 
-  // Check if this review has a sync status from the database
   const getSyncStatus = async () => {
     const { data, error } = await supabase
       .from('reviews')
