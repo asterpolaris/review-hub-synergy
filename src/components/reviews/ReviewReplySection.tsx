@@ -1,25 +1,16 @@
 
-import { Reply, Pencil, Trash2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Review } from "@/types/review";
 import { ReviewReplyForm } from "./ReviewReplyForm";
-import { useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Loader2 } from "lucide-react";
+import { format } from "date-fns";
 
 interface ReviewReplySectionProps {
   review: Review;
   isEditing: boolean;
   isGenerating: boolean;
+  isSending?: boolean;
   onEdit: () => void;
   onCancelEdit: () => void;
   onDelete: () => void;
@@ -31,96 +22,97 @@ export const ReviewReplySection = ({
   review,
   isEditing,
   isGenerating,
+  isSending = false,
   onEdit,
   onCancelEdit,
   onDelete,
   onSubmitReply,
-  onGenerateReply,
+  onGenerateReply
 }: ReviewReplySectionProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
-  const handleDelete = () => {
-    setShowDeleteDialog(false);
-    onDelete();
-  };
-
-  if (review.reply && !isEditing) {
+  if (isEditing) {
     return (
-      <>
-        <div className="bg-muted p-4 rounded-md">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Reply size={16} className="text-muted-foreground" />
-              <span className="text-sm font-medium">Business Response</span>
-              <span className="text-xs text-muted-foreground">
-                {new Date(review.reply.createTime).toLocaleDateString()}
-              </span>
-            </div>
+      <Card className="border-dashed border-primary/50">
+        <CardHeader>
+          <CardTitle className="text-sm">Your Reply</CardTitle>
+          <CardDescription>
+            {review.reply 
+              ? "Edit your response to this review" 
+              : "Add a response to this review"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ReviewReplyForm
+            initialValue={review.reply?.comment}
+            onSubmit={onSubmitReply}
+            onCancel={onCancelEdit}
+            onGenerateReply={onGenerateReply}
+            isGenerating={isGenerating}
+            isSending={isSending}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (review.reply) {
+    return (
+      <Card className="bg-muted/30">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between">
+            <CardTitle className="text-sm">Your Reply</CardTitle>
             <div className="flex gap-2">
-              <Button
-                variant="ghost"
+              <Button 
+                variant="ghost" 
                 size="sm"
                 onClick={onEdit}
-                className="h-8 px-2"
               >
-                <Pencil size={16} />
+                Edit
               </Button>
-              <Button
-                variant="ghost"
+              <Button 
+                variant="ghost" 
                 size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-                className="h-8 px-2 text-destructive hover:text-destructive"
+                onClick={onDelete}
               >
-                <Trash2 size={16} />
+                Delete
               </Button>
             </div>
           </div>
+          <CardDescription>
+            {review.reply.createTime && (
+              <span>Replied on {format(new Date(review.reply.createTime), 'MMM d, yyyy')}</span>
+            )}
+            {review.syncStatus === 'pending_reply_sync' && (
+              <span className="ml-2 text-yellow-600 inline-flex items-center">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Sending to Google...
+              </span>
+            )}
+            {review.syncStatus === 'reply_sync_failed' && (
+              <span className="ml-2 text-red-600">
+                Failed to sync with Google
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <p className="text-sm">{review.reply.comment}</p>
-        </div>
-
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Reply</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this reply? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Collapsible open={isOpen || isEditing} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger asChild>
-        {!isEditing && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex items-center gap-2"
-          >
-            <Reply size={16} />
-            Reply to Review
-          </Button>
+    <div className="flex justify-center">
+      <Button variant="outline" onClick={onEdit}>
+        {isSending ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Sending...
+          </>
+        ) : (
+          "Reply to this review"
         )}
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-4">
-        <ReviewReplyForm
-          onSubmit={onSubmitReply}
-          onCancel={onCancelEdit}
-          onGenerateReply={onGenerateReply}
-          isGenerating={isGenerating}
-          isPending={false}
-          initialValue={isEditing ? review.reply?.comment : ""}
-        />
-      </CollapsibleContent>
-    </Collapsible>
+      </Button>
+    </div>
   );
 };

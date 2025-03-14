@@ -1,3 +1,4 @@
+
 export interface Review {
   id: string;
   authorName: string;
@@ -11,4 +12,5 @@ export interface Review {
   };
   venueName: string;
   placeId: string;
+  syncStatus?: 'synced' | 'pending_reply_sync' | 'reply_sync_failed';
 }

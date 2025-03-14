@@ -37,6 +37,7 @@ export type Database = {
           google_business_account_id: string | null
           google_place_id: string | null
           id: string
+          last_synced_at: string | null
           location: string | null
           name: string
           updated_at: string
@@ -49,6 +50,7 @@ export type Database = {
           google_business_account_id?: string | null
           google_place_id?: string | null
           id?: string
+          last_synced_at?: string | null
           location?: string | null
           name: string
           updated_at?: string
@@ -61,6 +63,7 @@ export type Database = {
           google_business_account_id?: string | null
           google_place_id?: string | null
           id?: string
+          last_synced_at?: string | null
           location?: string | null
           name?: string
           updated_at?: string
@@ -512,6 +515,47 @@ export type Database = {
         }
         Relationships: []
       }
+      review_sync_logs: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          reviews_fetched: number | null
+          reviews_processed: number | null
+          successful: boolean
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          reviews_fetched?: number | null
+          reviews_processed?: number | null
+          successful: boolean
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          reviews_fetched?: number | null
+          reviews_processed?: number | null
+          successful?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_sync_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           author_name: string
@@ -520,12 +564,14 @@ export type Database = {
           create_time: string
           created_at: string
           google_review_id: string
+          google_sync_source: boolean | null
           id: string
           photo_urls: string[] | null
           rating: number
           reply: string | null
           reply_time: string | null
           status: Database["public"]["Enums"]["review_status"] | null
+          sync_status: string | null
           updated_at: string
         }
         Insert: {
@@ -535,12 +581,14 @@ export type Database = {
           create_time: string
           created_at?: string
           google_review_id: string
+          google_sync_source?: boolean | null
           id?: string
           photo_urls?: string[] | null
           rating: number
           reply?: string | null
           reply_time?: string | null
           status?: Database["public"]["Enums"]["review_status"] | null
+          sync_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -550,12 +598,14 @@ export type Database = {
           create_time?: string
           created_at?: string
           google_review_id?: string
+          google_sync_source?: boolean | null
           id?: string
           photo_urls?: string[] | null
           rating?: number
           reply?: string | null
           reply_time?: string | null
           status?: Database["public"]["Enums"]["review_status"] | null
+          sync_status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -778,6 +828,16 @@ export type Database = {
           location_names: string[]
         }
         Returns: Json
+      }
+      sync_reviews_for_business: {
+        Args: {
+          business_id: string
+        }
+        Returns: undefined
+      }
+      trigger_reviews_sync: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       update_metrics_cache: {
         Args: Record<PropertyKey, never>

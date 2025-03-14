@@ -1,142 +1,127 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-google-token',
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
 
-serve(async (req) => {
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { reviewId, comment, placeId, isDelete } = await req.json()
+    // Get auth header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
     
-    // Validate required parameters
-    if (!placeId || !reviewId) {
+    // Verify the JWT
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: verificationError } = await supabase.auth.getUser(token)
+    
+    if (verificationError || !user) {
+      throw new Error('Invalid token')
+    }
+
+    // Parse request body
+    const { reviewId, comment, placeId } = await req.json()
+    
+    if (!reviewId || !comment || !placeId) {
       throw new Error('Missing required parameters')
     }
-
-    // Get the Google access token from headers
-    const googleToken = req.headers.get('x-google-token')
-    if (!googleToken) {
-      throw new Error('No Google access token provided')
+    
+    // Get the Google auth token
+    const { data: googleToken, error: tokenError } = await supabase
+      .from('google_auth_tokens')
+      .select('access_token')
+      .eq('user_id', user.id)
+      .single()
+      
+    if (tokenError || !googleToken) {
+      throw new Error('Google token not found')
     }
 
-    console.log('Received request with parameters:', {
-      placeId,
-      reviewId,
-      isDelete,
-      hasComment: !!comment,
-      hasGoogleToken: !!googleToken
-    })
-
-    // First get the account ID
-    console.log('Fetching Google Business accounts...')
+    // Get the account ID
     const accountsResponse = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       {
         headers: {
-          'Authorization': `Bearer ${googleToken}`,
+          'Authorization': `Bearer ${googleToken.access_token}`,
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       }
     )
-
+    
     if (!accountsResponse.ok) {
-      const errorText = await accountsResponse.text()
-      console.error('Error fetching accounts:', {
-        status: accountsResponse.status,
-        statusText: accountsResponse.statusText,
-        body: errorText
-      })
-      throw new Error(`Failed to fetch accounts: ${accountsResponse.status} ${errorText}`)
+      throw new Error(`Failed to fetch accounts: ${accountsResponse.status}`)
     }
-
+    
     const accountsData = await accountsResponse.json()
-    console.log('Google accounts response:', accountsData)
-
+    
     if (!accountsData.accounts || accountsData.accounts.length === 0) {
       throw new Error('No Google Business accounts found')
     }
-
-    const accountName = accountsData.accounts[0].name
-    console.log('Using account name:', accountName)
-
-    // Clean up the locationId - remove any 'locations/' prefix
-    const locationId = placeId.replace(/^locations\//, '')
     
-    // Construct the full URL with account name - using v4 API
-    const baseUrl = 'https://mybusiness.googleapis.com/v4'
-    const accountId = accountName.split('/').pop() // Get the ID part from "accounts/123"
-    const replyUrl = `${baseUrl}/accounts/${accountId}/locations/${locationId}/reviews/${reviewId}/reply`
+    const accountId = accountsData.accounts[0].name
     
-    console.log('Making request to Google API:', {
-      url: replyUrl,
-      method: isDelete ? 'DELETE' : 'PUT',
-      hasBody: !isDelete
-    })
-
-    const response = await fetch(replyUrl, {
-      method: isDelete ? 'DELETE' : 'PUT',
+    // Clean up IDs
+    const cleanLocationId = placeId.replace(/^locations\//, '')
+    
+    // Create the reply URL
+    const replyUrl = `https://mybusiness.googleapis.com/v4/${accountId}/locations/${cleanLocationId}/reviews/${reviewId}/reply`
+    
+    console.log(`Sending reply to: ${replyUrl}`)
+    
+    // Send the reply to Google
+    const replyResponse = await fetch(replyUrl, {
+      method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${googleToken}`,
+        'Authorization': `Bearer ${googleToken.access_token}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: isDelete ? undefined : JSON.stringify({
+      body: JSON.stringify({
         comment: comment
       })
     })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Error response from Google API:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-        url: replyUrl
-      })
-
-      // Handle rate limiting specifically
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({
-            error: 'Rate limit exceeded. Please wait a moment before trying again.',
-            details: 'The Google Business Profile API rate limit has been reached.'
-          }),
-          {
-            status: 429,
-            headers: {
-              ...corsHeaders,
-              'Content-Type': 'application/json',
-              'Retry-After': response.headers.get('Retry-After') || '60'
-            }
-          }
-        )
-      }
-
-      throw new Error(`Failed to ${isDelete ? 'delete' : 'update'} reply: ${response.status} ${errorText}`)
+    
+    if (!replyResponse.ok) {
+      const errorText = await replyResponse.text()
+      throw new Error(`Failed to reply to review: ${replyResponse.status} ${errorText}`)
     }
-
-    const data = isDelete ? { success: true } : await response.json()
-    console.log(`Reply ${isDelete ? 'deleted' : 'posted'} successfully:`, data)
-
-    return new Response(
-      JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
-  } catch (error) {
-    console.error('Error in reply-to-review function:', error)
+    
+    const replyData = await replyResponse.json()
+    
+    // Update the review sync status in the database
+    await supabase
+      .from('reviews')
+      .update({
+        reply: comment,
+        reply_time: new Date().toISOString(),
+        sync_status: 'synced'
+      })
+      .eq('google_review_id', reviewId)
+    
     return new Response(
       JSON.stringify({
-        error: error.message,
-        details: 'An error occurred while processing your request.'
+        message: 'Reply submitted successfully',
+        replyData
       }),
-      {
-        status: 400,
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+    
+  } catch (error) {
+    console.error('Error in reply-to-review function:', error)
+    
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
