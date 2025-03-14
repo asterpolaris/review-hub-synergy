@@ -2,7 +2,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useReviews } from "@/hooks/useReviews";
 import { useState } from "react";
 import { ReviewFilters } from "@/components/reviews/ReviewFilters";
 import { ReviewList } from "@/components/reviews/ReviewList";
@@ -11,9 +10,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Loader2, RefreshCw } from "lucide-react";
-import { startOfDay, endOfDay, parseISO } from "date-fns";
+import { startOfDay, endOfDay, format } from "date-fns";
 import { syncBusinessReviews } from "@/utils/reviewProcessing";
 import { useToast } from "@/hooks/use-toast";
+import { usePaginatedReviews } from "@/hooks/usePaginatedReviews";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 10;
 
 const Reviews = () => {
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -21,34 +32,72 @@ const Reviews = () => {
   const [selectedReplyStatus, setSelectedReplyStatus] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>("newest");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined } | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useReviews();
+
   const { googleAuthToken } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Convert filter states to format expected by the API
+  const businessIds = selectedLocations.length > 0 && !selectedLocations.includes('all_businesses') 
+    ? selectedLocations 
+    : undefined;
+    
+  const ratings = selectedRatings.length > 0 && !selectedRatings.includes('all_ratings')
+    ? selectedRatings.map(r => parseInt(r))
+    : undefined;
+    
+  const replyStatus = selectedReplyStatus.length > 0 && !selectedReplyStatus.includes('all_status')
+    ? selectedReplyStatus
+    : undefined;
+    
+  const startDateStr = dateRange?.from ? format(startOfDay(dateRange.from), "yyyy-MM-dd'T'HH:mm:ss'Z'") : undefined;
+  const endDateStr = dateRange?.to ? format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss'Z'") : undefined;
+
+  const { data, isLoading, error, refetch } = usePaginatedReviews({
+    page: currentPage,
+    pageSize: ITEMS_PER_PAGE,
+    businessIds,
+    ratings,
+    replyStatus,
+    startDate: startDateStr,
+    endDate: endDateStr,
+    sortBy: selectedSort
+  });
+
   const handleLocationChange = (value: string) => {
     setSelectedLocations(value ? value.split(",").filter(Boolean) : []);
+    setCurrentPage(1); // Reset to first page when filter changes
   };
 
   const handleRatingChange = (value: string) => {
     setSelectedRatings(value ? value.split(",").filter(Boolean) : []);
+    setCurrentPage(1);
   };
 
   const handleReplyStatusChange = (value: string) => {
     setSelectedReplyStatus(value ? value.split(",").filter(Boolean) : []);
+    setCurrentPage(1);
   };
 
   const handleSortChange = (value: string) => {
     setSelectedSort(value);
+    setCurrentPage(1);
   };
 
   const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined } | undefined) => {
     setDateRange(range);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
   };
 
   const handleSyncReviews = async () => {
-    if (!data?.pages[0]?.businesses || data.pages[0].businesses.length === 0) {
+    if (!data?.businessDetails || data.businessDetails.length === 0) {
       toast({
         title: "No businesses found",
         description: "There are no businesses to sync reviews for.",
@@ -60,7 +109,7 @@ const Reviews = () => {
     setIsSyncing(true);
     
     try {
-      const businesses = data.pages[0].businesses;
+      const businesses = data.businessDetails;
       let successCount = 0;
       let errorCount = 0;
       
@@ -80,9 +129,7 @@ const Reviews = () => {
         });
         
         // Force refetch with the forceSync parameter
-        await refetch({ 
-          meta: { forceSync: true }
-        });
+        await refetch();
       } else {
         toast({
           title: "Sync failed",
@@ -149,45 +196,9 @@ const Reviews = () => {
     );
   }
 
-  // Combine all reviews from all pages
-  const allReviews = data?.pages.flatMap(page => page.reviews) || [];
-  // Get businesses from the first page
-  const businesses = data?.pages[0]?.businesses || [];
-
-  const filteredReviews = allReviews.filter((review) => {
-    const locationMatch = 
-      selectedLocations.length === 0 || 
-      selectedLocations.includes('all_businesses') ||
-      selectedLocations.includes(review.placeId);
-    
-    const numericRating = convertGoogleRating(review.rating.toString());
-    const ratingMatch = 
-      selectedRatings.length === 0 || 
-      selectedRatings.includes('all_ratings') ||
-      selectedRatings.includes(numericRating.toString());
-    
-    const replyStatusMatch = 
-      selectedReplyStatus.length === 0 || 
-      selectedReplyStatus.includes('all_status') ||
-      (selectedReplyStatus.includes('waiting') && !review.reply) ||
-      (selectedReplyStatus.includes('replied') && review.reply);
-
-    // Improved date filtering with proper start and end of day boundaries
-    let dateMatch = true;
-    if (dateRange?.from && dateRange?.to) {
-      const reviewDate = parseISO(review.createTime);
-      const fromDate = startOfDay(dateRange.from);
-      const toDate = endOfDay(dateRange.to);
-      
-      dateMatch = reviewDate >= fromDate && reviewDate <= toDate;
-    }
-    
-    return locationMatch && ratingMatch && replyStatusMatch && dateMatch;
-  }).sort((a, b) => {
-    const dateA = new Date(a.createTime).getTime();
-    const dateB = new Date(b.createTime).getTime();
-    return selectedSort === "newest" ? dateB - dateA : dateA - dateB;
-  });
+  const reviews = data?.reviews || [];
+  const businesses = data?.businessDetails || [];
+  const totalPages = data?.totalPages || 1;
 
   return (
     <AppLayout>
@@ -226,15 +237,105 @@ const Reviews = () => {
           onReplyStatusChange={handleReplyStatusChange}
           onSortChange={handleSortChange}
           onDateRangeChange={handleDateRangeChange}
-          visibleReviews={filteredReviews}
+          visibleReviews={reviews}
         />
 
         <ReviewList 
-          reviews={filteredReviews}
-          hasNextPage={hasNextPage}
-          isLoading={isFetchingNextPage}
-          onLoadMore={() => fetchNextPage()}
+          reviews={reviews}
+          isLoading={isLoading}
         />
+
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-6">
+            <Pagination>
+              <PaginationContent>
+                {currentPage > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(currentPage - 1);
+                      }} 
+                    />
+                  </PaginationItem>
+                )}
+                
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  // Show first page, last page, current page, and pages around current
+                  let pageToShow: number | null = null;
+                  
+                  if (i === 0) {
+                    pageToShow = 1;
+                  } else if (i === 4) {
+                    pageToShow = totalPages;
+                  } else if (totalPages <= 5) {
+                    pageToShow = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageToShow = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageToShow = totalPages - 4 + i;
+                  } else {
+                    pageToShow = currentPage - 1 + i;
+                  }
+                  
+                  if (i === 3 && totalPages > 5 && currentPage < totalPages - 2) {
+                    return (
+                      <PaginationItem key="ellipsis">
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
+                  }
+                  
+                  if (i === 1 && totalPages > 5 && currentPage > 3) {
+                    return (
+                      <PaginationItem key="ellipsis-start">
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
+                  }
+                  
+                  if (pageToShow !== null) {
+                    return (
+                      <PaginationItem key={pageToShow}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(pageToShow as number);
+                          }}
+                          isActive={currentPage === pageToShow}
+                        >
+                          {pageToShow}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }
+                  
+                  return null;
+                })}
+                
+                {currentPage < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(currentPage + 1);
+                      }} 
+                    />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+        
+        {data?.totalCount !== undefined && (
+          <div className="text-center text-sm text-muted-foreground">
+            Showing {reviews.length} of {data.totalCount} reviews
+          </div>
+        )}
       </div>
     </AppLayout>
   );

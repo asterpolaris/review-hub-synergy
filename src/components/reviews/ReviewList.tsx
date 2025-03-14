@@ -1,22 +1,25 @@
 
 import { Review } from "@/types/review";
 import { ReviewCard } from "./ReviewCard";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 interface ReviewListProps {
   reviews: Review[];
-  hasNextPage?: boolean;
   isLoading?: boolean;
-  onLoadMore?: () => void;
 }
 
 export const ReviewList = ({ 
   reviews, 
-  hasNextPage, 
-  isLoading,
-  onLoadMore 
+  isLoading
 }: ReviewListProps) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   if (!reviews || reviews.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
@@ -32,25 +35,6 @@ export const ReviewList = ({
           <ReviewCard key={review.id} review={review} />
         ))}
       </div>
-
-      {hasNextPage && (
-        <div className="flex justify-center mt-6">
-          <Button
-            variant="outline"
-            onClick={onLoadMore}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading more...
-              </>
-            ) : (
-              'Load More Reviews'
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
