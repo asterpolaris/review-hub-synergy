@@ -80,7 +80,9 @@ const Reviews = () => {
         });
         
         // Force refetch with the forceSync parameter
-        await refetch();
+        await refetch({ 
+          meta: { forceSync: true }
+        });
       } else {
         toast({
           title: "Sync failed",

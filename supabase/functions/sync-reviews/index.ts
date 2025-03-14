@@ -6,6 +6,25 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+// Helper function to convert Google's rating strings to numbers
+function parseRating(rating: string | number): number {
+  if (typeof rating === 'number') return rating;
+  
+  // Handle string number values
+  if (!isNaN(Number(rating))) return Number(rating);
+  
+  // Handle text ratings
+  const ratingMap: Record<string, number> = {
+    'ONE': 1,
+    'TWO': 2, 
+    'THREE': 3,
+    'FOUR': 4,
+    'FIVE': 5
+  };
+  
+  return ratingMap[rating] || 0;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -102,31 +121,39 @@ Deno.serve(async (req) => {
     let processedCount = 0
     
     for (const review of reviews) {
-      // Process the review
-      const { data, error } = await supabase
-        .from('reviews')
-        .upsert({
-          google_review_id: review.reviewId,
-          business_id: business.id,
-          author_name: review.reviewer.displayName,
-          rating: review.starRating,
-          comment: review.comment || null,
-          create_time: new Date(review.createTime).toISOString(),
-          reply: review.reviewReply?.comment || null,
-          reply_time: review.reviewReply?.createTime ? new Date(review.reviewReply.createTime).toISOString() : null,
-          photo_urls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || null,
-          sync_status: 'synced',
-          google_sync_source: true,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'google_review_id',
-          ignoreDuplicates: false
-        })
-      
-      if (error) {
-        console.error(`Error storing review ${review.reviewId}:`, error)
-      } else {
-        processedCount++
+      try {
+        // Convert string ratings to numbers
+        const numericRating = parseRating(review.starRating);
+        console.log(`Processing review ${review.reviewId} with rating: ${review.starRating} (converted to ${numericRating})`);
+        
+        // Process the review
+        const { data, error } = await supabase
+          .from('reviews')
+          .upsert({
+            google_review_id: review.reviewId,
+            business_id: business.id,
+            author_name: review.reviewer.displayName,
+            rating: numericRating,
+            comment: review.comment || null,
+            create_time: new Date(review.createTime).toISOString(),
+            reply: review.reviewReply?.comment || null,
+            reply_time: review.reviewReply?.createTime ? new Date(review.reviewReply.createTime).toISOString() : null,
+            photo_urls: review.reviewPhotos?.map((photo: any) => photo.photoUri) || null,
+            sync_status: 'synced',
+            google_sync_source: true,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'google_review_id',
+            ignoreDuplicates: false
+          });
+        
+        if (error) {
+          console.error(`Error storing review ${review.reviewId}:`, error);
+        } else {
+          processedCount++;
+        }
+      } catch (error) {
+        console.error(`Error processing review ${review.reviewId}:`, error);
       }
     }
     
