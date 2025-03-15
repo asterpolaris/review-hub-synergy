@@ -1,5 +1,5 @@
 
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useVenueInsights } from "@/hooks/useVenueInsights";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,7 +14,7 @@ interface VenueInsightsProps {
 }
 
 export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
-  const { data: insights, isLoading, refetch } = useVenueInsights(businessId);
+  const { data: insights, isLoading, refetch, isError } = useVenueInsights(businessId);
   const [syncingReviews, setSyncingReviews] = useState(false);
   const { toast } = useToast();
 
@@ -75,11 +75,19 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
     );
   }
 
-  if (!insights) {
+  if (isError || !insights) {
     return (
       <Alert variant="destructive" className="my-4">
-        <AlertDescription>
-          Failed to load venue insights. Please try again later.
+        <AlertDescription className="flex flex-col gap-4">
+          <div>Failed to load venue insights. Please try again later.</div>
+          <Button 
+            variant="outline" 
+            onClick={() => refetch()} 
+            className="self-start"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
         </AlertDescription>
       </Alert>
     );
@@ -102,7 +110,17 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
           <div className="text-center py-4">
             <p className="text-muted-foreground mb-4">No reviews found for {monthLabel}.</p>
             <Button onClick={handleSyncReviews} disabled={syncingReviews}>
-              {syncingReviews ? "Syncing..." : "Sync Latest Reviews"}
+              {syncingReviews ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Sync Latest Reviews
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
@@ -128,7 +146,17 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
             <CardDescription>Review analysis for {monthLabel}</CardDescription>
           </div>
           <Button variant="outline" onClick={handleSyncReviews} disabled={syncingReviews}>
-            {syncingReviews ? "Syncing..." : "Refresh Data"}
+            {syncingReviews ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Data
+              </>
+            )}
           </Button>
         </div>
       </CardHeader>

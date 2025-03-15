@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
@@ -91,10 +90,30 @@ serve(async (req) => {
   }
 
   try {
-    const { businessId, year, month } = await req.json();
+    const { businessId, year, month, reviews } = await req.json();
 
+    // If direct reviews analysis is provided, use it instead of fetching from the database
+    if (reviews && Array.isArray(reviews) && reviews.length > 0) {
+      console.log(`Analyzing ${reviews.length} reviews provided directly in the request`);
+      const analysis = await callClaude(reviews);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          analysis 
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
+    // Otherwise, use businessId, year, month to fetch and analyze reviews
     if (!businessId) {
-      throw new Error('Business ID is required');
+      throw new Error('Business ID is required when reviews are not provided directly');
     }
 
     // Define current date for default values

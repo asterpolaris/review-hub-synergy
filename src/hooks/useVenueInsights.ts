@@ -70,7 +70,10 @@ export const useVenueInsights = (businessId?: string) => {
           }
         });
         
-        if (generationError) throw generationError;
+        if (generationError) {
+          console.error('Error generating insights:', generationError);
+          throw new Error('Failed to generate insights. Please try again.');
+        }
         
         console.log('Generation result:', generationResult);
         
@@ -123,7 +126,7 @@ export const useVenueInsights = (businessId?: string) => {
             authorName: review.author_name
           }));
           
-          // Call the analyze-reviews-by-venue function directly
+          // Call the analyze-reviews-by-venue function directly with reviews
           const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
             body: { reviews: formattedReviews }
           });
@@ -152,7 +155,7 @@ export const useVenueInsights = (businessId?: string) => {
         console.error("Error fetching venue insights:", error);
         toast({
           title: "Error",
-          description: "Failed to load venue insights.",
+          description: "Failed to load venue insights. Please try again later.",
           variant: "destructive",
         });
         return null;
@@ -161,5 +164,6 @@ export const useVenueInsights = (businessId?: string) => {
       }
     },
     enabled: !!businessId && !!session,
+    retry: 1,
   });
 };
