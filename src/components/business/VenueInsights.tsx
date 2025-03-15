@@ -1,5 +1,5 @@
 
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { useVenueInsights } from "@/hooks/useVenueInsights";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface VenueInsightsProps {
   businessId: string;
@@ -16,6 +17,7 @@ interface VenueInsightsProps {
 export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
   const { data: insights, isLoading, refetch, isError, error } = useVenueInsights(businessId);
   const [syncingReviews, setSyncingReviews] = useState(false);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
   const { toast } = useToast();
 
   const handleSyncReviews = async () => {
@@ -70,6 +72,16 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
       });
     } finally {
       setSyncingReviews(false);
+    }
+  };
+
+  const copyAnalysisToClipboard = () => {
+    if (insights?.analysis) {
+      navigator.clipboard.writeText(insights.analysis);
+      toast({
+        title: "Copied",
+        description: "Analysis copied to clipboard",
+      });
     }
   };
 
@@ -196,12 +208,39 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
           </div>
         </div>
         
-        <div className="prose prose-sm max-w-none dark:prose-invert">
-          <h3 className="text-lg font-medium mb-2">AI Analysis</h3>
-          <div className="bg-muted p-4 rounded-lg text-sm">
-            {formattedAnalysis}
+        <Collapsible 
+          open={isAnalysisOpen} 
+          onOpenChange={setIsAnalysisOpen}
+          className="border rounded-lg p-2"
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-medium">AI Analysis</h3>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={copyAnalysisToClipboard}
+                title="Copy analysis to clipboard"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <CollapsibleTrigger asChild>
+                <Button size="sm" variant="ghost">
+                  {isAnalysisOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
           </div>
-        </div>
+          <CollapsibleContent>
+            <div className="bg-muted p-4 rounded-lg text-sm">
+              {formattedAnalysis}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );
