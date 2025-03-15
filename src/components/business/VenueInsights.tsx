@@ -14,7 +14,7 @@ interface VenueInsightsProps {
 }
 
 export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
-  const { data: insights, isLoading, refetch, isError } = useVenueInsights(businessId);
+  const { data: insights, isLoading, refetch, isError, error } = useVenueInsights(businessId);
   const [syncingReviews, setSyncingReviews] = useState(false);
   const { toast } = useToast();
 
@@ -69,27 +69,41 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <Card className="mt-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isError || !insights) {
     return (
-      <Alert variant="destructive" className="my-4">
-        <AlertDescription className="flex flex-col gap-4">
-          <div>Failed to load venue insights. Please try again later.</div>
-          <Button 
-            variant="outline" 
-            onClick={() => refetch()} 
-            className="self-start"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Monthly Insights</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive" className="my-4">
+            <AlertDescription className="flex flex-col gap-4">
+              <div>Failed to load venue insights. Please try again later.</div>
+              <div className="text-xs text-muted-foreground">
+                {error instanceof Error ? error.message : "Unknown error"}
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => refetch()} 
+                className="self-start"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -129,7 +143,7 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
   }
 
   // Format the analysis by preserving line breaks for better readability
-  const formattedAnalysis = insights.analysis
+  const formattedAnalysis = (insights.analysis || "No analysis available.")
     .split('\n')
     .map((line, index) => (
       <p key={index} className={`${line.trim() === '' ? 'my-2' : 'my-1'}`}>
