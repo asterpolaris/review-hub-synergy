@@ -114,6 +114,7 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
     }
   };
 
+  // Handle loading state
   if (isLoading) {
     return (
       <Card className="mt-6">
@@ -126,12 +127,31 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
     );
   }
 
+  // Last month for display
+  const lastMonth = new Date();
+  lastMonth.setDate(1);
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const monthLabel = format(lastMonth, 'MMMM yyyy');
+
+  // Create a fallback insights object to prevent JS errors
+  const fallbackInsights = {
+    businessName: '',
+    reviewCount: 0,
+    averageRating: 0,
+    responseRate: 0,
+    analysis: "Analysis is currently unavailable. Please try again later."
+  };
+
+  // Safely access insights with fallback
+  const safeInsights = insights || fallbackInsights;
+
+  // Handle error state
   if (isError) {
-    // Provide a more user-friendly error card that won't crash the UI
     return (
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Monthly Insights</CardTitle>
+          <CardTitle>Monthly Insights: {monthLabel}</CardTitle>
+          <CardDescription>Review analysis for {monthLabel}</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive" className="my-4">
@@ -150,46 +170,21 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
               </Button>
             </AlertDescription>
           </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Safeguard against undefined insights
-  if (!insights) {
-    return (
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Monthly Insights</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <p className="text-muted-foreground mb-4">No insights data is available.</p>
-            <Button onClick={handleSyncReviews} disabled={syncingReviews}>
-              {syncingReviews ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Syncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sync Latest Reviews
-                </>
-              )}
-            </Button>
+          
+          {/* Fallback stats section */}
+          <div className="mt-6">
+            <h3 className="text-md font-semibold mb-2">Local Analysis</h3>
+            <div className="bg-muted p-4 rounded-lg">
+              {generateLocalAnalysis()}
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const lastMonth = new Date();
-  lastMonth.setDate(1);
-  lastMonth.setMonth(lastMonth.getMonth() - 1);
-  const monthLabel = format(lastMonth, 'MMMM yyyy');
-
-  if (insights.reviewCount === 0) {
+  // No reviews state
+  if (safeInsights.reviewCount === 0) {
     return (
       <Card className="mt-6">
         <CardHeader>
@@ -219,13 +214,13 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
   }
 
   // Check if analysis is unavailable or contains error message
-  const isAnalysisUnavailable = !insights.analysis || 
-                               insights.analysis === "Analysis is currently unavailable. Please try again later." || 
-                               insights.analysis.includes("could not be completed") ||
-                               insights.analysis.includes("unavailable");
+  const isAnalysisUnavailable = !safeInsights.analysis || 
+                               safeInsights.analysis === "Analysis is currently unavailable. Please try again later." || 
+                               safeInsights.analysis.includes("could not be completed") ||
+                               safeInsights.analysis.includes("unavailable");
   
   // Use local fallback if AI analysis is unavailable
-  const analysisContent = isAnalysisUnavailable ? generateLocalAnalysis() : insights.analysis;
+  const analysisContent = isAnalysisUnavailable ? generateLocalAnalysis() : safeInsights.analysis;
 
   // Format the analysis for display with appropriate styling
   const formattedAnalysis = (analysisContent || "No analysis available.")
@@ -249,6 +244,7 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
       );
     });
 
+  // Main render with insights
   return (
     <Card className="mt-6">
       <CardHeader>
@@ -275,15 +271,15 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-muted p-4 rounded-lg">
-            <div className="text-2xl font-bold">{insights.reviewCount}</div>
+            <div className="text-2xl font-bold">{safeInsights.reviewCount}</div>
             <div className="text-sm text-muted-foreground">Reviews this month</div>
           </div>
           <div className="bg-muted p-4 rounded-lg">
-            <div className="text-2xl font-bold">{insights.averageRating?.toFixed(1) || 'N/A'}</div>
+            <div className="text-2xl font-bold">{safeInsights.averageRating?.toFixed(1) || 'N/A'}</div>
             <div className="text-sm text-muted-foreground">Average rating</div>
           </div>
           <div className="bg-muted p-4 rounded-lg">
-            <div className="text-2xl font-bold">{insights.responseRate?.toFixed(0) || 0}%</div>
+            <div className="text-2xl font-bold">{safeInsights.responseRate?.toFixed(0) || 0}%</div>
             <div className="text-sm text-muted-foreground">Response rate</div>
           </div>
         </div>
