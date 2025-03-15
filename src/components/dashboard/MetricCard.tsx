@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricVariance } from "./MetricVariance";
 
@@ -12,10 +13,10 @@ export const MetricCard = ({ title, value, variance, absoluteChange }: MetricCar
   return (
     <Card className="glass-panel">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-bold">{value}</p>
+        <p className="text-4xl font-bold">{value}</p>
         {variance !== 0 && (
           <MetricVariance value={variance} absoluteChange={absoluteChange} />
         )}
