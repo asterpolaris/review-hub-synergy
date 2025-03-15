@@ -72,20 +72,25 @@ export const useVenueInsights = (businessId?: string) => {
         console.log('Triggering insights generation');
         
         // Trigger the generation of insights via the edge function
-        const { data: generationResult, error: generationError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
-          body: { 
-            businessId,
-            year: lastMonth.getFullYear(),
-            month: lastMonth.getMonth() + 1 // Edge function expects 1-based months
+        try {
+          const { data: generationResult, error: generationError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
+            body: { 
+              businessId,
+              year: lastMonth.getFullYear(),
+              month: lastMonth.getMonth() + 1 // Edge function expects 1-based months
+            }
+          });
+          
+          if (generationError) {
+            console.error('Error generating insights:', generationError);
+            throw new Error(`Failed to generate insights: ${generationError.message || 'Unknown error'}`);
           }
-        });
-        
-        if (generationError) {
-          console.error('Error generating insights:', generationError);
-          throw new Error(`Failed to generate insights: ${generationError.message || 'Unknown error'}`);
+          
+          console.log('Generation result:', generationResult);
+        } catch (error) {
+          console.error('Error calling analyze-reviews-by-venue function:', error);
+          // Continue with fallback logic instead of throwing
         }
-        
-        console.log('Generation result:', generationResult);
         
         // After generation, fetch the updated insights with retry logic
         let retries = 0;
@@ -179,25 +184,37 @@ export const useVenueInsights = (businessId?: string) => {
         console.log('Sending reviews for direct analysis');
         
         // Call the analyze-reviews-by-venue function directly with reviews
-        const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
-          body: { reviews: formattedReviews }
-        });
-        
-        if (analysisError) {
-          console.error('Error analyzing reviews directly:', analysisError);
-          throw analysisError;
+        try {
+          const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
+            body: { reviews: formattedReviews }
+          });
+          
+          if (analysisError) {
+            console.error('Error analyzing reviews directly:', analysisError);
+            throw analysisError;
+          }
+          
+          console.log('Analysis result:', analysisData);
+          
+          return {
+            businessName: business.name,
+            reviewCount: reviews.length,
+            analysis: analysisData.analysis || "Unable to generate analysis.",
+            averageRating: reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length,
+            responseRate: (reviews.filter(review => review.reply).length / reviews.length) * 100
+          };
+        } catch (error) {
+          console.error('Error with direct analysis, providing basic stats only:', error);
+          
+          // Last fallback - just return basic stats without AI analysis
+          return {
+            businessName: business.name,
+            reviewCount: reviews.length,
+            analysis: "Analysis is currently unavailable. Please try again later.",
+            averageRating: reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length,
+            responseRate: (reviews.filter(review => review.reply).length / reviews.length) * 100
+          };
         }
-        
-        console.log('Analysis result:', analysisData);
-        
-        return {
-          businessName: business.name,
-          reviewCount: reviews.length,
-          analysis: analysisData.analysis || "Unable to generate analysis.",
-          averageRating: reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length,
-          responseRate: (reviews.filter(review => review.reply).length / reviews.length) * 100
-        };
-        
       } catch (error) {
         console.error("Error fetching venue insights:", error);
         toast({

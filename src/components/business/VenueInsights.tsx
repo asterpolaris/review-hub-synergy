@@ -41,16 +41,22 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
       lastMonth.setDate(1);
       lastMonth.setMonth(lastMonth.getMonth() - 1);
       
-      const { error: analysisError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
-        body: { 
-          businessId,
-          year: lastMonth.getFullYear(),
-          month: lastMonth.getMonth() + 1 // Edge function expects 1-based months
+      try {
+        const { error: analysisError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
+          body: { 
+            businessId,
+            year: lastMonth.getFullYear(),
+            month: lastMonth.getMonth() + 1 // Edge function expects 1-based months
+          }
+        });
+        
+        if (analysisError) {
+          console.error("Error invoking analyze-reviews-by-venue:", analysisError);
+          // We'll continue anyway and refetch
         }
-      });
-      
-      if (analysisError) {
-        throw new Error("Failed to analyze reviews");
+      } catch (err) {
+        console.error("Exception when calling analyze-reviews-by-venue:", err);
+        // Continue with refetch anyway
       }
       
       // Wait a moment for the sync to complete on the backend
