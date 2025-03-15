@@ -33,8 +33,8 @@ export const ReviewReplySection = ({
     return (
       <Card className="border-dashed border-primary/50">
         <CardHeader>
-          <CardTitle className="text-sm">Your Reply</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base">Your Reply</CardTitle>
+          <CardDescription className="text-base">
             {review.reply 
               ? "Edit your response to this review" 
               : "Add a response to this review"}
@@ -59,11 +59,12 @@ export const ReviewReplySection = ({
       <Card className="bg-muted/30">
         <CardHeader className="pb-3">
           <div className="flex justify-between">
-            <CardTitle className="text-sm">Your Reply</CardTitle>
-            <div className="flex gap-2">
+            <CardTitle className="text-base">Your Reply</CardTitle>
+            <div className="flex gap-3">
               <Button 
                 variant="ghost" 
                 size="sm"
+                className="text-base"
                 onClick={onEdit}
               >
                 Edit
@@ -71,19 +72,20 @@ export const ReviewReplySection = ({
               <Button 
                 variant="ghost" 
                 size="sm"
+                className="text-base"
                 onClick={onDelete}
               >
                 Delete
               </Button>
             </div>
           </div>
-          <CardDescription>
+          <CardDescription className="text-base">
             {review.reply.createTime && (
               <span>Replied on {format(new Date(review.reply.createTime), 'MMM d, yyyy')}</span>
             )}
             {review.syncStatus === 'pending_reply_sync' && (
               <span className="ml-2 text-yellow-600 inline-flex items-center">
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 Sending to Google...
               </span>
             )}
@@ -95,18 +97,18 @@ export const ReviewReplySection = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm">{review.reply.comment}</p>
+          <p className="text-base leading-relaxed">{review.reply.comment}</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="flex justify-center">
-      <Button variant="outline" onClick={onEdit}>
+    <div className="flex justify-center py-2">
+      <Button variant="outline" className="text-base py-6 px-8" onClick={onEdit}>
         {isSending ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             Sending...
           </>
         ) : (

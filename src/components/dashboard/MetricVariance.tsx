@@ -16,10 +16,10 @@ export const MetricVariance = ({ value, absoluteChange }: MetricVarianceProps) =
   const isPositive = value > 0;
   return (
     <div className={cn(
-      "text-sm flex items-center gap-1 mt-2",
+      "text-base flex items-center gap-2 mt-2",
       isPositive ? "text-green-600" : "text-red-600"
     )}>
-      {isPositive ? <ArrowUpIcon className="h-4 w-4" /> : <ArrowDownIcon className="h-4 w-4" />}
+      {isPositive ? <ArrowUpIcon className="h-5 w-5" /> : <ArrowDownIcon className="h-5 w-5" />}
       <span>{Math.abs(value).toFixed(1)}% ({absoluteChange > 0 ? '+' : ''}{absoluteChange})</span>
     </div>
   );

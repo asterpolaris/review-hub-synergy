@@ -14,23 +14,23 @@ export const ReviewList = ({
 }: ReviewListProps) => {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
   
   if (!reviews || reviews.length === 0) {
     return (
-      <div className="text-center text-muted-foreground py-8">
+      <div className="text-center text-muted-foreground text-lg py-12">
         No reviews found.
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6">
+    <div className="space-y-8">
+      <div className="grid gap-8">
         {reviews.map((review) => (
           <ReviewCard key={review.id} review={review} />
         ))}

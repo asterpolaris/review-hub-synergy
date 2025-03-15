@@ -13,10 +13,10 @@ export const MetricCard = ({ title, value, variance, absoluteChange }: MetricCar
   return (
     <Card className="glass-panel">
       <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardTitle className="text-xl">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-4xl font-bold">{value}</p>
+        <p className="text-5xl font-bold mb-2">{value}</p>
         {variance !== 0 && (
           <MetricVariance value={variance} absoluteChange={absoluteChange} />
         )}
