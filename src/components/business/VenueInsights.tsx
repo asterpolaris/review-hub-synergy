@@ -1,3 +1,4 @@
+
 import { Loader2, RefreshCw, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { useVenueInsights } from "@/hooks/useVenueInsights";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,26 +38,7 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
         description: "Reviews synced successfully. Refreshing insights...",
       });
       
-      const lastMonth = new Date();
-      lastMonth.setDate(1);
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
-      
-      try {
-        const { error: analysisError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
-          body: { 
-            businessId,
-            year: lastMonth.getFullYear(),
-            month: lastMonth.getMonth() + 1
-          }
-        });
-        
-        if (analysisError) {
-          console.error("Error invoking analyze-reviews-by-venue:", analysisError);
-        }
-      } catch (err) {
-        console.error("Exception when calling analyze-reviews-by-venue:", err);
-      }
-      
+      // No need to call Edge Function directly - just refresh data
       setTimeout(() => refetch(), 2000);
     } catch (error) {
       console.error("Error syncing reviews:", error);
@@ -144,7 +126,8 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
     );
   }
 
-  if (isError || !insights) {
+  if (isError) {
+    // Provide a more user-friendly error card that won't crash the UI
     return (
       <Card className="mt-6">
         <CardHeader>
@@ -155,7 +138,7 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
             <AlertDescription className="flex flex-col gap-4">
               <div>Failed to load venue insights. Please try again later.</div>
               <div className="text-xs text-muted-foreground">
-                {error instanceof Error ? error.message : "Unknown error"}
+                {error instanceof Error ? error.message : "Connection to analytics service failed"}
               </div>
               <Button 
                 variant="outline" 
@@ -167,6 +150,35 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
               </Button>
             </AlertDescription>
           </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Safeguard against undefined insights
+  if (!insights) {
+    return (
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Monthly Insights</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">
+            <p className="text-muted-foreground mb-4">No insights data is available.</p>
+            <Button onClick={handleSyncReviews} disabled={syncingReviews}>
+              {syncingReviews ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Sync Latest Reviews
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -206,12 +218,16 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
     );
   }
 
-  const isAnalysisUnavailable = insights.analysis === "Analysis is currently unavailable. Please try again later." || 
-                               !insights.analysis || 
-                               insights.analysis.includes("could not be completed");
+  // Check if analysis is unavailable or contains error message
+  const isAnalysisUnavailable = !insights.analysis || 
+                               insights.analysis === "Analysis is currently unavailable. Please try again later." || 
+                               insights.analysis.includes("could not be completed") ||
+                               insights.analysis.includes("unavailable");
   
+  // Use local fallback if AI analysis is unavailable
   const analysisContent = isAnalysisUnavailable ? generateLocalAnalysis() : insights.analysis;
 
+  // Format the analysis for display with appropriate styling
   const formattedAnalysis = (analysisContent || "No analysis available.")
     .split('\n')
     .map((line, index) => {
