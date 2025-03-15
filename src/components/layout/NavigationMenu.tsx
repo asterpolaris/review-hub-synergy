@@ -82,7 +82,7 @@ export const NavigationMenu = () => {
           </a>
         </div>
         <p className="text-xs text-center text-muted-foreground">
-          © {new Date().getFullYear()} Revuman
+          © {new Date().getFullYear()} JEGantic
         </p>
       </div>
     </div>
