@@ -1,5 +1,4 @@
-
-import { Settings, UserCircle2, LogOut, Bell, Menu } from "lucide-react";
+import { Settings, UserCircle2, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +12,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NavigationMenu } from "./NavigationMenu";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut, session } = useAuth();
@@ -48,13 +48,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-10 w-10 rounded-full bg-accent/20 text-primary hover:bg-accent/30 hover:text-primary"
-              >
-                <Bell className="h-5 w-5" />
-              </Button>
+              <NotificationBell />
               
               <Sheet>
                 <SheetTrigger asChild>

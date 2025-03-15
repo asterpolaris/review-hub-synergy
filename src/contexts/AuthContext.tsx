@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log("[Auth] Current session found, checking provider refresh token");
-      // Get the provider refresh token from the session
       const providerToken = currentSession.provider_refresh_token;
       if (!providerToken) {
         console.error("[Auth] No refresh token available in session");
@@ -57,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log("[Auth] Calling refresh-google-token edge function");
-      // Exchange the refresh token for a new access token
       const response = await supabase.functions.invoke('refresh-google-token', {
         body: { refresh_token: providerToken },
         headers: {
@@ -76,8 +73,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("[Auth] Received new token, expires in:", expires_in, "seconds");
       console.log("[Auth] New token expiration:", expires_at);
 
-      // Update the token in the database
-      console.log("[Auth] Updating token in database");
       const { error: updateError } = await supabase
         .from('google_auth_tokens')
         .update({
@@ -135,10 +130,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Check if token is expired or about to expire (within 5 minutes)
       const expiresAt = new Date(tokens.expires_at);
       const now = new Date();
-      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+      const fiveMinutes = 5 * 60 * 1000;
       const timeUntilExpiry = expiresAt.getTime() - now.getTime();
 
       console.log("[Auth] Token expires at:", expiresAt);
@@ -162,18 +156,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserActivity = async (userId: string) => {
+    try {
+      await supabase.functions.invoke('update-user-activity', {
+        body: { userId }
+      });
+    } catch (error) {
+      console.error("Failed to update user activity:", error);
+    }
+  };
+
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("[Auth] Initial session check:", session?.user?.id);
       setSession(session);
       if (session?.user) {
         fetchGoogleToken(session.user.id);
+        updateUserActivity(session.user.id);
       }
       setIsLoading(false);
     });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -181,19 +184,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setIsLoading(false);
 
-      // Reset Google auth token on sign out
       if (!session) {
         console.log("[Auth] Clearing Google auth token");
         setGoogleAuthToken(null);
       } else {
-        // Fetch Google auth token on sign in
         console.log("[Auth] Fetching Google auth token for user:", session.user.id);
         fetchGoogleToken(session.user.id);
+        
+        if (_event === 'SIGNED_IN') {
+          updateUserActivity(session.user.id);
+        }
       }
     });
 
-    // Set up periodic token refresh check (every 4 minutes)
-    console.log("[Auth] Setting up periodic token refresh check (every 4 minutes)");
     const refreshInterval = setInterval(() => {
       if (session?.user) {
         console.log("[Auth] Running periodic token refresh check");
