@@ -48,3 +48,4 @@ verify_jwt = true
 
 [functions.analyze-reviews-by-venue]
 verify_jwt = true
+port = 54325

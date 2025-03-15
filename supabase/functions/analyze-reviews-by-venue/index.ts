@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
@@ -35,69 +34,155 @@ async function callClaude(reviews: any[], retryCount = 0): Promise<string> {
       return acc;
     }, {});
 
-    const prompt = `Analyze these reviews grouped by venue. For each venue, provide:
-1. Overall sentiment (positive/negative ratio)
-2. Key themes in positive reviews
-3. Key themes in negative reviews
-4. Standout issues or praise that appear frequently
-5. One or two specific recommendations for improvement
+    // If we end up with no reviews after filtering (e.g., all comments are empty)
+    if (Object.keys(reviewsByVenue).length === 0) {
+      return "No valid reviews available for analysis.";
+    }
 
-Reviews by venue:
+    // Prepare a shorter, more focused prompt to reduce token usage
+    const prompt = `Analyze these customer reviews for a business and provide:
+1. Overall sentiment summary
+2. Key positive themes
+3. Key negative themes or areas for improvement
+4. 2-3 specific recommendations
+
+Reviews (${reviews.length} total):
 ${Object.entries(reviewsByVenue).map(([venue, venueReviews]: [string, any[]]) => `
 ${venue}:
-${venueReviews.map((r: any) => `- ${r.rating} stars: "${r.comment}"`).join('\n')}
+${(venueReviews as any[]).slice(0, 20).map((r: any) => `- ${r.rating} stars: "${r.comment.substring(0, 200)}${r.comment.length > 200 ? '...' : ''}"`).join('\n')}
+${venueReviews.length > 20 ? `... and ${venueReviews.length - 20} more reviews` : ''}
 `).join('\n')}
 
-Provide a clear, structured analysis for each venue.`;
+Format your analysis in markdown with headers and bullet points where appropriate.`;
 
-    console.log("Sending request to Claude API...");
+    console.log(`Sending request to Claude API with ${reviews.length} reviews...`);
     
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: prompt
-        }]
-      })
-    });
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicApiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: prompt
+          }]
+        })
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Claude API error response:', errorText);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Claude API error response:', errorText);
+        
+        // If overloaded and we haven't exceeded retries, try again
+        if ((response.status === 529 || response.status === 429) && retryCount < MAX_RETRIES) {
+          console.log(`Retry attempt ${retryCount + 1} after rate limit...`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+          return callClaude(reviews, retryCount + 1);
+        }
+        
+        throw new Error(`Claude API error: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
       
-      // If overloaded and we haven't exceeded retries, try again
-      if (response.status === 529 && retryCount < MAX_RETRIES) {
-        console.log(`Retry attempt ${retryCount + 1} after overload...`);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      if (!data || !data.content || !data.content[0] || !data.content[0].text) {
+        throw new Error("Unexpected response format from Claude API");
+      }
+      
+      return data.content[0].text;
+    } catch (fetchError) {
+      console.error("Error fetching from Claude API:", fetchError);
+      
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retry attempt ${retryCount + 1} after fetch error`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
         return callClaude(reviews, retryCount + 1);
       }
       
-      throw new Error(`Claude API error: ${response.status} ${errorText}`);
+      // If we've exhausted retries or had another error, provide a basic analysis
+      return generateBasicAnalysis(reviews);
     }
-
-    const data = await response.json();
-    return data.content && data.content[0] && data.content[0].text 
-      ? data.content[0].text
-      : "Analysis could not be generated at this time.";
   } catch (error) {
     console.error("Error in callClaude:", error);
     
     if (retryCount < MAX_RETRIES) {
       console.log(`Retry attempt ${retryCount + 1} after error:`, error);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
       return callClaude(reviews, retryCount + 1);
     }
     
     // Return a fallback message rather than throwing
-    return "Analysis could not be completed due to technical issues. Please try again later.";
+    return generateBasicAnalysis(reviews);
+  }
+}
+
+function generateBasicAnalysis(reviews: any[]): string {
+  try {
+    // Calculate basic stats
+    const totalReviews = reviews.length;
+    const averageRating = reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / totalReviews;
+    
+    // Count ratings
+    const ratingCounts = [0, 0, 0, 0, 0, 0]; // Index 0 is unused, 1-5 for stars
+    reviews.forEach(review => {
+      const rating = Math.floor(review.rating);
+      if (rating >= 1 && rating <= 5) {
+        ratingCounts[rating]++;
+      }
+    });
+    
+    // Calculate positive vs negative ratio
+    const positiveReviews = ratingCounts[4] + ratingCounts[5];
+    const negativeReviews = ratingCounts[1] + ratingCounts[2];
+    const neutralReviews = ratingCounts[3];
+    
+    // Generate analysis text
+    let analysis = `# Review Analysis Summary\n\n`;
+    
+    analysis += `## Overview\n`;
+    analysis += `Total reviews analyzed: ${totalReviews}\n`;
+    analysis += `Average rating: ${averageRating.toFixed(1)} stars\n\n`;
+    
+    analysis += `## Rating Distribution\n`;
+    analysis += `- 5 stars: ${ratingCounts[5]} (${((ratingCounts[5] / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- 4 stars: ${ratingCounts[4]} (${((ratingCounts[4] / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- 3 stars: ${ratingCounts[3]} (${((ratingCounts[3] / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- 2 stars: ${ratingCounts[2]} (${((ratingCounts[2] / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- 1 star: ${ratingCounts[1]} (${((ratingCounts[1] / totalReviews) * 100).toFixed(0)}%)\n\n`;
+    
+    analysis += `## Sentiment Overview\n`;
+    analysis += `- Positive reviews (4-5 stars): ${positiveReviews} (${((positiveReviews / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- Neutral reviews (3 stars): ${neutralReviews} (${((neutralReviews / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- Negative reviews (1-2 stars): ${negativeReviews} (${((negativeReviews / totalReviews) * 100).toFixed(0)}%)\n\n`;
+    
+    analysis += `## General Assessment\n`;
+    if (averageRating >= 4.5) {
+      analysis += `Overall customer satisfaction appears to be excellent. The high percentage of 5-star ratings suggests customers are very happy with their experience.\n\n`;
+    } else if (averageRating >= 4.0) {
+      analysis += `Overall customer satisfaction appears to be good. Most customers are satisfied with their experience.\n\n`;
+    } else if (averageRating >= 3.0) {
+      analysis += `Overall customer satisfaction appears to be average. There is room for improvement in the customer experience.\n\n`;
+    } else {
+      analysis += `Overall customer satisfaction appears to be below average. Significant improvements may be needed to enhance the customer experience.\n\n`;
+    }
+    
+    analysis += `## Recommendations\n`;
+    analysis += `1. ${negativeReviews > 0 ? 'Examine the negative reviews to identify specific areas for improvement.' : 'Continue maintaining the high quality of service.'}\n`;
+    analysis += `2. ${neutralReviews > 0 ? 'Look for ways to convert neutral (3-star) experiences into positive ones.' : 'Focus on maintaining consistency in service quality.'}\n`;
+    analysis += `3. Consider implementing a review response strategy to show engagement with customer feedback.\n\n`;
+    
+    analysis += `*Note: This is an automated basic analysis. Detailed AI analysis of review content was unavailable.*`;
+    
+    return analysis;
+  } catch (err) {
+    console.error("Error generating basic analysis:", err);
+    return "Analysis could not be generated due to technical issues. Please try again later.";
   }
 }
 
