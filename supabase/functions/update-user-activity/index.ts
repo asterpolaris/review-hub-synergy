@@ -26,6 +26,14 @@ Deno.serve(async (req) => {
       .from('profiles')
       .update({ 
         last_login: new Date().toISOString(),
+        // Initialize last_reviews_check if it's null (first login)
+        last_reviews_check: supabase.sql`
+          CASE 
+            WHEN (SELECT last_reviews_check FROM profiles WHERE id = ${userId}) IS NULL 
+            THEN ${new Date().toISOString()}
+            ELSE (SELECT last_reviews_check FROM profiles WHERE id = ${userId})
+          END
+        `
       })
       .eq('id', userId)
     

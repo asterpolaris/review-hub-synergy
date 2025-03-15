@@ -17,13 +17,16 @@ export const useNewReviewsNotification = () => {
       try {
         setLoading(true);
         
-        // First check if we have a last_login record for this user
-        const { data: profileData } = await supabase
+        // First check if we have a last_reviews_check record for this user
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('last_reviews_check')
+          .select('*')
           .eq('id', session.user.id)
           .single();
         
+        if (profileError) throw profileError;
+        
+        // If last_reviews_check is not set, use a very old date
         const lastReviewsCheck = profileData?.last_reviews_check || new Date(0).toISOString();
 
         // Get reviews created after last check
@@ -40,7 +43,9 @@ export const useNewReviewsNotification = () => {
         // Update the last_reviews_check time
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ last_reviews_check: new Date().toISOString() })
+          .update({ 
+            last_reviews_check: new Date().toISOString() 
+          })
           .eq('id', session.user.id);
           
         if (updateError) {
@@ -70,7 +75,9 @@ export const useNewReviewsNotification = () => {
       // Update the last checked time to now
       await supabase
         .from('profiles')
-        .update({ last_reviews_check: new Date().toISOString() })
+        .update({ 
+          last_reviews_check: new Date().toISOString() 
+        })
         .eq('id', session.user.id);
         
       setNewReviewsCount(0);
