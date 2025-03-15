@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 export const useVenueInsights = (businessId?: string) => {
   const { toast } = useToast();
   const { session } = useAuth();
-  const [loading, setLoading] = useState(false);
 
   return useQuery({
     queryKey: ["venue-insights", businessId],
@@ -17,7 +15,6 @@ export const useVenueInsights = (businessId?: string) => {
       if (!businessId || !session) return null;
       
       try {
-        setLoading(true);
         console.log(`Fetching venue insights for business ${businessId}`);
         
         // Get the current date and calculate last month
@@ -209,8 +206,6 @@ export const useVenueInsights = (businessId?: string) => {
           variant: "destructive",
         });
         throw error;
-      } finally {
-        setLoading(false);
       }
     },
     enabled: !!businessId && !!session,
