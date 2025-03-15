@@ -1,13 +1,14 @@
-import { Sidebar, SidebarContent, SidebarGroup } from "@/components/ui/sidebar";
-import { SidebarHeader } from "./sidebar/SidebarHeader";
+
+import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader } from "@/components/ui/sidebar";
+import { SidebarHeader as CustomSidebarHeader } from "./sidebar/SidebarHeader";
 import { SidebarNavigation } from "./sidebar/SidebarNavigation";
 
 export const AppSidebar = () => {
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarHeader />
+    <Sidebar variant="floating" collapsible="icon" className="border-none">
+      <SidebarContent className="p-2">
+        <SidebarGroup className="bg-background/30 backdrop-blur-lg rounded-2xl shadow-lg p-2">
+          <CustomSidebarHeader />
           <SidebarNavigation />
         </SidebarGroup>
       </SidebarContent>

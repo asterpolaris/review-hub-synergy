@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReviewMetrics } from "@/hooks/useReviewMetrics";
-import { RefreshCwIcon, Loader2 } from "lucide-react";
+import { RefreshCwIcon, Loader2, Trophy, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,12 +36,18 @@ const Dashboard = () => {
   if (!googleAuthToken) {
     return (
       <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+          <div className="w-16 h-16 rounded-full bg-accent/30 flex items-center justify-center mb-2">
+            <Trophy className="h-8 w-8 text-primary" />
+          </div>
           <h2 className="text-2xl font-semibold">Connect Google Business Profile</h2>
           <p className="text-muted-foreground text-center max-w-md">
             To view your business metrics, you need to connect your Google Business Profile account.
           </p>
-          <Button onClick={() => navigate("/businesses")}>
+          <Button 
+            onClick={() => navigate("/businesses")}
+            className="rounded-full px-8 py-6 text-lg font-medium"
+          >
             Connect Google Account
           </Button>
         </div>
@@ -64,40 +71,41 @@ const Dashboard = () => {
 
   const rawName = session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'there';
   const firstName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-  const greeting = `${getGreeting()}, ${firstName}`;
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fadeIn">
-        <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-medium tracking-tight text-muted-foreground">
-              {greeting}
-            </h2>
-            <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
+      <div className="space-y-8">
+        <div className="flex flex-col space-y-2">
+          <h2 className="text-xl font-medium text-muted-foreground">
+            {getGreeting()}, {firstName}
+          </h2>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">Follow Your Favorites</h1>
+            <div className="flex gap-2">
+              <Select value={period} onValueChange={(value: DatePeriod) => setPeriod(value)}>
+                <SelectTrigger className="w-[180px] rounded-xl">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="last-month">Last Month</SelectItem>
+                  <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                  <SelectItem value="last-year">Last Year</SelectItem>
+                  <SelectItem value="lifetime">Lifetime</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={handleRefresh}
+                variant="outline"
+                size="icon"
+                className="rounded-full h-10 w-10"
+              >
+                <RefreshCwIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Select value={period} onValueChange={(value: DatePeriod) => setPeriod(value)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="last-month">Last Month</SelectItem>
-                <SelectItem value="last-30-days">Last 30 Days</SelectItem>
-                <SelectItem value="last-year">Last Year</SelectItem>
-                <SelectItem value="lifetime">Lifetime</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              onClick={handleRefresh}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <RefreshCwIcon className="h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
+          <p className="text-muted-foreground text-base">
+            Keep up with stats, scores, and more for every business.
+          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -127,11 +135,19 @@ const Dashboard = () => {
           />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Metrics by Venue</CardTitle>
+        <Button className="mx-auto flex items-center justify-center rounded-full px-8 py-6 text-lg font-medium">
+          <Star className="mr-2 h-5 w-5" />
+          Follow Businesses
+        </Button>
+
+        <Card className="rounded-2xl shadow-lg border-accent/20 overflow-hidden">
+          <CardHeader className="bg-accent/10">
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5" />
+              Metrics by Venue
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <VenueMetricsTable venues={metrics?.venueMetrics || []} />
           </CardContent>
         </Card>

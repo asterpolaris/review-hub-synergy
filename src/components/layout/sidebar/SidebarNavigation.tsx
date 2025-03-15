@@ -1,7 +1,8 @@
+
 import { useLocation } from "react-router-dom";
-import { BarChart3, MessageSquare, Building2, Settings, Link, Layout } from "lucide-react";
+import { BarChart3, MessageSquare, Building2, Settings, Link, Layout, Search, Trophy, Star } from "lucide-react";
 import { SidebarMenuItem } from "./SidebarMenuItem";
-import { SidebarGroupContent } from "@/components/ui/sidebar";
+import { SidebarGroupContent, SidebarMenu } from "@/components/ui/sidebar";
 
 const menuItems = [
   {
@@ -20,14 +21,19 @@ const menuItems = [
     label: "Reviews"
   },
   {
+    to: "/search",
+    icon: Search,
+    label: "Search"
+  },
+  {
     to: "/client-experience",
-    icon: Layout,
-    label: "Client Experience"
+    icon: Trophy,
+    label: "My Teams"
   },
   {
     to: "https://www.sevenrooms.com/login",
-    icon: Link,
-    label: "Sevenrooms",
+    icon: Star,
+    label: "Favorites",
     external: true
   },
   {
@@ -42,16 +48,18 @@ export const SidebarNavigation = () => {
 
   return (
     <SidebarGroupContent>
-      {menuItems.map((item) => (
-        <SidebarMenuItem
-          key={item.to}
-          to={item.to}
-          icon={item.icon}
-          label={item.label}
-          isActive={location.pathname === item.to}
-          external={item.external}
-        />
-      ))}
+      <SidebarMenu>
+        {menuItems.map((item) => (
+          <SidebarMenuItem
+            key={item.to}
+            to={item.to}
+            icon={item.icon}
+            label={item.label}
+            isActive={location.pathname === item.to}
+            external={item.external}
+          />
+        ))}
+      </SidebarMenu>
     </SidebarGroupContent>
   );
 };
