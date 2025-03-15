@@ -1,6 +1,6 @@
 
 import { useLocation, Link } from "react-router-dom";
-import { BarChart3, MessageSquare, Building2, Settings, Search } from "lucide-react";
+import { BarChart3, MessageSquare, Building2, Settings, Users } from "lucide-react";
 
 const menuItems = [
   {
@@ -19,9 +19,9 @@ const menuItems = [
     label: "Reviews"
   },
   {
-    to: "/search",
-    icon: Search,
-    label: "Search"
+    to: "/client-experience",
+    icon: Users,
+    label: "Guest Experience"
   },
   {
     to: "/profile",
@@ -68,6 +68,19 @@ export const NavigationMenu = () => {
       </nav>
       
       <div className="mt-auto pt-4 border-t">
+        <div className="mb-3">
+          <a 
+            href="https://www.sevenrooms.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors hover:bg-accent/20"
+          >
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent/30">
+              <span className="font-semibold text-sm">7R</span>
+            </div>
+            <span>Seven Rooms</span>
+          </a>
+        </div>
         <p className="text-xs text-center text-muted-foreground">
           © {new Date().getFullYear()} Revuman
         </p>
