@@ -63,6 +63,7 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-black/80 backdrop-blur-sm border border-white/20 shadow-lg dark:bg-black/80 dark:backdrop-blur-sm dark:border-white/20 dark:shadow-lg light:bg-white/80 light:backdrop-blur-sm light:border-black/20 light:shadow-lg;
+    @apply bg-white/80 backdrop-blur-sm border border-black/20 shadow-lg;
+    @apply dark:bg-black/80 dark:backdrop-blur-sm dark:border-white/20 dark:shadow-lg;
   }
 }
