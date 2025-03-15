@@ -1,6 +1,7 @@
 
 import { useLocation, Link } from "react-router-dom";
 import { BarChart3, MessageSquare, Building2, Settings, Users } from "lucide-react";
+import { SevenRoomsLogo } from "@/components/ui/icon";
 
 const menuItems = [
   {
@@ -76,7 +77,7 @@ export const NavigationMenu = () => {
             className="flex items-center gap-4 px-5 py-4 rounded-xl transition-colors hover:bg-accent/20"
           >
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/30">
-              <span className="font-semibold text-base">7R</span>
+              <SevenRoomsLogo className="h-7 w-7" />
             </div>
             <span className="text-lg">Seven Rooms</span>
           </a>
