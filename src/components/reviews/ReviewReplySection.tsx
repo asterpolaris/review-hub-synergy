@@ -97,7 +97,7 @@ export const ReviewReplySection = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-base leading-relaxed">{review.reply.comment}</p>
+          <p className="text-base leading-relaxed text-left">{review.reply.comment}</p>
         </CardContent>
       </Card>
     );
