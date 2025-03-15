@@ -104,7 +104,7 @@ export const ReviewReplySection = ({
   }
 
   return (
-    <div className="flex justify-center py-2">
+    <div className="flex justify-start py-2">
       <Button variant="outline" className="text-base py-6 px-8" onClick={onEdit}>
         {isSending ? (
           <>
