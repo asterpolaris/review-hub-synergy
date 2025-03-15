@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
@@ -30,6 +31,7 @@ async function callClaude(reviews: any[], retryCount = 0): Promise<string> {
 2. Key themes in positive reviews
 3. Key themes in negative reviews
 4. Standout issues or praise that appear frequently
+5. One or two specific recommendations for improvement
 
 Reviews by venue:
 ${Object.entries(reviewsByVenue).map(([venue, reviews]: [string, any[]]) => `

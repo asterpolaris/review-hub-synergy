@@ -1,5 +1,7 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VenueInsights } from "./VenueInsights";
 
 interface BusinessCardProps {
   id: string;
@@ -38,9 +40,10 @@ export const BusinessCard = ({ id, name, location, googleBusinessAccountId }: Bu
       </div>
       
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          <TabsTrigger value="insights">Monthly Insights</TabsTrigger>
         </TabsList>
         
         <TabsContent value="details" className="p-6">
@@ -66,6 +69,12 @@ export const BusinessCard = ({ id, name, location, googleBusinessAccountId }: Bu
         <TabsContent value="reviews">
           <div className="p-6">
             <p>Reviews will be displayed here</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="insights">
+          <div className="p-6">
+            <VenueInsights businessId={id} />
           </div>
         </TabsContent>
       </Tabs>

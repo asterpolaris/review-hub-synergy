@@ -204,9 +204,11 @@ export const BusinessList = () => {
   return (
     <div className="space-y-6">
       {googleAuthToken && (
-        <Button onClick={fetchGoogleBusinesses} variant="outline">
-          Refresh Google Business List
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={fetchGoogleBusinesses} variant="outline">
+            Refresh Google Business List
+          </Button>
+        </div>
       )}
       
       {!businesses?.length ? (
