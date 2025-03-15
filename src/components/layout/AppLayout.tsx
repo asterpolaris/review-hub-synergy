@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NavigationMenu } from "./NavigationMenu";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut, session } = useAuth();
@@ -45,6 +46,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             
             <div className="flex items-center gap-2">
+              <ThemeToggle />
+              
               <Button 
                 variant="ghost" 
                 size="icon" 
