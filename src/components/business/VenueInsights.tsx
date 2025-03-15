@@ -4,9 +4,10 @@ import { useVenueInsights } from "@/hooks/useVenueInsights";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { syncBusinessReviews } from "@/utils/reviewProcessing";
+import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 interface VenueInsightsProps {
   businessId: string;
@@ -20,27 +21,45 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
   const handleSyncReviews = async () => {
     try {
       setSyncingReviews(true);
-      const result = await syncBusinessReviews(businessId);
       
-      if (result.success) {
-        toast({
-          title: "Success",
-          description: "Reviews synced successfully. Refreshing insights...",
-        });
-        // Wait a moment for the sync to complete on the backend
-        setTimeout(() => refetch(), 2000);
-      } else {
-        toast({
-          title: "Error",
-          description: result.message,
-          variant: "destructive",
-        });
+      // First refresh Google reviews from the source
+      const { error: syncError } = await supabase.rpc('sync_reviews_for_business', {
+        business_id: businessId
+      });
+      
+      if (syncError) {
+        throw new Error(syncError.message);
       }
+      
+      toast({
+        title: "Success",
+        description: "Reviews synced successfully. Refreshing insights...",
+      });
+      
+      // Now trigger the edge function to regenerate monthly insights
+      const lastMonth = new Date();
+      lastMonth.setDate(1);
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      
+      const { error: analysisError } = await supabase.functions.invoke('analyze-reviews-by-venue', {
+        body: { 
+          businessId,
+          year: lastMonth.getFullYear(),
+          month: lastMonth.getMonth() + 1 // Edge function expects 1-based months
+        }
+      });
+      
+      if (analysisError) {
+        throw new Error("Failed to analyze reviews");
+      }
+      
+      // Wait a moment for the sync to complete on the backend
+      setTimeout(() => refetch(), 2000);
     } catch (error) {
       console.error("Error syncing reviews:", error);
       toast({
         title: "Error",
-        description: "Failed to sync reviews.",
+        description: error instanceof Error ? error.message : "Failed to sync reviews",
         variant: "destructive",
       });
     } finally {
@@ -66,16 +85,22 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
     );
   }
 
+  // Display the month this data is for
+  const lastMonth = new Date();
+  lastMonth.setDate(1);
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const monthLabel = format(lastMonth, 'MMMM yyyy');
+
   if (insights.reviewCount === 0) {
     return (
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Monthly Insights</CardTitle>
-          <CardDescription>Review analysis for the past month</CardDescription>
+          <CardTitle>Monthly Insights: {monthLabel}</CardTitle>
+          <CardDescription>Review analysis for {monthLabel}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
-            <p className="text-muted-foreground mb-4">No reviews found for the past month.</p>
+            <p className="text-muted-foreground mb-4">No reviews found for {monthLabel}.</p>
             <Button onClick={handleSyncReviews} disabled={syncingReviews}>
               {syncingReviews ? "Syncing..." : "Sync Latest Reviews"}
             </Button>
@@ -99,8 +124,8 @@ export const VenueInsights = ({ businessId }: VenueInsightsProps) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Monthly Insights</CardTitle>
-            <CardDescription>Review analysis for the past month</CardDescription>
+            <CardTitle>Monthly Insights: {monthLabel}</CardTitle>
+            <CardDescription>Review analysis for {monthLabel}</CardDescription>
           </div>
           <Button variant="outline" onClick={handleSyncReviews} disabled={syncingReviews}>
             {syncingReviews ? "Syncing..." : "Refresh Data"}

@@ -91,18 +91,148 @@ serve(async (req) => {
   }
 
   try {
-    const { reviews } = await req.json();
+    const { businessId, year, month } = await req.json();
 
-    if (!reviews || !Array.isArray(reviews) || reviews.length === 0) {
-      throw new Error('No reviews provided or invalid format');
+    if (!businessId) {
+      throw new Error('Business ID is required');
     }
 
-    console.log(`Processing ${reviews.length} reviews...`);
+    // Define current date for default values
+    const now = new Date();
+    const currentYear = year || now.getFullYear();
+    const currentMonth = month || now.getMonth() + 1; // JavaScript months are 0-based
+    
+    // Calculate previous month
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-    const analysis = await callClaude(reviews);
+    // Create month string in YYYY-MM format for database query
+    const monthString = `${prevYear}-${prevMonth.toString().padStart(2, '0')}`;
+    
+    console.log(`Processing monthly insights for business ${businessId} for month ${monthString}`);
+
+    // Trigger the generation of basic statistics in the database
+    const { data: insightId, error: insightError } = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/rest/v1/rpc/trigger_monthly_insights_generation`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        },
+        body: JSON.stringify({
+          p_business_id: businessId,
+          p_year: prevYear,
+          p_month: prevMonth
+        })
+      }
+    ).then(res => res.json());
+
+    if (insightError) {
+      throw new Error(`Error generating insights: ${insightError.message}`);
+    }
+
+    console.log(`Successfully generated base insights with ID ${insightId}`);
+
+    // Get the month's reviews for this business
+    const startDate = new Date(prevYear, prevMonth - 1, 1);
+    const endDate = new Date(prevYear, prevMonth, 0);
+    
+    const { data: reviews, error: reviewsError } = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/rest/v1/reviews?business_id=eq.${businessId}&create_time=gte.${startDate.toISOString()}&create_time=lte.${endDate.toISOString()}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        }
+      }
+    ).then(res => res.json());
+
+    if (reviewsError) {
+      throw new Error(`Error fetching reviews: ${reviewsError.message}`);
+    }
+
+    console.log(`Found ${reviews.length} reviews for analysis`);
+
+    if (!reviews || reviews.length === 0) {
+      console.log('No reviews to analyze, skipping AI analysis');
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'No reviews found for this month, insights created with empty analysis',
+          insightId 
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
+    // First, get the business details for the venue name
+    const { data: business, error: businessError } = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/rest/v1/businesses?id=eq.${businessId}&select=*`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        }
+      }
+    ).then(res => res.json());
+
+    if (businessError || !business || business.length === 0) {
+      throw new Error('Could not find business details');
+    }
+
+    // Format reviews for AI analysis
+    const formattedReviews = reviews.map(review => ({
+      id: review.id,
+      rating: review.rating,
+      comment: review.comment || "",
+      createTime: review.create_time,
+      venueName: business[0].name
+    }));
+
+    // Call Claude for analysis
+    console.log('Calling Claude for review analysis');
+    const analysis = await callClaude(formattedReviews);
+    console.log('Received analysis from Claude');
+
+    // Update the venue_monthly_insights table with the analysis
+    const { error: updateError } = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/rest/v1/venue_monthly_insights?business_id=eq.${businessId}&month=eq.${monthString}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          analysis: analysis
+        })
+      }
+    ).then(res => res.status === 204 ? { error: null } : res.json());
+
+    if (updateError) {
+      throw new Error(`Error updating insights with analysis: ${updateError.message}`);
+    }
+
+    console.log('Successfully updated insights with AI analysis');
 
     return new Response(
-      JSON.stringify({ analysis }),
+      JSON.stringify({ 
+        success: true,
+        message: 'Monthly insights generated and updated with analysis',
+        insightId 
+      }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -112,7 +242,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in analyze-reviews:', error);
+    console.error('Error in analyze-reviews-by-venue:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,

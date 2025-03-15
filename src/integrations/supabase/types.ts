@@ -761,6 +761,50 @@ export type Database = {
           },
         ]
       }
+      venue_monthly_insights: {
+        Row: {
+          analysis: string | null
+          average_rating: number | null
+          business_id: string
+          created_at: string
+          id: string
+          month: string
+          response_rate: number | null
+          review_count: number
+          updated_at: string
+        }
+        Insert: {
+          analysis?: string | null
+          average_rating?: number | null
+          business_id: string
+          created_at?: string
+          id?: string
+          month: string
+          response_rate?: number | null
+          review_count?: number
+          updated_at?: string
+        }
+        Update: {
+          analysis?: string | null
+          average_rating?: number | null
+          business_id?: string
+          created_at?: string
+          id?: string
+          month?: string
+          response_rate?: number | null
+          review_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_monthly_insights_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue_stakeholders: {
         Row: {
           business_id: string | null
@@ -814,6 +858,18 @@ export type Database = {
         }
         Returns: string
       }
+      generate_all_monthly_insights: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      generate_business_monthly_insights: {
+        Args: {
+          p_business_id: string
+          p_year: number
+          p_month: number
+        }
+        Returns: string
+      }
       reject_registration: {
         Args: {
           registration_id: string
@@ -837,6 +893,14 @@ export type Database = {
           business_id: string
         }
         Returns: undefined
+      }
+      trigger_monthly_insights_generation: {
+        Args: {
+          p_business_id: string
+          p_year?: number
+          p_month?: number
+        }
+        Returns: string
       }
       trigger_reviews_sync: {
         Args: Record<PropertyKey, never>
