@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReviewMetrics } from "@/hooks/useReviewMetrics";
-import { RefreshCwIcon, Loader2, Trophy, Star } from "lucide-react";
+import { RefreshCwIcon, Loader2, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -80,7 +80,7 @@ const Dashboard = () => {
             {getGreeting()}, {firstName}
           </h2>
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">Follow Your Favorites</h1>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
             <div className="flex gap-2">
               <Select value={period} onValueChange={(value: DatePeriod) => setPeriod(value)}>
                 <SelectTrigger className="w-[180px] rounded-xl">
@@ -103,9 +103,6 @@ const Dashboard = () => {
               </Button>
             </div>
           </div>
-          <p className="text-muted-foreground text-base">
-            Keep up with stats, scores, and more for every business.
-          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -135,11 +132,6 @@ const Dashboard = () => {
           />
         </div>
 
-        <Button className="mx-auto flex items-center justify-center rounded-full px-8 py-6 text-lg font-medium">
-          <Star className="mr-2 h-5 w-5" />
-          Follow Businesses
-        </Button>
-
         <Card className="rounded-2xl shadow-lg border-accent/20 overflow-hidden">
           <CardHeader className="bg-accent/10">
             <CardTitle className="flex items-center gap-2">
@@ -157,3 +149,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
