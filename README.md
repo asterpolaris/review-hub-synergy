@@ -1,23 +1,40 @@
+
 # JEGantic Hospitality Desk
 
 ## About
 
-JEGantic Hospitality Desk is a web application designed to help businesses manage and respond to their Google Reviews efficiently. The application integrates with Google Business Profile API to provide a centralized dashboard for monitoring and responding to customer reviews across multiple business locations.
+JEGantic Hospitality Desk is a comprehensive web application designed to help restaurants and hospitality businesses efficiently manage and respond to their Google Reviews. The platform integrates with Google Business Profile API to provide a centralized dashboard for monitoring, analyzing, and responding to customer reviews across multiple business locations.
 
 ## Features
 
-- Centralized dashboard for monitoring review metrics
-- Multi-business review management
-- Google Business Profile API integration
-- AI-powered review response generation using Claude
-- Review filtering and sorting capabilities
-- Review response templates
-- Real-time metrics and analytics
-- Secure user authentication
-- Admin user management
-- Review response capabilities
-- Team and organization management
-- Role-based access control
+### Review Management
+- **Centralized Dashboard**: View and manage all reviews from a single interface
+- **Multi-Location Support**: Manage reviews for multiple business venues
+- **Google Business Profile Integration**: Automatic syncing with Google's review platform
+- **Advanced Filtering**: Filter reviews by date, rating, response status, and more
+- **Paginated Review Display**: Efficiently browse through large volumes of reviews
+
+### AI-Powered Capabilities
+- **Intelligent Response Generation**: Create personalized review replies using Claude AI
+- **Review Analysis**: Get AI-powered insights about your reviews and customer sentiment
+- **Monthly Performance Reports**: Automatically generated analytics about review patterns
+
+### Analytics & Insights
+- **Real-time Metrics**: Monitor key review metrics from your dashboard
+- **Response Rate Tracking**: Track how consistently your team responds to reviews
+- **Rating Distribution**: Visualize your rating performance over time
+- **Monthly Business Insights**: Detailed analysis of review trends and patterns
+
+### User Management
+- **Secure Authentication**: Role-based access control for team members
+- **Team Collaboration**: Multiple team members can manage reviews
+- **Organization Management**: Create a hierarchy for multi-location businesses
+
+### Interface & Experience
+- **Responsive Design**: Works seamlessly on desktops, tablets, and mobile devices
+- **Intuitive Interface**: User-friendly design focused on productivity
+- **Dark/Light Mode**: Choose your preferred visual theme
+- **Real-time Updates**: See new reviews as they come in
 
 ## Tech Stack
 
@@ -40,14 +57,7 @@ JEGantic Hospitality Desk is a web application designed to help businesses manag
   - Edge Functions
   - Storage
 - Google Business Profile API
-- Anthropic's Claude AI for review responses
-- Stripe for payments and subscriptions
-
-### Development Tools
-- TypeScript
-- ESLint
-- PostCSS
-- Git for version control
+- Anthropic's Claude AI for review analysis and responses
 
 ## Local Development Setup
 
@@ -79,6 +89,15 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ## Deployment
 
 The application is deployed at [https://desk.jegantic.com](https://desk.jegantic.com)
+
+## Pricing
+
+JEGantic Hospitality Desk offers several pricing tiers:
+
+- **Free**: Single business management, basic review monitoring
+- **Standard**: Multi-business review management, basic analytics
+- **Premium**: AI-powered responses, advanced analytics, unlimited locations
+- **Enterprise**: Custom AI training, dedicated support, API access
 
 ## Contact
 
