@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 type Theme = "dark" | "light";
 
@@ -11,8 +12,21 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize theme from system preference or localStorage
+  const location = useLocation();
+  const isDashboardRoute = location.pathname.includes("/dashboard") || 
+                          location.pathname.includes("/reviews") || 
+                          location.pathname.includes("/businesses") || 
+                          location.pathname.includes("/profile") || 
+                          location.pathname.includes("/client-experience") || 
+                          location.pathname.includes("/admin");
+
+  // Initialize theme from system preference or localStorage, but enforce dark mode for non-dashboard pages
   const [theme, setTheme] = useState<Theme>(() => {
+    if (!isDashboardRoute) {
+      return "dark"; // Always use dark theme for non-dashboard routes
+    }
+    
+    // For dashboard routes, respect the user preference
     // Check localStorage first
     const savedTheme = localStorage.getItem("theme") as Theme | null;
     
@@ -36,12 +50,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.remove("light", "dark");
     root.classList.add(theme);
     
-    // Save to localStorage
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    // Save to localStorage (only for dashboard routes)
+    if (isDashboardRoute) {
+      localStorage.setItem("theme", theme);
+    }
+  }, [theme, isDashboardRoute]);
 
-  // Listen for system preference changes
+  // Listen for system preference changes (only apply to dashboard routes)
   useEffect(() => {
+    if (!isDashboardRoute) return;
+    
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
     
     const handleChange = () => {
@@ -53,10 +71,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  }, [isDashboardRoute]);
+
+  // Enforce dark theme for non-dashboard routes whenever route changes
+  useEffect(() => {
+    if (!isDashboardRoute) {
+      setTheme("dark");
+    }
+  }, [isDashboardRoute]);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === "dark" ? "light" : "dark"));
+    // Only allow toggling for dashboard routes
+    if (isDashboardRoute) {
+      setTheme(prevTheme => (prevTheme === "dark" ? "light" : "dark"));
+    }
   };
 
   return (
