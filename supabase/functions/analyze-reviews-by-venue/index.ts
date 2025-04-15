@@ -199,13 +199,13 @@ serve(async (req) => {
       throw new Error("Invalid JSON in request body");
     });
     
-    const { businessId, year, month, reviews } = reqBody;
-    console.log("Request parameters:", { businessId, year, month, hasReviews: !!reviews });
+    const { businessId, year, month, reviews: requestReviews } = reqBody;
+    console.log("Request parameters:", { businessId, year, month, hasReviews: !!requestReviews });
 
     // If direct reviews analysis is provided, use it instead of fetching from the database
-    if (reviews && Array.isArray(reviews) && reviews.length > 0) {
-      console.log(`Analyzing ${reviews.length} reviews provided directly in the request`);
-      const analysis = await callClaude(reviews);
+    if (requestReviews && Array.isArray(requestReviews) && requestReviews.length > 0) {
+      console.log(`Analyzing ${requestReviews.length} reviews provided directly in the request`);
+      const analysis = await callClaude(requestReviews);
       
       return new Response(
         JSON.stringify({ 
@@ -284,32 +284,25 @@ serve(async (req) => {
     
     console.log(`Fetching reviews from ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
-    let reviews = [];
-    try {
-      const reviewsResponse = await fetch(
-        `${Deno.env.get('SUPABASE_URL')}/rest/v1/reviews?business_id=eq.${businessId}&create_time=gte.${startDate.toISOString()}&create_time=lte.${endDate.toISOString()}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-          }
+    const reviewsResponse = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/rest/v1/reviews?business_id=eq.${businessId}&create_time=gte.${startDate.toISOString()}&create_time=lte.${endDate.toISOString()}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'apikey': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
         }
-      );
-
-      if (!reviewsResponse.ok) {
-        throw new Error(`Error fetching reviews: ${reviewsResponse.status} ${await reviewsResponse.text()}`);
       }
+    );
 
-      reviews = await reviewsResponse.json();
-      console.log(`Found ${reviews ? reviews.length : 0} reviews for analysis`);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      // Default to empty array if there's an error
-      reviews = [];
+    if (!reviewsResponse.ok) {
+      throw new Error(`Error fetching reviews: ${reviewsResponse.status} ${await reviewsResponse.text()}`);
     }
 
-    if (!reviews || reviews.length === 0) {
+    const dbReviews = await reviewsResponse.json();
+    console.log(`Found ${dbReviews ? dbReviews.length : 0} reviews for analysis`);
+
+    if (!dbReviews || dbReviews.length === 0) {
       console.log('No reviews to analyze, creating empty analysis');
       
       // Update the venue_monthly_insights table with an empty analysis
@@ -373,7 +366,7 @@ serve(async (req) => {
     }
 
     // Format reviews for AI analysis
-    const formattedReviews = reviews.map(review => ({
+    const formattedReviews = dbReviews.map(review => ({
       id: review.id,
       rating: review.rating || 0,
       comment: review.comment || "",
