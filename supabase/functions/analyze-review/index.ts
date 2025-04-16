@@ -37,7 +37,7 @@ Be concise and professional in your analysis.`,
         messages: [{
           role: 'user',
           content: `Analyze this review:
-Rating: ${review.rating}
+Rating: ${review.rating} out of 5 stars
 Review: "${review.comment}"
 
 Provide the sentiment and a brief summary.`

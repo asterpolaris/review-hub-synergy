@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
@@ -39,8 +40,41 @@ async function callClaude(reviews: any[], retryCount = 0): Promise<string> {
       return "No valid reviews available for analysis.";
     }
 
+    // Calculate rating distribution and average rating
+    const ratingCounts = [0, 0, 0, 0, 0, 0]; // Index 0 unused, indices 1-5 for star ratings
+    let totalRating = 0;
+    let totalReviews = 0;
+
+    Object.values(reviewsByVenue).forEach((venueReviews: any) => {
+      (venueReviews as any[]).forEach((review: any) => {
+        const rating = Math.floor(review.rating);
+        if (rating >= 1 && rating <= 5) {
+          ratingCounts[rating]++;
+          totalRating += rating;
+          totalReviews++;
+        }
+      });
+    });
+
+    const averageRating = totalReviews > 0 ? totalRating / totalReviews : 0;
+    
+    // Create a rating distribution summary
+    const ratingDistribution = `
+Rating Distribution:
+1 star: ${ratingCounts[1]} (${((ratingCounts[1] / totalReviews) * 100).toFixed(0)}%)
+2 star: ${ratingCounts[2]} (${((ratingCounts[2] / totalReviews) * 100).toFixed(0)}%)
+3 star: ${ratingCounts[3]} (${((ratingCounts[3] / totalReviews) * 100).toFixed(0)}%)
+4 star: ${ratingCounts[4]} (${((ratingCounts[4] / totalReviews) * 100).toFixed(0)}%)
+5 star: ${ratingCounts[5]} (${((ratingCounts[5] / totalReviews) * 100).toFixed(0)}%)
+
+Average Rating: ${averageRating.toFixed(1)}
+`;
+
     // Prepare a shorter, more focused prompt to reduce token usage
     const prompt = `Analyze these customer reviews for a business and provide:
+
+${ratingDistribution}
+
 1. Overall sentiment summary
 2. Key positive themes
 3. Key negative themes or areas for improvement
@@ -53,7 +87,7 @@ ${(venueReviews as any[]).slice(0, 20).map((r: any) => `- ${r.rating} stars: "${
 ${venueReviews.length > 20 ? `... and ${venueReviews.length - 20} more reviews` : ''}
 `).join('\n')}
 
-Format your analysis in markdown with headers and bullet points where appropriate.`;
+Format your analysis in markdown with headers and bullet points where appropriate. Begin with the rating distribution and average rating information.`;
 
     console.log(`Sending request to Claude API with ${reviews.length} reviews...`);
     
@@ -145,16 +179,16 @@ function generateBasicAnalysis(reviews: any[]): string {
     // Generate analysis text
     let analysis = `# Review Analysis Summary\n\n`;
     
-    analysis += `## Overview\n`;
-    analysis += `Total reviews analyzed: ${totalReviews}\n`;
-    analysis += `Average rating: ${averageRating.toFixed(1)} stars\n\n`;
-    
     analysis += `## Rating Distribution\n`;
-    analysis += `- 5 stars: ${ratingCounts[5]} (${((ratingCounts[5] / totalReviews) * 100).toFixed(0)}%)\n`;
-    analysis += `- 4 stars: ${ratingCounts[4]} (${((ratingCounts[4] / totalReviews) * 100).toFixed(0)}%)\n`;
-    analysis += `- 3 stars: ${ratingCounts[3]} (${((ratingCounts[3] / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- 1 star: ${ratingCounts[1]} (${((ratingCounts[1] / totalReviews) * 100).toFixed(0)}%)\n`;
     analysis += `- 2 stars: ${ratingCounts[2]} (${((ratingCounts[2] / totalReviews) * 100).toFixed(0)}%)\n`;
-    analysis += `- 1 star: ${ratingCounts[1]} (${((ratingCounts[1] / totalReviews) * 100).toFixed(0)}%)\n\n`;
+    analysis += `- 3 stars: ${ratingCounts[3]} (${((ratingCounts[3] / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- 4 stars: ${ratingCounts[4]} (${((ratingCounts[4] / totalReviews) * 100).toFixed(0)}%)\n`;
+    analysis += `- 5 stars: ${ratingCounts[5]} (${((ratingCounts[5] / totalReviews) * 100).toFixed(0)}%)\n\n`;
+    analysis += `**Average Rating: ${averageRating.toFixed(1)}**\n\n`;
+    
+    analysis += `## Overview\n`;
+    analysis += `Total reviews analyzed: ${totalReviews}\n\n`;
     
     analysis += `## Sentiment Overview\n`;
     analysis += `- Positive reviews (4-5 stars): ${positiveReviews} (${((positiveReviews / totalReviews) * 100).toFixed(0)}%)\n`;
