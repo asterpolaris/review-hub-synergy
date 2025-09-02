@@ -87,7 +87,7 @@ ${(venueReviews as any[]).slice(0, 20).map((r: any) => `- ${r.rating} stars: "${
 ${venueReviews.length > 20 ? `... and ${venueReviews.length - 20} more reviews` : ''}
 `).join('\n')}
 
-Format your analysis in markdown with headers and bullet points where appropriate. Alwats begin with the rating distribution and average rating information.`;
+Format your analysis in markdown with headers and bullet points where appropriate. Always begin with the rating distribution and average rating information.`;
 
     console.log(`Sending request to OpenRouter API with ${reviews.length} reviews...`);
     
