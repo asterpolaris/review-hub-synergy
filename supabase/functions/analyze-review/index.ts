@@ -29,7 +29,7 @@ serve(async (req) => {
         'X-Title': 'Review Analysis'
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp',
+        model: 'google/gemini-2.5-pro',
         messages: [{
           role: 'system',
           content: `You are an expert at analyzing customer reviews. Your task is to:

@@ -101,7 +101,7 @@ Format your analysis in markdown with headers and bullet points where appropriat
           'X-Title': 'Review Analysis'
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-exp',
+          model: 'google/gemini-2.5-pro',
           messages: [{
             role: 'user',
             content: prompt
