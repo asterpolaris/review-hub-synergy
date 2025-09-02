@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
+const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +11,7 @@ const corsHeaders = {
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
-async function callClaude(reviews: any[], retryCount = 0): Promise<string> {
+async function callGemini(reviews: any[], retryCount = 0): Promise<string> {
   try {
     // Safety check - if reviews is empty or undefined, return a default message
     if (!reviews || reviews.length === 0) {
@@ -89,66 +89,67 @@ ${venueReviews.length > 20 ? `... and ${venueReviews.length - 20} more reviews` 
 
 Format your analysis in markdown with headers and bullet points where appropriate. Alwats begin with the rating distribution and average rating information.`;
 
-    console.log(`Sending request to Claude API with ${reviews.length} reviews...`);
+    console.log(`Sending request to OpenRouter API with ${reviews.length} reviews...`);
     
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': anthropicApiKey,
-          'anthropic-version': '2023-06-01'
+          'Authorization': `Bearer ${openrouterApiKey}`,
+          'HTTP-Referer': 'https://your-app.com',
+          'X-Title': 'Review Analysis'
         },
         body: JSON.stringify({
-          model: 'claude-3-haiku-20240307',
-          max_tokens: 1000,
+          model: 'google/gemini-2.0-flash-exp',
           messages: [{
             role: 'user',
             content: prompt
-          }]
+          }],
+          max_tokens: 1000
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Claude API error response:', errorText);
+        console.error('OpenRouter API error response:', errorText);
         
         // If overloaded and we haven't exceeded retries, try again
         if ((response.status === 529 || response.status === 429) && retryCount < MAX_RETRIES) {
           console.log(`Retry attempt ${retryCount + 1} after rate limit...`);
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
-          return callClaude(reviews, retryCount + 1);
+          return callGemini(reviews, retryCount + 1);
         }
         
-        throw new Error(`Claude API error: ${response.status} ${errorText}`);
+        throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
       
-      if (!data || !data.content || !data.content[0] || !data.content[0].text) {
-        throw new Error("Unexpected response format from Claude API");
+      if (!data || !data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        throw new Error("Unexpected response format from OpenRouter API");
       }
       
-      return data.content[0].text;
+      return data.choices[0].message.content;
     } catch (fetchError) {
-      console.error("Error fetching from Claude API:", fetchError);
+      console.error("Error fetching from OpenRouter API:", fetchError);
       
       if (retryCount < MAX_RETRIES) {
         console.log(`Retry attempt ${retryCount + 1} after fetch error`);
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
-        return callClaude(reviews, retryCount + 1);
+        return callGemini(reviews, retryCount + 1);
       }
       
       // If we've exhausted retries or had another error, provide a basic analysis
       return generateBasicAnalysis(reviews);
     }
   } catch (error) {
-    console.error("Error in callClaude:", error);
+    console.error("Error in callGemini:", error);
     
     if (retryCount < MAX_RETRIES) {
       console.log(`Retry attempt ${retryCount + 1} after error:`, error);
       await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
-      return callClaude(reviews, retryCount + 1);
+      return callGemini(reviews, retryCount + 1);
     }
     
     // Return a fallback message rather than throwing
@@ -239,7 +240,7 @@ serve(async (req) => {
     // If direct reviews analysis is provided, use it instead of fetching from the database
     if (requestReviews && Array.isArray(requestReviews) && requestReviews.length > 0) {
       console.log(`Analyzing ${requestReviews.length} reviews provided directly in the request`);
-      const analysis = await callClaude(requestReviews);
+      const analysis = await callGemini(requestReviews);
       
       return new Response(
         JSON.stringify({ 
@@ -408,14 +409,14 @@ serve(async (req) => {
       venueName: businessName
     }));
 
-    // Call Claude for analysis
-    console.log('Calling Claude for review analysis');
+    // Call Gemini for analysis
+    console.log('Calling Gemini for review analysis');
     let analysis = "";
     try {
-      analysis = await callClaude(formattedReviews);
-      console.log('Received analysis from Claude');
+      analysis = await callGemini(formattedReviews);
+      console.log('Received analysis from Gemini');
     } catch (error) {
-      console.error("Error getting analysis from Claude:", error);
+      console.error("Error getting analysis from Gemini:", error);
       analysis = "Analysis could not be completed due to technical issues. Please try again later.";
     }
 

@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')!;
+const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,46 +14,49 @@ serve(async (req) => {
   }
 
   try {
-    if (!anthropicApiKey) {
-      throw new Error('ANTHROPIC_API_KEY is not configured');
+    if (!openrouterApiKey) {
+      throw new Error('OPENROUTER_API_KEY is not configured');
     }
 
     const { review } = await req.json();
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${openrouterApiKey}`,
+        'HTTP-Referer': 'https://your-app.com',
+        'X-Title': 'Review Analysis'
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 150,
-        system: `You are an expert at analyzing customer reviews. Your task is to:
+        model: 'google/gemini-2.0-flash-exp',
+        messages: [{
+          role: 'system',
+          content: `You are an expert at analyzing customer reviews. Your task is to:
 1. Determine the sentiment of the review (positive, neutral, or negative)
 2. Provide a brief, one-sentence summary of the key points
-Be concise and professional in your analysis.`,
-        messages: [{
+Be concise and professional in your analysis.`
+        }, {
           role: 'user',
           content: `Analyze this review:
 Rating: ${review.rating} out of 5 stars
 Review: "${review.comment}"
 
 Provide the sentiment and a brief summary.`
-        }]
+        }],
+        max_tokens: 150
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Claude API error: ${response.status} ${errorText}`);
+      throw new Error(`OpenRouter API error: ${response.status} ${errorText}`);
     }
 
-    const claudeResponse = await response.json();
-    const analysisText = claudeResponse.content[0].text;
+    const geminiResponse = await response.json();
+    const analysisText = geminiResponse.choices[0].message.content;
 
-    // Extract sentiment and summary from Claude's response
+    // Extract sentiment and summary from Gemini's response
     const sentimentMatch = analysisText.match(/Sentiment:\s*(.*?)(?:\.|$)/i);
     const summaryMatch = analysisText.match(/Summary:\s*(.*?)(?:\.|$)/i);
 
