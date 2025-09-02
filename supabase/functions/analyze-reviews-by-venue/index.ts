@@ -97,8 +97,8 @@ Format your analysis in markdown with headers and bullet points where appropriat
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${openrouterApiKey}`,
-          'HTTP-Referer': 'https://your-app.com',
-          'X-Title': 'Review Analysis'
+          'HTTP-Referer': 'https://desk.jegantic.com',
+          'X-Title': 'Desk Reviews'
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-pro',
@@ -113,6 +113,12 @@ Format your analysis in markdown with headers and bullet points where appropriat
       if (!response.ok) {
         const errorText = await response.text();
         console.error('OpenRouter API error response:', errorText);
+        
+        // Handle specific errors
+        if (response.status === 404) {
+          console.warn('Model not available on OpenRouter, using basic analysis fallback.');
+          return generateBasicAnalysis(reviews);
+        }
         
         // If overloaded and we haven't exceeded retries, try again
         if ((response.status === 529 || response.status === 429) && retryCount < MAX_RETRIES) {

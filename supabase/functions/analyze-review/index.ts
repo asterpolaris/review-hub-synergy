@@ -25,8 +25,8 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${openrouterApiKey}`,
-        'HTTP-Referer': 'https://your-app.com',
-        'X-Title': 'Review Analysis'
+        'HTTP-Referer': 'https://desk.jegantic.com',
+        'X-Title': 'Desk Reviews'
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-pro',
