@@ -29,7 +29,7 @@ serve(async (req) => {
         'X-Title': 'Desk Reviews'
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
+        model: 'anthropic/claude-3.5-sonnet',
         messages: [{
           role: 'system',
           content: `You are an expert at analyzing customer reviews. Your task is to:

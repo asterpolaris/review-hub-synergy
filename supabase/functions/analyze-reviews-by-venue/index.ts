@@ -101,7 +101,7 @@ Format your analysis in markdown with headers and bullet points where appropriat
           'X-Title': 'Desk Reviews'
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-pro',
+          model: 'anthropic/claude-3.5-sonnet',
           messages: [{
             role: 'user',
             content: prompt
